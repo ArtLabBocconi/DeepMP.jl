@@ -86,8 +86,9 @@ mutable struct ReinfParams
     rstep::Float64
     ry::Float64
     rystep::Float64
+    ψ::Float64
     wait_count::Int
-    ReinfParams(r=0., rstep=0., ry=0., rystep=0.) = new(r, rstep, ry, rystep, 0)
+    ReinfParams(r=0., rstep=0., ry=0., rystep=0., ψ=0.) = new(r, rstep, ry, rystep, ψ, 0)
 end
 
 function update_reinforcement!(reinfpar::ReinfParams)
@@ -115,21 +116,17 @@ function fixtopbottom!(g::FactorGraph)
     fixY!(g.layers[2], ξ)
 end
 
-function update!(g::FactorGraph, r::Float64, ry::Float64)
+function update!(g::FactorGraph, reinfpar)
     Δ = 0. # Updating layer $(lay.l)")
     for l=2:g.L+1
         dropout!(g, l+1)
-        # rl = l > 2 ? r/l : r
-        # ryl = l*ry
-        rl = r
-        ryl = ry
-        δ = update!(g.layers[l], rl, ryl)
+        δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end
     return Δ
 end
 
-function randupdate!(g::FactorGraph, r::Float64, ry::Float64)
+function randupdate!(g::FactorGraph, reinfpar)
     @extract g: K
     Δ = 0.# Updating layer $(lay.l)")
     numW = sum(l->K[l]*K[l+1],1:length(K)-2)
@@ -137,11 +134,7 @@ function randupdate!(g::FactorGraph, r::Float64, ry::Float64)
     for it=1:numW
         for l=2:g.L+1
             dropout!(g, l+1)
-            # rl = l > 2 ? r/l : r
-            # ryl = l*ry
-            rl = r
-            ryl = ry
-            δ = randupdate!(g.layers[l], rl, ryl)
+            δ = randupdate!(g.layers[l], reinfpar)
             Δ = max(δ, Δ)
         end
     end
@@ -248,7 +241,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
 
     for it=1:maxiters
         # Δ = randupdate!(g, reinfpar.r, reinfpar.ry)
-        Δ = update!(g, reinfpar.r, reinfpar.ry)
+        Δ = update!(g, reinfpar)
 
         E, h = energy(g)
         verbose > 0 && @printf("it=%d \t r=%.3f ry=%.3f \t E=%d \t Δ=%f \n"
@@ -412,6 +405,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 K::Vector{Int} = [101, 3, 1],layers=[:tap,:tapex,:tapex],
                 r::Float64 = 0., rstep::Float64= 0.001,
                 ry::Float64 = 0., rystep::Float64= 0.0,
+                ψ = 0., # dumping coefficient
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
@@ -422,7 +416,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
     initrand!(g)
     fixtopbottom!(g)
     maketree && maketree!(g.layers[2])
-    reinfpar = ReinfParams(r, rstep, ry, rystep)
+    reinfpar = ReinfParams(r, rstep, ry, rystep, ψ)
 
     converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
             altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
