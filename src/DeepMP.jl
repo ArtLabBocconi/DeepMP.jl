@@ -8,6 +8,8 @@ using Random
 using LinearAlgebra
 using Statistics
 
+using PyPlot
+
 const CVec = Vector{Complex{Float64}}
 const IVec = Vector{Int}
 const Vec = Vector{Float64}
@@ -163,10 +165,11 @@ function printvec(q::Vector{Float64}, head = "")
 end
 
 function plot_info(g::FactorGraph, info=1; verbose=0)
-    W = getW(g)
+    #W = getW(g)
     K = g.K
     L = length(K)-1
-    N = length(W[1][1])
+    N = K[1]
+    #N = length(W[1][1])
     layers = g.layers[2:end-1]
     width = info
     info > 0 && clf()
@@ -190,13 +193,15 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         subplot(L,width,width*(L-l)+1)
         title("W Overlaps Layer $l")
         xlim(-1.01,1.01)
-        plt[:hist](q)
+        #plt[:hist](q)
+        plt.hist(qWαβ)
         info == 1 && continue
 
         subplot(L,width,width*(L-l)+2)
         title("Mags Layer $l")
         xlim(-1.01,1.01)
-        plt[:hist](vcat(m[l]...))
+        #plt[:hist](vcat(m[l]...))
+        plt.hist(vcat(layers[l].allm...))
         info == 2 && continue
 
         subplot(L,width,width*(L-l)+3)
@@ -205,8 +210,11 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         for k=1:K[l+1]
             pu = layers[l].allpu[k]
             pd = layers[l].top_allpd[k]
-            sat = (2pu-1) .* (2pd-1)
-            plt[:hist](sat)
+            #sat = (2pu-1) .* (2pd-1)
+            sat = @. (2pu-1) * (2pd-1)
+            #plt[:hist](sat)
+            #@show size(sat)
+            #plt.hist(sat)
         end
         info == 3 && continue
 
@@ -215,7 +223,8 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         xlim(-1.01,1.01)
         for k=1:K[l+1]
             pu = layers[l].allpu[k]
-            plt[:hist](2pu-1)
+            #plt[:hist](2pu-1)
+            plt.hist(2 .* pu .- 1)
         end
         info == 4 && continue
 
@@ -225,9 +234,11 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         xlim(-1.01,1.01)
         for k=1:K[l+1]
             pd = layers[l].top_allpd[k]
-            plt[:hist](2pd-1)
+            #plt.hist(2 .* pd .- 1)
         end
         info == 5 && continue
+
+        tight_layout()
 
     end
 end
