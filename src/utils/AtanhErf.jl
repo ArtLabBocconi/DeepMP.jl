@@ -9,14 +9,15 @@ using JLD
 batanherf(x::Float64) = Float64(atanh(erf(big(x))))
 
 let
-    const mm = 16.0
-    const st = 1e-4
-    const r = 1.0:st:mm
-    const rb = convert(FloatRange{BigFloat}, r)
+    mm = 16.0
+    st = 1e-4
+    r = 1.0:st:mm
+    # rb = convert(FloatRange{BigFloat}, r)
+    rb = BigFloat.(r)
 
-    const interp_degree = Quadratic
-    const interp_boundary = Line
-    const interp_type = Interpolations.BSplineInterpolation{Float64,1,Vector{Float64},BSpline{interp_degree{interp_boundary}},OnGrid,0} 
+    interp_degree = Quadratic
+    interp_boundary = Line
+    interp_type = Interpolations.BSplineInterpolation{Float64,1,Vector{Float64},BSpline{interp_degree{interp_boundary}},OnGrid,0} 
 
     function getinp!()
         filename = "atanherf_interp.max_$mm.step_$st.jld"
@@ -31,7 +32,7 @@ let
         return inp::interp_type
     end
 
-    const inp = getinp!()
+    inp = getinp!()
 
     global atanherf_interp
     atanherf_interp(x::Float64) = inp[(x - first(r)) / step(r) + 1]::Float64

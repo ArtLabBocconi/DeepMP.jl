@@ -17,6 +17,7 @@ const VecVecVec = Vector{VecVec}
 const IVecVecVec = Vector{IVecVec}
 
 include("utils/functions.jl")
+include("utils/Magnetizations.jl")
 include("layers.jl")
 include("dropout.jl")
 
@@ -49,6 +50,9 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M))
                 println("Created BPLayer\t $(K[l])")
+            elseif  layertype[l] == :bpacc
+                push!(layers, BPLayer(K[l+1], K[l], M))
+                println("Created BPAccurateLayer\t $(K[l])")
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M))
                 println("Created BPExactLayer\t $(K[l])")
