@@ -1,5 +1,7 @@
 #TODO Layer not working
 
+include("../utils/Magnetizations.jl")
+using .Magnetizations
 
 mutable struct BPExactLayer <: AbstractLayer
     l::Int
@@ -222,11 +224,14 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             Mhtot += my[i]*m[i]
             Chtot += 1 - my[i]^2*m[i]^2
         end
+        #println("notbottom, Chtot = $Chtot")
     else
+        #println("isbot(0), Chtot = $Chtot, summ=$(sum(m)), summy=$(sum(my))")
         for i=1:N
             Mhtot += my[i]*m[i]
             Chtot += my[i]^2*(1 - m[i]^2)
         end
+        #println("isbot, Chtot = $Chtot")
     end
 
     Chtot == 0 &&  (Chtot = 1e-8); # print("!")
@@ -237,6 +242,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
     #     pd[a] -= 1e-8
     # end
     mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
+    #@show Chtot mh[a]
     @assert isfinite(mh[a])
     if !isbottomlayer(layer)
         for i=1:N
@@ -256,15 +262,23 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
         for i=1:N
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
-             
+
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
-            m₋ = (Mcav - my[i]) / sdσ̄²            
-            H = f2mT(pd[a])
-            newu = erfmix(H, m₊, m₋) |> m2f
-            
+            m₋ = (Mcav - my[i]) / sdσ̄²
+            #H = f2mT(pd[a])
+            #H = f2m(MagT64, pd[a])
+            #H = reinterpret(MagT64, pd[a])
+            H = pd[a]
+            #newu = erfmix(H, m₊, m₋) |> m2f
+            newu = erfmix(H, m₊, m₋)
+
+            #@show typeof(H) typeof(newu)
+
             # gh = GH(pd[a],-Mcav / Ccav)
+
             mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * newu
+
             # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
             # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
             # t = DH(pd[a], Mcav, my[i], Ccav)
@@ -337,6 +351,72 @@ function BPLayer(K::Int, N::Int, M::Int)
         , DummyLayer(), DummyLayer())
 end
 
+function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
+#function updateFact!(layer::BPLayer, k::Int)
+    @extract layer K N M allm allmy allmh allpu allpd
+    @extract layer bottom_allpu top_allpd
+    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+
+    mh = allmh[k];
+    pd = top_allpd[k];
+
+    my = allmycav[a][k]
+    m = allmcav[k][a]
+    mhw = allmhcavtow[k]
+    mhy = allmhcavtoy[a]
+    Mhtot = 0.
+    Chtot = 0.
+    if !isbottomlayer(layer)
+        for i=1:N
+            Mhtot += my[i]*m[i]
+            Chtot += 1 - my[i]^2*m[i]^2
+        end
+    else
+        for i=1:N
+            Mhtot += my[i]*m[i]
+            Chtot += my[i]^2*(1 - m[i]^2)
+        end
+    end
+
+    Chtot == 0 &&  (Chtot = 1e-8); # print("!")
+
+    # println("Mhtot $a= $Mhtot pd=$(pd[a])")
+    # @assert isfinite(pd[a]) "$(pd)"
+    # if pd[a]*Hp + (1-pd[a])*Hm <= 0.
+    #     pd[a] -= 1e-8
+    # end
+    mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
+    @assert isfinite(mh[a])
+    if !isbottomlayer(layer)
+        for i=1:N
+            Mcav = Mhtot - my[i]*m[i]
+            Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
+            Ccav == 0 &&  (Ccav = 1e-8); # print("!")
+            # mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
+            gh = GH(pd[a],-Mcav / Ccav)
+            # mhw[i][a] = myatanh(my[i]/Ccav * gh)
+            # mhy[i][k] = myatanh(m[i]/Ccav * gh)
+            @assert isfinite(gh)
+            mhw[i][a] = my[i]/Ccav * gh
+            mhy[i][k] = m[i]/Ccav * gh
+            @assert isfinite(mhy[i][k]) "isfinite(mhy[i][k]) gh=$gh Ccav=$Ccav"
+        end
+    else
+        for i=1:N
+            Mcav = Mhtot - my[i]*m[i]
+            Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
+            mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
+            # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+            # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
+            # t = DH(pd[a], Mcav, my[i], Ccav)
+            # @assert abs(t-mhw[i][a]) < 1e-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
+        end
+    end
+
+    allpu[k][a] = atanh2Hm1(-Mhtot / √Chtot)
+
+end
+
 function updateVarW!(layer::L, k::Int, i::Int, r::Float64=0.) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd allh
     @extract layer bottom_allpu top_allpd
@@ -345,13 +425,18 @@ function updateVarW!(layer::L, k::Int, i::Int, r::Float64=0.) where {L <: Union{
     m = allm[k]
     h = allh[k]
     Δ = 0.
+    #@assert isfinite(h[i])
     mhw = allmhcavtow[k][i]
     mcav = allmcav[k]
+    #@assert isfinite(sum(mhw))
     h[i] = sum(mhw) + r*h[i]
     oldm = m[i]
     m[i] = tanh(h[i])
     for a=1:M
         mcav[a][i] = tanh(h[i]-mhw[a])
+        #@assert isfinite(h[i])
+        #@assert isfinite(mhw[a])
+        #@assert isfinite(mcav[a][i])
     end
     Δ = max(Δ, abs(m[i] - oldm))
     return Δ
@@ -441,7 +526,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     # @show allm allmy allmh allpu allpd allhy top_allpd
     # println("m=$(allm[1])")
     # println("mcav=$(allmcav[1][1])")
-    
+
     # println("mhcavw=$(allmhcavtow[1][1])")
     Δ = 0.
     for u in randperm(M + N*K)
@@ -453,13 +538,13 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
         else
             k = (u-M-1) ÷ N + 1
             i = (u-M-1) % N + 1
-      
+
             if !istoplayer(layer) || isonlylayer(layer)
                 # println("Updating W")
                 δ = updateVarW!(layer, k, i, reinfpar.r)
                 Δ = max(δ, Δ)
             end
-                
+
         end
     end
     if !isbottomlayer(layer)
@@ -472,8 +557,8 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     # for k in 1:K, a in 1:M
     #     updateFact!(layer, k, a, reinfpar)
     # end
-    
-    # for k in 1:K, i in 1:N 
+
+    # for k in 1:K, i in 1:N
     #     if !istoplayer(layer) || isonlylayer(layer)
     #         # println("Updating W")
     #         δ = updateVarW!(layer, k, i, reinfpar.r)
@@ -484,9 +569,9 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     #     for a=1:M
     #         updateVarY!(layer, a, reinfpar.ry)
     #     end
-    # end    
+    # end
 
-    
+
     return Δ
 end
 
@@ -544,5 +629,3 @@ function fixY!(layer::L, ξ::Matrix) where {L <: Union{BPLayer, BPAccurateLayer,
         allmycav[a][k][i] = allmy[a][i]
     end
 end
-
-

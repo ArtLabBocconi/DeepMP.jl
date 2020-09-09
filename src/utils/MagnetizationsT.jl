@@ -6,8 +6,9 @@ primitive type MagT64 <: Mag64 64 end
 
 f2mT(a::Float64) = f2m(MagT64, a)
 
-include("AtanhErf.jl")
-using .AtanhErf
+#include("AtanhErf.jl")
+#include("AtanhErf_v2.jl")
+#using .AtanhErf
 
 const mInf = 30.0
 

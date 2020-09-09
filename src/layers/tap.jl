@@ -361,7 +361,8 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLay
     end
 end
 
-function update!(layer::L, reinfpar::ReinfParams) where {L <: Union{TapLayer,TapExactLayer}}
+#function update!(layer::L, reinfpar::ReinfParams) where {L <: Union{TapLayer,TapExactLayer}}
+function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot
 
 
