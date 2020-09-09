@@ -4,6 +4,9 @@ and modifies its allpu and allpd
 """
 ∞ = 10000
 
+# include("utils/Magnetizations.jl")
+# using .Magnetizations
+
 abstract type AbstractLayer end
 mutable struct DummyLayer <: AbstractLayer
 end
@@ -15,7 +18,6 @@ include("layers/bp.jl")
 include("layers/tap.jl")
 include("layers/parity.jl")
 include("layers/bp_real.jl")
-
 
 istoplayer(layer::AbstractLayer) = (typeof(layer.top_layer) == OutputLayer)
 isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)

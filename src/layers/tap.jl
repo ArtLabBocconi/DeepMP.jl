@@ -97,7 +97,7 @@ fexpinv2M(N) = Complex{Float64}[(
 
 
 
-function updateFact!(layer::TapExactLayer, k::Int)
+function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
     @extract layer K N M allm allmy allmh allpu allpd
     @extract layer CYtot MYtot Mtot Ctot
     @extract layer bottom_allpu top_allpd
@@ -234,7 +234,7 @@ function TapLayer(K::Int, N::Int, M::Int)
         , DummyLayer(), DummyLayer())
 end
 
-function updateFact!(layer::TapLayer, k::Int)
+function updateFact!(layer::TapLayer, k::Int, reinfpar)
     @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot bottom_allpu top_allpd
 
     m = allm[k]; mh = allmh[k];
@@ -361,7 +361,8 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLay
     end
 end
 
-function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,TapExactLayer}}
+#function update!(layer::L, reinfpar::ReinfParams) where {L <: Union{TapLayer,TapExactLayer}}
+function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot
 
 
@@ -377,12 +378,12 @@ function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,T
     ############
 
     for k=1:K
-        updateFact!(layer, k)
+        updateFact!(layer, k, reinfpar)
     end
     Δ = 0.
     if !istoplayer(layer) || isonlylayer(layer)
         for k=1:K
-            δ = updateVarW!(layer, k, r)
+            δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)
         end
     end
@@ -390,7 +391,7 @@ function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,T
     # bypass Y if toplayer
     if !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, ry)
+            updateVarY!(layer, a, reinfpar.ry)
         end
     end
     return Δ
