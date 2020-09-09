@@ -247,40 +247,27 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
             Ccav == 0 &&  (Ccav = 1e-8); # print("!")
-            # mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
-            gh = GH(pd[a], -Mcav / Ccav)
-            # mhw[i][a] = myatanh(my[i]/Ccav * gh)
-            # mhy[i][k] = myatanh(m[i]/Ccav * gh)
-            @assert isfinite(gh)
-            mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * my[i]/Ccav * gh
-            mhy[i][k] = m[i]/Ccav * gh
-            @assert isfinite(mhy[i][k]) "isfinite(mhy[i][k]) gh=$gh Ccav=$Ccav"
+            sdσ̄² = √2 * Ccav
+            m₊ = (Mcav + my[i]) / sdσ̄²
+            m₋ = (Mcav - my[i]) / sdσ̄²
+            my₊ = (Mcav + m[i]) / sdσ̄²
+            my₋ = (Mcav - m[i]) / sdσ̄²
+            h = clamp(pd[a], -30, +30) |> Magnetizations.f2mT
+            mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * erfmix(h, m₊, m₋)
+            mhy[i][k] = erfmix(h, my₊, my₋)
+            @assert isfinite(mhy[i][k]) "isfinite(mhy[i][k]) Ccav=$Ccav"
         end
     else
         for i=1:N
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
-
+            Ccav == 0 &&  (Ccav = 1e-8)
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
             m₋ = (Mcav - my[i]) / sdσ̄²
-            #H = f2mT(pd[a])
-            #H = f2m(MagT64, pd[a])
-            #H = reinterpret(MagT64, pd[a])
-            H = pd[a]
-            #newu = erfmix(H, m₊, m₋) |> m2f
-            newu = erfmix(H, m₊, m₋)
-
-            #@show typeof(H) typeof(newu)
-
-            # gh = GH(pd[a],-Mcav / Ccav)
-
-            mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * newu
-
-            # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
-            # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
-            # t = DH(pd[a], Mcav, my[i], Ccav)
-            # @assert abs(t-mhw[i][a]) < 1e-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
+            h = clamp(pd[a], -30, +30) |> Magnetizations.f2mT
+            mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * erfmix(h, m₊, m₋)
+            @assert isfinite(mhw[i][a]) "m₊ = $(m₊)  m₋ = $(m₋) pd[a]=$(pd[a])" 
         end
     end
 
@@ -384,6 +371,7 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
     #     pd[a] -= 1e-8
     # end
     mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
+
     @assert isfinite(mh[a])
     if !isbottomlayer(layer)
         for i=1:N
@@ -395,15 +383,16 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
             # mhw[i][a] = myatanh(my[i]/Ccav * gh)
             # mhy[i][k] = myatanh(m[i]/Ccav * gh)
             @assert isfinite(gh)
-            mhw[i][a] = my[i]/Ccav * gh
-            mhy[i][k] = m[i]/Ccav * gh
+            mhw[i][a] = (1-reinfpar.ψ) * my[i]/Ccav * gh  + reinfpar.ψ * mhw[i][a]
+            mhy[i][k] = (1-reinfpar.ψ) * m[i]/Ccav * gh   + reinfpar.ψ * mhy[i][a]
             @assert isfinite(mhy[i][k]) "isfinite(mhy[i][k]) gh=$gh Ccav=$Ccav"
         end
     else
         for i=1:N
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
-            mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
+            gh = GH(pd[a],-Mcav / Ccav)
+            mhw[i][a] = (1-reinfpar.ψ) * my[i]/Ccav * gh  + reinfpar.ψ * mhw[i][a]
             # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
             # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
             # t = DH(pd[a], Mcav, my[i], Ccav)
@@ -526,41 +515,23 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     # println("mcav=$(allmcav[1][1])")
 
     # println("mhcavw=$(allmhcavtow[1][1])")
-    # Δ = 0.
-    # for u in randperm(M + N*K)
-    #     if u <= M
-    #         a = u
-    #         for k=1:K
-    #             updateFact!(layer, k, a, reinfpar)
-    #         end
-    #     else
-    #         k = (u-M-1) ÷ N + 1
-    #         i = (u-M-1) % N + 1
-
-    #         if !istoplayer(layer) || isonlylayer(layer)
-    #             # println("Updating W")
-    #             δ = updateVarW!(layer, k, i, reinfpar.r)
-    #             Δ = max(δ, Δ)
-    #         end
-
-    #     end
-    # end
-    # if !isbottomlayer(layer)
-    #     for a=1:M
-    #         updateVarY!(layer, a, reinfpar.ry)
-    #     end
-    # end
-
     Δ = 0.
-    for k in 1:K, a in 1:M
-        updateFact!(layer, k, a, reinfpar)
-    end
+    for u in randperm(M + N*K)
+        if u <= M
+            a = u
+            for k=1:K
+                updateFact!(layer, k, a, reinfpar)
+            end
+        else
+            k = (u-M-1) ÷ N + 1
+            i = (u-M-1) % N + 1
 
-    for k in 1:K, i in 1:N
-        if !istoplayer(layer) || isonlylayer(layer)
-            # println("Updating W")
-            δ = updateVarW!(layer, k, i, reinfpar.r)
-            Δ = max(δ, Δ)
+            if !istoplayer(layer) || isonlylayer(layer)
+                # println("Updating W")
+                δ = updateVarW!(layer, k, i, reinfpar.r)
+                Δ = max(δ, Δ)
+            end
+
         end
     end
     if !isbottomlayer(layer)
@@ -568,6 +539,24 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
             updateVarY!(layer, a, reinfpar.ry)
         end
     end
+
+    # Δ = 0.
+    # for k in 1:K, a in 1:M
+    #     updateFact!(layer, k, a, reinfpar)
+    # end
+
+    # for k in 1:K, i in 1:N
+    #     if !istoplayer(layer) || isonlylayer(layer)
+    #         # println("Updating W")
+    #         δ = updateVarW!(layer, k, i, reinfpar.r)
+    #         Δ = max(δ, Δ)
+    #     end
+    # end
+    # if !isbottomlayer(layer)
+    #     for a=1:M
+    #         updateVarY!(layer, a, reinfpar.ry)
+    #     end
+    # end
 
 
     return Δ
@@ -577,7 +566,7 @@ end
 function initrand!(layer::L) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-    ϵ = 0
+    ϵ = 1e-1
     for m in allm
         m .= ϵ*(2*rand(N) .- 1)
     end
