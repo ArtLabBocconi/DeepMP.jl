@@ -1,7 +1,5 @@
 #TODO Layer not working
 
-include("../utils/Magnetizations.jl")
-using .Magnetizations
 
 mutable struct BPExactLayer <: AbstractLayer
     l::Int
@@ -528,41 +526,23 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     # println("mcav=$(allmcav[1][1])")
 
     # println("mhcavw=$(allmhcavtow[1][1])")
-    Δ = 0.
-    for u in randperm(M + N*K)
-        if u <= M
-            a = u
-            for k=1:K
-                updateFact!(layer, k, a, reinfpar)
-            end
-        else
-            k = (u-M-1) ÷ N + 1
-            i = (u-M-1) % N + 1
-
-            if !istoplayer(layer) || isonlylayer(layer)
-                # println("Updating W")
-                δ = updateVarW!(layer, k, i, reinfpar.r)
-                Δ = max(δ, Δ)
-            end
-
-        end
-    end
-    if !isbottomlayer(layer)
-        for a=1:M
-            updateVarY!(layer, a, reinfpar.ry)
-        end
-    end
-
     # Δ = 0.
-    # for k in 1:K, a in 1:M
-    #     updateFact!(layer, k, a, reinfpar)
-    # end
+    # for u in randperm(M + N*K)
+    #     if u <= M
+    #         a = u
+    #         for k=1:K
+    #             updateFact!(layer, k, a, reinfpar)
+    #         end
+    #     else
+    #         k = (u-M-1) ÷ N + 1
+    #         i = (u-M-1) % N + 1
 
-    # for k in 1:K, i in 1:N
-    #     if !istoplayer(layer) || isonlylayer(layer)
-    #         # println("Updating W")
-    #         δ = updateVarW!(layer, k, i, reinfpar.r)
-    #         Δ = max(δ, Δ)
+    #         if !istoplayer(layer) || isonlylayer(layer)
+    #             # println("Updating W")
+    #             δ = updateVarW!(layer, k, i, reinfpar.r)
+    #             Δ = max(δ, Δ)
+    #         end
+
     #     end
     # end
     # if !isbottomlayer(layer)
@@ -570,6 +550,24 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     #         updateVarY!(layer, a, reinfpar.ry)
     #     end
     # end
+
+    Δ = 0.
+    for k in 1:K, a in 1:M
+        updateFact!(layer, k, a, reinfpar)
+    end
+
+    for k in 1:K, i in 1:N
+        if !istoplayer(layer) || isonlylayer(layer)
+            # println("Updating W")
+            δ = updateVarW!(layer, k, i, reinfpar.r)
+            Δ = max(δ, Δ)
+        end
+    end
+    if !isbottomlayer(layer)
+        for a=1:M
+            updateVarY!(layer, a, reinfpar.ry)
+        end
+    end
 
 
     return Δ

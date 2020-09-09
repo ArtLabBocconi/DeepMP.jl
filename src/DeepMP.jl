@@ -17,8 +17,8 @@ const VecVecVec = Vector{VecVec}
 const IVecVecVec = Vector{IVecVec}
 
 include("utils/functions.jl")
-#include("utils/Magnetizations.jl")
-#using .Magnetizations
+include("utils/Magnetizations.jl")
+using .Magnetizations
 
 include("layers.jl")
 include("dropout.jl")
