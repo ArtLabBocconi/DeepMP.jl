@@ -16,6 +16,7 @@ include("layers/output.jl")
 include("layers/maxsum.jl")
 include("layers/bp.jl")
 include("layers/tap.jl")
+include("layers/bpi.jl")
 include("layers/parity.jl")
 include("layers/bp_real.jl")
 

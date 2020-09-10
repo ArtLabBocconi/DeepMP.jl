@@ -35,9 +35,11 @@ mutable struct TapExactLayer <: AbstractLayer
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
+
+    weight_mask::Vector{Vector{Int}}
 end
 
-function TapExactLayer(K::Int, N::Int, M::Int)
+function TapExactLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -64,10 +66,13 @@ function TapExactLayer(K::Int, N::Int, M::Int)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
+    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+
     return TapExactLayer(-1, K, N, M, allm, allmy, allmh, allh, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
-        , DummyLayer(), DummyLayer())
+        , DummyLayer(), DummyLayer(),
+        weight_mask)
 end
 
 
@@ -98,10 +103,10 @@ fexpinv2M(N) = Complex{Float64}[(
 
 
 function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
-    @extract layer K N M allm allmy allmh allpu allpd
-    @extract layer CYtot MYtot Mtot Ctot
-    @extract layer bottom_allpu top_allpd
-    @extract layer expf expinv0 expinv2M expinv2P expinv2m expinv2p
+    @extract layer: K N M allm allmy allmh allpu allpd
+    @extract layer: CYtot MYtot Mtot Ctot
+    @extract layer: bottom_allpu top_allpd
+    @extract layer: expf expinv0 expinv2M expinv2P expinv2m expinv2p
     m = allm[k]; mh = allmh[k];
     Mt = Mtot[k]; Ct = Ctot;
     pdtop = top_allpd[k];
