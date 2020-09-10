@@ -31,9 +31,11 @@ mutable struct FactorGraph
     σ::Vector{Int}
     layers::Vector{AbstractLayer}
     dropout::Dropout
+    density # weight density (ONLY FOR bp family as of yet)
 
     function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}
-                , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0)
+                , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0,
+                density=1.)
         N, M = size(ξ)
         @assert length(σ) == M
         println("# N=$N M=$M α=$(M/N)")
@@ -50,11 +52,11 @@ mutable struct FactorGraph
                 push!(layers, TapExactLayer(K[l+1], K[l], M))
                 println("Created TapExactLayer\t $(K[l])")
             elseif  layertype[l] == :bp
-                push!(layers, BPLayer(K[l+1], K[l], M))
+                push!(layers, BPLayer(K[l+1], K[l], M, density=density))
                 println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
-                push!(layers, BPAccurateLayer(K[l+1], K[l], M))
+                push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density))
                 println("Created BPAccurateLayer\t $(K[l])")
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M))
@@ -89,21 +91,28 @@ mutable struct FactorGraph
 end
 
 mutable struct ReinfParams
-    r::Float64
+    r::Float64         # reinforcement for W variables
     rstep::Float64
-    ry::Float64
+    ry::Float64         # reinforcement for Y variables
     rystep::Float64
-    ψ::Float64
+    y::Float64          # parameter for FocusingBP
+    ψ::Float64          # damping parameter
     wait_count::Int
-    ReinfParams(r=0., rstep=0., ry=0., rystep=0., ψ=0.) = new(r, rstep, ry, rystep, ψ, 0)
+    ReinfParams(r=0., rstep=0., ry=0., rystep=0., ψ=0., y=0) = new(r, rstep, ry, rystep, ψ, y, 0)
 end
 
 function update_reinforcement!(reinfpar::ReinfParams)
     if reinfpar.wait_count < 10
         reinfpar.wait_count += 1
     else
-        reinfpar.r = 1 - (1-reinfpar.r) * (1-reinfpar.rstep)
-        reinfpar.ry = 1 - (1-reinfpar.ry) * (1-reinfpar.rystep)
+        if reinfpar.y <= 0
+            # reinforcement update
+            reinfpar.r = 1 - (1-reinfpar.r) * (1-reinfpar.rstep)
+            reinfpar.ry = 1 - (1-reinfpar.ry) * (1-reinfpar.rystep)
+        else
+            # focusing update
+            @assert false #TODO
+        end
     end
 end
 
@@ -173,7 +182,7 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
     for l=1:L
         q0 = Float64[]
         for k=1:K[l+1]
-            push!(q0, dot(layers[l].allm[k],layers[l].allm[k])/K[l])
+            push!(q0, dot(layers[l].allm[k], layers[l].allm[k])/K[l])
         end
         qWαβ = Float64[]
         for k=1:K[l+1]
@@ -416,10 +425,11 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
+                density = 1., # density of fully connected layer
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
-    g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops)
+    g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
     initrand!(g)
     fixtopbottom!(g)
     maketree && maketree!(g.layers[2])
