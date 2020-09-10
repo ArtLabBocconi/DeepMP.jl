@@ -2,7 +2,7 @@
 for lay in [:tapex, :bpex]
     @time g, W, E, stab = DeepMP.solve(α=0.2, K=[1001,7,1]
                 , layers=[:tap,lay]
-                ,r=.8,rstep=0.01, ry=0.3, seedξ=1,maxiters=500);
+                ,r=.8,rstep=0.01, ry=0.3, seedξ=2, maxiters=500);
     @test E == 0
 end
 
@@ -28,7 +28,7 @@ end
 
 @time g, W, E, stab = DeepMP.solve(α=0.2, K=[401,21,3,1]
                    , layers=[:tap,:bp,:bpex]
-                   ,r=.9,rstep=0.002, seedξ=1,maxiters=800);
+                   ,r=.9,rstep=0.002, seedξ=1,maxiters=1000);
 @test E == 0
 
 #### too slow

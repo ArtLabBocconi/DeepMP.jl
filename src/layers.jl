@@ -32,8 +32,16 @@ end
 getW(lay::AbstractLayer) = getWBinary(lay)
 getW(lay::BPRealLayer) = getWReal(lay)
 getWReal(lay::AbstractLayer) = lay.allm
-getWBinary(lay::AbstractLayer) = [Float64[1-2signbit(m) for m in magk]
-                        for magk in getWReal(lay)] # TODO return BitArray
+
+function getWBinary(lay::AbstractLayer) 
+    W = [Float64[1-2signbit(m) for m in magk] for magk in getWReal(lay)] # TODO return BitArray
+    if hasproperty(lay, :weight_mask)
+        for k in 1:length(W)
+            W[k] .*= lay.weight_mask[k]
+        end
+    end
+    return W
+end
 
 function energy(lay::OutputLayer, ξ::Vector, a)
     @extract lay: labels
