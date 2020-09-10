@@ -80,10 +80,10 @@ end
 
 
 function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
-    @extract layer K N M allm allmy allmh allpu allpd
-    @extract layer bottom_allpu top_allpd
-    @extract layer expf expinv0 expinv2M expinv2P expinv2m expinv2p
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh allpu allpd
+    @extract layer: bottom_allpu top_allpd
+    @extract layer: expf expinv0 expinv2M expinv2P expinv2m expinv2p
+    @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
     #TODO add reinforcement/dumping
 
     mh = allmh[k];
@@ -92,11 +92,12 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     mcav = allmcav[k][a]
     mhw = allmhcavtow[k]
     mhy = allmhcavtoy[a]
+    mask = layer.weight_mask[k]
 
     X = ones(Complex{Float64}, N+1)
     for p=1:N+1
         for i=1:N
-            pup = (1+mcav[i]*mycav[i])/2
+            pup = (1+mcav[i]*mycav[i])/2 * mask[i]
             X[p] *= (1-pup) + pup*expf[p]
         end
     end
@@ -116,6 +117,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     end
 
     for i = 1:N
+        mask[i] == 1 || continue
         pup = (1+mcav[i]*mycav[i])/2
         s0 = Complex{Float64}(0.)
         s2p = Complex{Float64}(0.)

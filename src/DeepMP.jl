@@ -44,22 +44,26 @@ mutable struct FactorGraph
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
         println("Created InputLayer")
+        if isa(density, Number)
+            density = fill(density, L)
+        end
+        @assert length(density) == L 
         for l=1:L
             if  layertype[l] == :tap
-                push!(layers, TapLayer(K[l+1], K[l], M))
+                push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
                 println("Created TapLayer\t $(K[l])")
             elseif  layertype[l] == :tapex
                 push!(layers, TapExactLayer(K[l+1], K[l], M))
                 println("Created TapExactLayer\t $(K[l])")
             elseif  layertype[l] == :bp
-                push!(layers, BPLayer(K[l+1], K[l], M, density=density))
+                push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
                 println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
-                push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density))
+                push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
                 println("Created BPAccurateLayer\t $(K[l])")
             elseif  layertype[l] == :bpex
-                push!(layers, BPExactLayer(K[l+1], K[l], M))
+                push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] == :ms
                 push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
