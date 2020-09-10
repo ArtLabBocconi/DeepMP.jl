@@ -65,6 +65,9 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 println("Created BPExactLayer\t $(K[l])")
+            elseif  layertype[l] == :bpi
+                push!(layers, BPILayer(K[l+1], K[l], M, density=density[l]))
+                println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :ms
                 push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
                 println("Created MaxSumLayer\t $(K[l])")

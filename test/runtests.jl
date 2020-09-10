@@ -5,6 +5,11 @@ using Test, DelimitedFiles, Random, Statistics
     include("perceptron.jl")
 end
 
+@testset "BPI_MLP" begin
+    include("bpi_mlp.jl")
+end
+
+
 @testset "MLP" begin
     include("mlp.jl")
 end
