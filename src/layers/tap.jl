@@ -35,9 +35,11 @@ mutable struct TapExactLayer <: AbstractLayer
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
+
+    weight_mask::Vector{Vector{Int}}
 end
 
-function TapExactLayer(K::Int, N::Int, M::Int)
+function TapExactLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -64,10 +66,13 @@ function TapExactLayer(K::Int, N::Int, M::Int)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
+    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+
     return TapExactLayer(-1, K, N, M, allm, allmy, allmh, allh, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
-        , DummyLayer(), DummyLayer())
+        , DummyLayer(), DummyLayer(),
+        weight_mask)
 end
 
 
@@ -97,11 +102,11 @@ fexpinv2M(N) = Complex{Float64}[(
 
 
 
-function updateFact!(layer::TapExactLayer, k::Int)
-    @extract layer K N M allm allmy allmh allpu allpd
-    @extract layer CYtot MYtot Mtot Ctot
-    @extract layer bottom_allpu top_allpd
-    @extract layer expf expinv0 expinv2M expinv2P expinv2m expinv2p
+function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
+    @extract layer: K N M allm allmy allmh allpu allpd
+    @extract layer: CYtot MYtot Mtot Ctot
+    @extract layer: bottom_allpu top_allpd
+    @extract layer: expf expinv0 expinv2M expinv2P expinv2m expinv2p
     m = allm[k]; mh = allmh[k];
     Mt = Mtot[k]; Ct = Ctot;
     pdtop = top_allpd[k];
@@ -208,9 +213,11 @@ mutable struct TapLayer <: AbstractLayer
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
+
+    weight_mask::Vector{Vector{Int}}
 end
 
-function TapLayer(K::Int, N::Int, M::Int)
+function TapLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -229,18 +236,22 @@ function TapLayer(K::Int, N::Int, M::Int)
     allpu = [zeros(M) for k=1:K]
     allpd = [zeros(M) for k=1:N]
 
+    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+
     return TapLayer(-1, K, N, M, allm, allmy, allmh, allh, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
-        , DummyLayer(), DummyLayer())
+        , DummyLayer(), DummyLayer()
+        , weight_mask)
 end
 
-function updateFact!(layer::TapLayer, k::Int)
+function updateFact!(layer::TapLayer, k::Int, reinfpar)
     @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot bottom_allpu top_allpd
 
     m = allm[k]; mh = allmh[k];
     Mt = Mtot[k]; Ct = Ctot;
     pd = top_allpd[k];
     CYt = CYtot
+    mask = layer.weight_mask[k]
     for a=1:M
         my = allmy[a]
         MYt = MYtot[a]
@@ -250,13 +261,13 @@ function updateFact!(layer::TapLayer, k::Int)
         #TODO controllare il termine di reazione
         if !isbottomlayer(layer)
             for i=1:N
-                Mhtot += my[i]*m[i]
-                Chtot += 1 - my[i]^2*m[i]^2
+                Mhtot += my[i]*m[i] * mask[i]
+                Chtot += (1 - my[i]^2*m[i]^2) * mask[i]
             end
         else
             for i=1:N
-                Mhtot += my[i]*m[i]
-                Chtot += my[i]^2 *(1 - m[i]^2)
+                Mhtot += my[i]*m[i] * mask[i]
+                Chtot += (my[i]^2 *(1 - m[i]^2)) * mask[i]
             end
         end
 
@@ -280,11 +291,11 @@ function updateFact!(layer::TapLayer, k::Int)
         if !isbottomlayer(layer)
             CYt[a] += c
             for i=1:N
-                MYt[i] += m[i] * mh[a]
+                MYt[i] += m[i] * mh[a] * mask[i]
             end
         end
         for i=1:N
-            Mt[i] += my[i] * mh[a]
+            Mt[i] += my[i] * mh[a] * mask[i] 
         end
 
         # Message to top
@@ -300,15 +311,12 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer
     Mt=Mtot[k]; Ct = Ctot;
     h=allh[k]
     for i=1:N
-        # DEBUG
-        # if i==1 && k==1
-        #     println("l=$l Mtot[k=1][i=1:10] = ",Mt[1:min(end,10)])
-        # end
-        # i==1 && println("h $(h[i]) r $r")
+        if layer.weight_mask[k][i] == 0
+            @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
+        end
         h[i] = Mt[i] + m[i] * Ct[k] + r*h[i]
         oldm = m[i]
-        dump = 0.
-        m[i] = (1-dump)*tanh(h[i]) + dump*oldm
+        m[i] = tanh(h[i])
         Δ = max(Δ, abs(m[i] - oldm))
     end
     return Δ
@@ -361,7 +369,8 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLay
     end
 end
 
-function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,TapExactLayer}}
+#function update!(layer::L, reinfpar::ReinfParams) where {L <: Union{TapLayer,TapExactLayer}}
+function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot
 
 
@@ -377,12 +386,12 @@ function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,T
     ############
 
     for k=1:K
-        updateFact!(layer, k)
+        updateFact!(layer, k, reinfpar)
     end
     Δ = 0.
     if !istoplayer(layer) || isonlylayer(layer)
         for k=1:K
-            δ = updateVarW!(layer, k, r)
+            δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)
         end
     end
@@ -390,7 +399,7 @@ function update!(layer::L, r::Float64, ry::Float64) where {L <: Union{TapLayer,T
     # bypass Y if toplayer
     if !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, ry)
+            updateVarY!(layer, a, reinfpar.ry)
         end
     end
     return Δ
@@ -399,14 +408,16 @@ end
 function initrand!(layer::L) where {L <: Union{TapExactLayer,TapLayer}}
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd
     ϵ = 1e-1
-    for m in allm
-        m .= (2*rand(N) .- 1)*ϵ
+    mask = layer.weight_mask
+
+    for (k, m) in enumerate(allm)
+        m .= (2*rand(N) .- 1) .* ϵ .* mask[k]
     end
     for my in allmy
-        my .= (2*rand(N) .- 1)*ϵ
+        my .= (2*rand(N) .- 1) .* ϵ
     end
     for mh in allmh
-        mh .= (2*rand(M) .- 1)*ϵ
+        mh .= (2*rand(M) .- 1) .* ϵ
     end
     for pu in allpu
         pu .= rand(M)

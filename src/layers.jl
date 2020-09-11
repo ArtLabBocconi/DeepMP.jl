@@ -4,6 +4,9 @@ and modifies its allpu and allpd
 """
 ∞ = 10000
 
+# include("utils/Magnetizations.jl")
+# using .Magnetizations
+
 abstract type AbstractLayer end
 mutable struct DummyLayer <: AbstractLayer
 end
@@ -13,9 +16,9 @@ include("layers/output.jl")
 include("layers/maxsum.jl")
 include("layers/bp.jl")
 include("layers/tap.jl")
+include("layers/bpi.jl")
 include("layers/parity.jl")
 include("layers/bp_real.jl")
-
 
 istoplayer(layer::AbstractLayer) = (typeof(layer.top_layer) == OutputLayer)
 isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
@@ -30,8 +33,16 @@ end
 getW(lay::AbstractLayer) = getWBinary(lay)
 getW(lay::BPRealLayer) = getWReal(lay)
 getWReal(lay::AbstractLayer) = lay.allm
-getWBinary(lay::AbstractLayer) = [Float64[1-2signbit(m) for m in magk]
-                        for magk in getWReal(lay)] # TODO return BitArray
+
+function getWBinary(lay::AbstractLayer) 
+    W = [Float64[1-2signbit(m) for m in magk] for magk in getWReal(lay)] # TODO return BitArray
+    if hasproperty(lay, :weight_mask)
+        for k in 1:length(W)
+            W[k] .*= lay.weight_mask[k]
+        end
+    end
+    return W
+end
 
 function energy(lay::OutputLayer, ξ::Vector, a)
     @extract lay: labels

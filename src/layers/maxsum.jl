@@ -331,7 +331,7 @@ function updateFact!(layer::MaxSumLayer, k::Int)
 end
 
 
-function update!(layer::MaxSumLayer, r::Float64, ry::Float64)
+function update!(layer::MaxSumLayer, reinfpar)
     @extract layer K N M allm allmy allmh allpu allpd
     # println(layer)
     for k=1:K
@@ -340,14 +340,14 @@ function update!(layer::MaxSumLayer, r::Float64, ry::Float64)
     Δ = 0.
     if !istoplayer(layer) || isonlylayer(layer)
         for k=1:K
-            δ = updateVarW!(layer, k, r)
+            δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)
         end
     end
 
     if !istoplayer(layer) && !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, ry)
+            updateVarY!(layer, a, reinfpar.ry)
         end
     end
 

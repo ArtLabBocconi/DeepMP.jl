@@ -1,78 +1,98 @@
+# This file is a part of BinaryCommitteeMachineFBP.jl. License is MIT: http://github.com/carlobaldassi/BinaryCommitteeMachineFBP.jl/LICENCE.md
+
 module Magnetizations
 
-primitive type Mag64 64 end
+export Mag64, MagT64, MagP64, mfill, mflatp, mrand, damp, reinforce, ⊗, ⊘, ↑, sign0,
+       merf, exactmix, erfmix, mtanh, log1pxy, mcrossentropy,
+       logZ, forcedmag, showinner, parseinner, magformat,
+       conv_diff
 
-include("Magnetizations_Common.jl")
+using SpecialFunctions
 
-magformat() = :plain
+import Base: convert, promote_rule, *, /, +, -, sign, signbit, isnan,
+             show, abs, isfinite, isless, copysign,
+             atanh, zero
 
-convert(::Type{Mag64}, y::Float64) = f2m(y)
-convert(::Type{Float64}, y::Mag64) = m2f(y)
+abstract type Mag64 <: Number end
 
-forcedmag(y::Float64) = Mag64(y)
+@inline m2f(a::Mag64) = reinterpret(Float64, a)
+@inline f2m(::Type{F}, a::Float64) where {F<:Mag64} = reinterpret(F, a)
 
-mtanh(x::Float64) = f2m(tanh(x))
-atanh(x::Mag64) = atanh(m2f(x))
+convert(::Type{T}, y::Mag64) where {T<:Real} = convert(T, Float64(y))
+convert(::Type{F}, y::Real) where {F<:Mag64} = convert(F, Float64(y))
 
-Mag64(pp::Real, pm::Real) = Mag64((pp - pm) / (pp + pm))
+convert(::Type{F}, x::F) where {F<:Mag64} = x
+convert(::Type{F}, x::Mag64) where {F<:Mag64} = F(Float64(x))
 
-isfinite(a::Mag64) = isfinite(m2f(a))
+Mag64(::Type{F}, pp::Real, pm::Real) where {F<:Mag64} = F(pp, pm)
 
-function ⊗(a::Mag64, b::Mag64)
-    xa = m2f(a)
-    xb = m2f(b)
-    return f2m(clamp((xa + xb) / (1 + xa * xb), -1, 1))
+Float64(x::F) where {F<:Mag64} = convert(Float64, x)
+
+promote_rule(::Type{<:Mag64}, ::Type{Float64}) = Float64
+
+zero(::Type{F}) where {F<:Mag64} = f2m(F, 0.0)
+
+isnan(a::Mag64) = isnan(m2f(a))
+
+abs(a::F) where {F<:Mag64} = f2m(F, abs(m2f(a)))
+copysign(x::F, y::Float64) where {F<:Mag64} = f2m(F, copysign(m2f(x), y))
+copysign(x::F, y::Mag64) where {F<:Mag64} = f2m(F, copysign(m2f(x), m2f(y)))
+
+⊗(a::F, b::Float64) where {F<:Mag64} = a ⊗ F(b)
+⊘(a::F, b::Float64) where {F<:Mag64} = a ⊘ F(b)
+
+⊗(a::Float64, b::Mag64) = b ⊗ a
+
+
+(*)(a::Mag64, b::Real) = Float64(a) * b
+(*)(a::Real, b::Mag64) = b * a
+
+(+)(a::Mag64, b::Real) = Float64(a) + b
+(+)(a::Real, b::Mag64) = b + a
+
+(-)(a::Mag64, b::Real) = Float64(a) - b
+(-)(a::Real, b::Mag64) = -(b - a)
+(-)(a::F) where {F<:Mag64} = f2m(F, -m2f(a))
+
+(-)(a::Mag64, b::Mag64) = Float64(a) - Float64(b)
+
+sign(a::Mag64) = sign(m2f(a))
+signbit(a::Mag64) = signbit(m2f(a))
+sign0(a::Union{Mag64,Real}) = (1 - 2signbit(a))
+
+show(io::IO, a::Mag64) = show(io, Float64(a))
+showinner(io::IO, a::Mag64) = show(io, m2f(a))
+
+mfill(::Type{F}, x::Float64, n::Int) where {F<:Mag64} = F[F(x) for i = 1:n]
+mflatp(::Type{F}, n::Int) where {F<:Mag64} = mfill(F, 0.0, n)
+
+mrand(::Type{F}, x::Float64, n::Int) where {F<:Mag64} = F[F(x * (2*rand()-1)) for i = 1:n]
+
+reinforce(m::Mag64, m0::Mag64, γ::Float64) = m ⊗ reinforce(m0, γ)
+
+damp(newx::Float64, oldx::Float64, λ::Float64) = newx * (1 - λ) + oldx * λ
+
+Base.:(==)(a::F, b::F) where {F<:Mag64} = (m2f(a) == m2f(b))
+Base.:(==)(a::Mag64, b::Float64) = (Float64(a) == b)
+Base.:(==)(a::Float64, b::Mag64) = (b == a)
+
+Base.iszero(a::Mag64) = iszero(m2f(a))
+
+isless(m::Mag64, x::Real) = isless(Float64(m), x)
+isless(x::Real, m::Mag64) = isless(x, Float64(m))
+
+function erfmix(H::Float64, m₊::Float64, m₋::Float64)
+    erf₊ = erf(m₊)
+    erf₋ = erf(m₋)
+    return H * (erf₊ - erf₋) / (2 + H * (erf₊ + erf₋))
 end
-function ⊘(a::Mag64, b::Mag64)
-    xa = m2f(a)
-    xb = m2f(b)
-    return f2m(xa == xb ? 0.0 : clamp((xa - xb) / (1 - xa * xb), -1, 1))
-end
 
-reinforce(m0::Mag64, γ::Float64) = Mag64(tanh(atanh(m2f(m0)) * γ))
+logZ(u::Vector{F}) where {F<:Mag64} = logZ(zero(F), u)
 
-damp(newx::Mag64, oldx::Mag64, λ::Float64) = f2m(m2f(newx) * (1 - λ) + m2f(oldx) * λ)
-#damp(newx::Mag64, oldx::Mag64, λ::Float64) = Mag64(Float64(newx) * (1 - λ) + Float64(oldx) * λ)
+↑(m::F, x::Real) where {F<:Mag64} = mtanh(F, x * atanh(m))
 
-(*)(x::Mag64, y::Mag64) = Mag64(Float64(x) * Float64(y))
+conv_diff(x::F, y::F) where {F<:Mag64} = abs(m2f(x) - m2f(y))
 
-merf(x::Float64) = f2m(erf(x))
+include("MagnetizationsT.jl")
 
-function exactmix(H::Mag64, p₊::Mag64, p₋::Mag64)
-    vH = m2f(H)
-    pd = (m2f(p₊) + m2f(p₋)) / 2
-    pz = (m2f(p₊) - m2f(p₋)) / 2
-
-    return f2m(pz * vH / (1 + pd * vH))
-end
-
-erfmix(H::Mag64, m₊::Float64, m₋::Float64) = Mag64(erfmix(Float64(H), m₊, m₋))
-
-log1pxy(x::Mag64, y::Mag64) = log((1 + Float64(x) * Float64(y)) / 2)
-
-# cross entropy with magnetizations:
-#
-# -(1 + x) / 2 * log((1 + y) / 2) + -(1 - x) / 2 * log((1 - y) / 2)
-#
-# == -x * atanh(y) - log(1 - y^2) / 2 + log(2)
-function mcrossentropy(x::Mag64, y::Mag64)
-    fx = m2f(x)
-    fy = m2f(y)
-    return -fx * atanh(fy) - log(1 - fy^2) / 2 + log(2)
-end
-
-logmag2pp(x::Mag64) = log((1 + m2f(x)) / 2)
-logmag2pm(x::Mag64) = log((1 - m2f(x)) / 2)
-
-function logZ(u0::Mag64, u::Vector{Mag64})
-    zkip = logmag2pp(u0)
-    zkim = logmag2pm(u0)
-    for ui in u
-        zkip += logmag2pp(ui)
-        zkim += logmag2pm(ui)
-    end
-    zki = exp(zkip) + exp(zkim)
-    return log(zki)
-end
-
-end
+end # module
