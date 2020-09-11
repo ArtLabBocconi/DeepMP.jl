@@ -49,7 +49,7 @@ mutable struct FactorGraph
         if isa(density, Number)
             density = fill(density, L)
         end
-        @assert length(density) == L 
+        @assert length(density) == L
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
@@ -107,7 +107,7 @@ mutable struct ReinfParams
     y::Float64          # parameter for FocusingBP
     ψ::Float64          # damping parameter
     wait_count::Int
-    ReinfParams(r=0., rstep=0., ry=0., rystep=0., ψ=0., y=0) = new(r, rstep, ry, rystep, ψ, y, 0)
+    ReinfParams(r=0., rstep=0., ry=0., rystep=0., y=0, ψ=0.) = new(r, rstep, ry, rystep, y, ψ, 0)
 end
 
 function update_reinforcement!(reinfpar::ReinfParams)
@@ -440,6 +440,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 r::Float64 = 0., rstep::Float64= 0.001,
                 ry::Float64 = 0., rystep::Float64= 0.0,
                 ψ = 0., # dumping coefficient
+                y = 0, # focusing
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
@@ -451,7 +452,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
     initrand!(g)
     fixtopbottom!(g)
     maketree && maketree!(g.layers[2])
-    reinfpar = ReinfParams(r, rstep, ry, rystep, ψ)
+    reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
             altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
