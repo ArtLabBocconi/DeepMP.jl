@@ -18,255 +18,15 @@ const IVecVec = Vector{IVec}
 const VecVecVec = Vector{VecVec}
 const IVecVecVec = Vector{IVecVec}
 
+include("utils/utils.jl")
 include("utils/functions.jl")
 include("utils/Magnetizations.jl")
 using .Magnetizations
 
 include("layers.jl")
 include("dropout.jl")
-
-mutable struct FactorGraph
-    K::Vector{Int} # dimension of hidden layers
-    M::Int
-    L::Int         # number of hidden layers. L=length(layers)-2
-    ξ::Matrix{Float64}
-    σ::Vector{Int}
-    layers::Vector{AbstractLayer}
-    dropout::Dropout
-    density # weight density (ONLY FOR bp family as of yet)
-
-    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}
-                , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0,
-                density=1.)
-        N, M = size(ξ)
-        @assert length(σ) == M
-        println("# N=$N M=$M α=$(M/N)")
-        @assert K[1]==N
-        L = length(K)-1
-        layers = Vector{AbstractLayer}()
-        push!(layers, InputLayer(ξ))
-        println("Created InputLayer")
-        if isa(density, Number)
-            density = fill(density, L)
-        end
-        @assert length(density) == L
-        for l=1:L
-            if  layertype[l] == :tap
-                push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created TapLayer\t $(K[l])")
-            elseif  layertype[l] == :tapex
-                push!(layers, TapExactLayer(K[l+1], K[l], M))
-                println("Created TapExactLayer\t $(K[l])")
-            elseif  layertype[l] == :bp
-                push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPLayer\t $(K[l])")
-            elseif  layertype[l] == :bpacc
-                #push!(layers, BPLayer(K[l+1], K[l], M))
-                push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPAccurateLayer\t $(K[l])")
-            elseif  layertype[l] == :bpex
-                push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPExactLayer\t $(K[l])")
-            elseif  layertype[l] == :bpi
-                push!(layers, BPILayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPILayer\t $(K[l])")
-            elseif  layertype[l] == :ms
-                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
-                println("Created MaxSumLayer\t $(K[l])")
-            elseif  layertype[l] == :parity
-                @assert l == L
-                push!(layers, ParityLayer(K[l+1], K[l], M))
-                println("Created ParityLayer\t $(K[l])")
-            elseif  layertype[l] == :bpreal
-                @assert l == 1
-                push!(layers, BPRealLayer(K[l+1], K[l], M))
-                println("Created BPRealLayer\t $(K[l])")
-            else
-                error("Wrong Layer Symbol")
-            end
-        end
-
-        push!(layers, OutputLayer(σ,β=β))
-        println("Created OutputLayer")
-
-        for l=1:L+1
-            chain!(layers[l], layers[l+1])
-        end
-
-        dropout = Dropout()
-        add_rand_drops!(dropout, 3, K[2], M, ndrops)
-        new(K, M, L, ξ, σ, layers, dropout)
-    end
-end
-
-mutable struct ReinfParams
-    r::Float64         # reinforcement for W variables
-    rstep::Float64
-    ry::Float64         # reinforcement for Y variables
-    rystep::Float64
-    y::Float64          # parameter for FocusingBP
-    ψ::Float64          # damping parameter
-    wait_count::Int
-    ReinfParams(r=0., rstep=0., ry=0., rystep=0., y=0, ψ=0.) = new(r, rstep, ry, rystep, y, ψ, 0)
-end
-
-function update_reinforcement!(reinfpar::ReinfParams)
-    if reinfpar.wait_count < 10
-        reinfpar.wait_count += 1
-    else
-        if reinfpar.y <= 0
-            # reinforcement update
-            reinfpar.r = 1 - (1-reinfpar.r) * (1-reinfpar.rstep)
-            reinfpar.ry = 1 - (1-reinfpar.ry) * (1-reinfpar.rystep)
-        else
-            # focusing update
-            @assert false #TODO
-        end
-    end
-end
-
-function initrand!(g::FactorGraph)
-    @extract g M layers K ξ
-    for lay in layers[2:end-1]
-        initrand!(lay)
-    end
-end
-
-function fixtopbottom!(g::FactorGraph)
-    @extract g M layers K ξ
-    if g.L != 1
-        fixW!(g.layers[end-1], 1.)
-    end
-
-    fixY!(g.layers[2], ξ)
-end
-
-function update!(g::FactorGraph, reinfpar)
-    Δ = 0. # Updating layer $(lay.l)")
-    for l=2:g.L+1
-        dropout!(g, l+1)
-        δ = update!(g.layers[l], reinfpar)
-        Δ = max(δ, Δ)
-    end
-    return Δ
-end
-
-function randupdate!(g::FactorGraph, reinfpar)
-    @extract g: K
-    Δ = 0.# Updating layer $(lay.l)")
-    numW = sum(l->K[l]*K[l+1],1:length(K)-2)
-    numW = sum(l->K[l],1:length(K)-2)
-    for it=1:numW
-        for l=2:g.L+1
-            dropout!(g, l+1)
-            δ = randupdate!(g.layers[l], reinfpar)
-            Δ = max(δ, Δ)
-        end
-    end
-    return Δ
-end
-
-getW(g::FactorGraph) = [getW(lay) for lay in g.layers[2:end-1]]
-
-function printvec(q::Vector{Float64}, head = "")
-    print(head)
-    if length(q) < 10
-        for e in q
-            @printf("%.6f ", e)
-        end
-    else
-        @printf("mean:%.6f std:%.6f", mean(q), std(q))
-    end
-    println()
-end
-
-function plot_info(g::FactorGraph, info=1; verbose=0)
-    #W = getW(g)
-    K = g.K
-    L = length(K)-1
-    N = K[1]
-    #N = length(W[1][1])
-    layers = g.layers[2:end-1]
-    width = info
-    info > 0 && clf()
-    for l=1:L
-        q0 = Float64[]
-        for k=1:K[l+1]
-            push!(q0, dot(layers[l].allm[k], layers[l].allm[k])/K[l])
-        end
-        qWαβ = Float64[]
-        for k=1:K[l+1]
-            for p=k+1:K[l+1]
-                # push!(q, dot(W[l][k],W[l][p])/K[l])
-                push!(qWαβ, dot(layers[l].allm[k],layers[l].allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-            end
-        end
-        verbose > 0 && printvec(q0,"layer $l q0=")
-        verbose > 0 && printvec(qWαβ,"layer $l qWαβ=")
-
-        info == 0 && continue
-
-        subplot(L,width,width*(L-l)+1)
-        title("W Overlaps Layer $l")
-        xlim(-1.01,1.01)
-        #plt[:hist](q)
-        plt.hist(qWαβ)
-        info == 1 && continue
-
-        subplot(L,width,width*(L-l)+2)
-        title("Mags Layer $l")
-        xlim(-1.01,1.01)
-        #plt[:hist](vcat(m[l]...))
-        plt.hist(vcat(layers[l].allm...))
-        info == 2 && continue
-
-        subplot(L,width,width*(L-l)+3)
-        title("Fact Satisfaction Layer $l")
-        xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pu = layers[l].allpu[k]
-            pd = layers[l].top_allpd[k]
-            #sat = (2pu-1) .* (2pd-1)
-            sat = @. (2pu-1) * (2pd-1)
-            #plt[:hist](sat)
-            #@show size(sat)
-            #plt.hist(sat)
-        end
-        info == 3 && continue
-
-        subplot(L,width,width*(L-l)+4)
-        title("Mag UP From Layer $l")
-        xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pu = layers[l].allpu[k]
-            #plt[:hist](2pu-1)
-            plt.hist(2 .* pu .- 1)
-        end
-        info == 4 && continue
-
-
-        subplot(L,width,width*(L-l)+5)
-        title("Mag DOWN To Layer $l")
-        xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pd = layers[l].top_allpd[k]
-            #plt.hist(2 .* pd .- 1)
-        end
-        info == 5 && continue
-
-        tight_layout()
-
-    end
-end
-
-function dropout!(g::FactorGraph, level::Int)
-    @extract g : dropout layers
-    !haskey(dropout.drops, level) && return
-    pd = layers[level].allpd
-    for (k, μ) in dropout.drops[level]
-        pd[k][μ] = 0.5
-    end
-end
+include("factor_graph.jl")
+include("reinforcement.jl")
 
 function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
                                 , altsolv::Bool=false, altconv = false, plotinfo=-1
@@ -274,7 +34,6 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
                                 , verbose::Int=1)
 
     for it=1:maxiters
-        # Δ = randupdate!(g, reinfpar.r, reinfpar.ry)
         Δ = update!(g, reinfpar)
 
         E, h = energy(g)
@@ -294,49 +53,22 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
     end
 end
 
-function forward(g::FactorGraph, ξ::Vector)
-    @extract g: L layers
-    σks = deepcopy(ξ)
-    stability = Vec()
-    for l=2:L+1
-        σks, stability = forward(layers[l], σks)
-    end
-    return σks, stability
-end
-
-function energy(g::FactorGraph)
-    @extract g: M ξ
-    E = 0
-    stability = zeros(M)
-    for a=1:M
-        σks, stab = forward(g, ξ[:,a])
-        stability[a] = sum(stab)
-        E += energy(g.layers[end], σks, a)
-    end
-
-    E, stability
-end
-
-mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
-
-function meanoverlap(ξ::Matrix)
-    N, M =size(ξ)
-    q = 0.
-    for a=1:M
-        for b=a+1:M
-            q += dot(ξ[:,a],ξ[:,b])
-        end
-    end
-    return q / N / (0.5*M*(M-1))
-end
-
-function randTeacher(K::Vector{Int})
+function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
+    @assert K[L] == 1
+
+    if isa(density, Number)
+        density = fill(density, L)
+        density[L] = 1
+    end
+    @assert density[L] == 1
+    @assert length(density) == L
+    
     W = Vector{Vector{Vector{Int}}}()
     for l=1:L
-        push!(W, Vector{Vector{Int}}())
-        for k=1:K[l+1]
-            push!(W[l], rand(Int[-1,1], K[l]))
+        push!(W, [rand(Int[-1,1], K[l]) for k=1:K[l+1]])
+        for k in 1:k[l+1]
+            W[l][k] *= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
         end
     end
     if L > 1
@@ -345,9 +77,10 @@ function randTeacher(K::Vector{Int})
     return W
 end
 
-function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6
-            , seedξ::Int=-1
-            , kw...)
+function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
+            seedξ::Int=-1,
+            density = 1,
+            kw...)
     seedξ > 0 && Random.seed!(seedξ)
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
     N = K[1]
@@ -355,22 +88,16 @@ function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6
     M = round(Int, α * numW)
     ξ = rand([-1.,1.], K[1], M)
     # ξ = (2rand(K[1], M) - 1)
-    W = randTeacher(K)
-    σ = Int[(res = forward(W, ξ[:,a]); res[1][1]) for a=1:M]
-    # @assert size(ξ) == (N, M)
-    # # println("Mean Overlap ξ $(meanoverlap(ξ))")
-    # g, Wnew, E, stab = solve(ξ, σ; K=K, kw...)
-    #
-    # reinfpar = ReinfParams(r, rstep, ry, rystep)
-
-    # converge!(g, maxiters=maxiters, ϵ=1e-5, reinfpar=reinfpar,
-    #         altsolv=false, altconv=altconv, plotinfo=plotinfo)
-    solve(ξ, σ; K=K, kw...)
+    W = rand_teacher(K)
+    σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
+   
+    solve(ξ, σ; K=K, teacher=W, kw...)
 end
 
 function solve(; K::Vector{Int} = [101,3], α::Float64=0.6
             , seedξ::Int=-1, realξ = false
             , dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[]
+            , teacher = nothing
             , maketree = false, kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
