@@ -8,6 +8,8 @@ using Random
 using LinearAlgebra
 using Statistics
 
+using PyPlot
+
 const CVec = Vector{Complex{Float64}}
 const IVec = Vector{Int}
 const Vec = Vector{Float64}
@@ -47,7 +49,7 @@ mutable struct FactorGraph
         if isa(density, Number)
             density = fill(density, L)
         end
-        @assert length(density) == L 
+        @assert length(density) == L
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
@@ -105,7 +107,7 @@ mutable struct ReinfParams
     y::Float64          # parameter for FocusingBP
     ψ::Float64          # damping parameter
     wait_count::Int
-    ReinfParams(r=0., rstep=0., ry=0., rystep=0., ψ=0., y=0) = new(r, rstep, ry, rystep, ψ, y, 0)
+    ReinfParams(r=0., rstep=0., ry=0., rystep=0., y=0, ψ=0.) = new(r, rstep, ry, rystep, y, ψ, 0)
 end
 
 function update_reinforcement!(reinfpar::ReinfParams)
@@ -179,10 +181,11 @@ function printvec(q::Vector{Float64}, head = "")
 end
 
 function plot_info(g::FactorGraph, info=1; verbose=0)
-    W = getW(g)
+    #W = getW(g)
     K = g.K
     L = length(K)-1
-    N = length(W[1][1])
+    N = K[1]
+    #N = length(W[1][1])
     layers = g.layers[2:end-1]
     width = info
     info > 0 && clf()
@@ -206,13 +209,15 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         subplot(L,width,width*(L-l)+1)
         title("W Overlaps Layer $l")
         xlim(-1.01,1.01)
-        plt[:hist](q)
+        #plt[:hist](q)
+        plt.hist(qWαβ)
         info == 1 && continue
 
         subplot(L,width,width*(L-l)+2)
         title("Mags Layer $l")
         xlim(-1.01,1.01)
-        plt[:hist](vcat(m[l]...))
+        #plt[:hist](vcat(m[l]...))
+        plt.hist(vcat(layers[l].allm...))
         info == 2 && continue
 
         subplot(L,width,width*(L-l)+3)
@@ -221,8 +226,11 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         for k=1:K[l+1]
             pu = layers[l].allpu[k]
             pd = layers[l].top_allpd[k]
-            sat = (2pu-1) .* (2pd-1)
-            plt[:hist](sat)
+            #sat = (2pu-1) .* (2pd-1)
+            sat = @. (2pu-1) * (2pd-1)
+            #plt[:hist](sat)
+            #@show size(sat)
+            #plt.hist(sat)
         end
         info == 3 && continue
 
@@ -231,7 +239,8 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         xlim(-1.01,1.01)
         for k=1:K[l+1]
             pu = layers[l].allpu[k]
-            plt[:hist](2pu-1)
+            #plt[:hist](2pu-1)
+            plt.hist(2 .* pu .- 1)
         end
         info == 4 && continue
 
@@ -241,9 +250,11 @@ function plot_info(g::FactorGraph, info=1; verbose=0)
         xlim(-1.01,1.01)
         for k=1:K[l+1]
             pd = layers[l].top_allpd[k]
-            plt[:hist](2pd-1)
+            #plt.hist(2 .* pd .- 1)
         end
         info == 5 && continue
+
+        tight_layout()
 
     end
 end
@@ -429,6 +440,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 r::Float64 = 0., rstep::Float64= 0.001,
                 ry::Float64 = 0., rystep::Float64= 0.0,
                 ψ = 0., # dumping coefficient
+                y = 0, # focusing
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
@@ -440,7 +452,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
     initrand!(g)
     fixtopbottom!(g)
     maketree && maketree!(g.layers[2])
-    reinfpar = ReinfParams(r, rstep, ry, rystep, ψ)
+    reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
             altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,

@@ -35,12 +35,12 @@ function BPILayer(K::Int, N::Int, M::Int; density=1)
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
     Mtot = [zeros(N) for i=1:K]
-    
+
     # for variables Y
     allmy = [zeros(N) for a=1:M]
     allhy = [zeros(N) for a=1:M]
     MYtot = [zeros(N) for a=1:M]
-    
+
 
     allpu = [zeros(M) for k=1:K]
     allpd = [zeros(M) for k=1:N]
@@ -54,10 +54,10 @@ function BPILayer(K::Int, N::Int, M::Int; density=1)
 end
 
 function updateFact!(layer::BPILayer, k::Int, reinfpar)
-    @extract layer: K N M allm allmy allpu allpd 
+    @extract layer: K N M allm allmy allpu allpd
     @extract layer: MYtot Mtot bottom_allpu top_allpd
 
-    m = allm[k] 
+    m = allm[k]
     Mt = Mtot[k]
     pd = top_allpd[k]
     mask = layer.weight_mask[k]
@@ -80,12 +80,18 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
 
         Chtot == 0 && (Chtot = 1e-8) #;print("!");
 
-        # mh = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)  
+        # mh = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
         for i=1:N
-            mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i] * mask[i]) / √Chtot)
-            Mt[i] += my[i] * mh * mask[i] 
+            mask[i] == 1 || continue
+            # mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i] * mask[i]) / √Chtot)
+            # Mt[i] += my[i] * mh * mask[i]
+            # if !isbottomlayer(layer)
+            #     MYt[i] += m[i] * mh * mask[i]
+            # end
+            mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i]) / √Chtot)
+            Mt[i] += my[i] * mh
             if !isbottomlayer(layer)
-                MYt[i] += m[i] * mh * mask[i]
+                MYt[i] += m[i] * mh
             end
         end
 
@@ -123,7 +129,7 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILaye
     MYt = MYtot[a]
     my = allmy[a]
     hy = allhy[a]
-    
+
     for i=1:N
         hy[i] = MYt[i] + ry* hy[i]
         allpd[i][a] = hy[i]
@@ -187,7 +193,7 @@ function initrand!(layer::L) where {L <: Union{BPILayer}}
     for (k, m) in enumerate(allm)
         m .= (2*rand(N) .- 1) .* ϵ .* mask[k]
     end
-    
+
     for my in allmy
         my .= (2*rand(N) .- 1) .* ϵ
     end
@@ -195,7 +201,7 @@ function initrand!(layer::L) where {L <: Union{BPILayer}}
     for pu in allpu
         pu .= rand(M)
     end
-    
+
     for pd in allpd
         pd .= rand(M)
     end
