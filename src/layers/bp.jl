@@ -139,7 +139,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
         end
         if !isbottomlayer(layer)
             mhy[i][k] =  myatanh(mcav[i] * sr)
-            !isfinite(mhy[i][k]) && (mhy[i][k] = sign(mhy[i][k])*20) #print("!")
+            !isfinite(mhy[i][k]) && (mhy[i][k] = sign(mhy[i][k])*20); #print("!")
             @assert isfinite(mhy[i][k]) "mhy[i][k]=$(mhy[i][k]) $(mcav) $sr"
         end
         @assert isfinite(mycav[i])
@@ -280,7 +280,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             m₋ = (Mcav - my[i]) / sdσ̄²
             h = clamp(pd[a], -30, +30) |> Magnetizations.f2mT
             mhw[i][a] = reinfpar.ψ * mhw[i][a] + (1-reinfpar.ψ) * erfmix(h, m₊, m₋)
-            @assert isfinite(mhw[i][a]) "m₊ = $(m₊)  m₋ = $(m₋) pd[a]=$(pd[a])" 
+            @assert isfinite(mhw[i][a]) "m₊ = $(m₊)  m₋ = $(m₋) pd[a]=$(pd[a])"
         end
     end
 
@@ -402,10 +402,10 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
             # mhw[i][a] = myatanh(my[i]/Ccav * gh)
             # mhy[i][k] = myatanh(m[i]/Ccav * gh)
             @assert isfinite(gh)
-        
+
 
             # if layer.weight_mask[k][i] == 0
-            #     @assert mhw[i][a] == 0 
+            #     @assert mhw[i][a] == 0
             # end
             mhw[i][a] = (1-reinfpar.ψ) * my[i]/Ccav * gh  + reinfpar.ψ * mhw[i][a]
             mhy[i][k] = (1-reinfpar.ψ) * m[i]/Ccav * gh   + reinfpar.ψ * mhy[i][k]
@@ -418,7 +418,7 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
             gh = GH(pd[a],-Mcav / Ccav)
             # if layer.weight_mask[k][i] == 0
-            #     @assert mhw[i][a] == 0 
+            #     @assert mhw[i][a] == 0
             # end
             mhw[i][a] = (1-reinfpar.ψ) * my[i]/Ccav * gh  + reinfpar.ψ * mhw[i][a]
             # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))

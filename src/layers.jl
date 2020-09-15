@@ -34,7 +34,7 @@ getW(lay::AbstractLayer) = getWBinary(lay)
 getW(lay::BPRealLayer) = getWReal(lay)
 getWReal(lay::AbstractLayer) = lay.allm
 
-function getWBinary(lay::AbstractLayer) 
+function getWBinary(lay::AbstractLayer)
     W = [Float64[1-2signbit(m) for m in magk] for magk in getWReal(lay)] # TODO return BitArray
     if hasproperty(lay, :weight_mask)
         for k in 1:length(W)
@@ -50,9 +50,22 @@ function energy(lay::OutputLayer, ξ::Vector, a)
     return all((labels[a] .* ξ) .> 0) ? 0 : 1
 end
 
+forward(W::VecVecVec, ξ::Vector) = forwardBinary(W, ξ)
+
 forward(lay::AbstractLayer, ξ::Vector) = forwardBinary(lay, ξ)
 forward(lay::BPRealLayer, ξ::Vector) = forwardReal(lay, ξ)
 forward(lay::ParityLayer, ξ::Vector) = forwardParity(lay, ξ)
+
+sign0(x::T) where{T} = ((x == zero(T)) ? rand([-one(T),one(T)]) : sign(x))
+function forwardBinary(W::VecVecVec, x::Vector)
+    L = length(W)
+    for l = 1:L
+        Wl = hcat(W[l]...)' |> Matrix
+        x = Wl * x
+        x = sign0.(x)
+    end
+    return x
+end
 
 function forwardBinary(lay::AbstractLayer, ξ::Vector)
     @extract lay: N K

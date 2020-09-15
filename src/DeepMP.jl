@@ -55,7 +55,7 @@ end
 
 function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
-    @assert K[L] == 1
+    @assert K[L+1] == 1
 
     if isa(density, Number)
         density = fill(density, L)
@@ -63,24 +63,24 @@ function rand_teacher(K::Vector{Int}; density=1.)
     end
     @assert density[L] == 1
     @assert length(density) == L
-    
-    W = Vector{Vector{Vector{Int}}}()
+
+    W = Vector{Vector{Vector{Float64}}}()
     for l=1:L
-        push!(W, [rand(Int[-1,1], K[l]) for k=1:K[l+1]])
-        for k in 1:k[l+1]
-            W[l][k] *= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
+        push!(W, [rand(Int[-1.0,1.0], K[l]) for k=1:K[l+1]])
+        for k in 1:K[l+1]
+            W[l][k] .*= [rand() < density[l] ? 1.0 : 0.0 for i=1:K[l]]
         end
     end
     if L > 1
-        W[L][1] .= 1
+        W[L][1] .= 1.0
     end
     return W
 end
 
 function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
-            seedξ::Int=-1,
-            density = 1,
-            kw...)
+                   seedξ::Int=-1,
+                   density = 1,
+                   kw...)
     seedξ > 0 && Random.seed!(seedξ)
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
     N = K[1]
@@ -88,17 +88,18 @@ function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
     M = round(Int, α * numW)
     ξ = rand([-1.,1.], K[1], M)
     # ξ = (2rand(K[1], M) - 1)
-    W = rand_teacher(K)
+    W = rand_teacher(K; density=density)
     σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
-   
-    solve(ξ, σ; K=K, teacher=W, kw...)
+    @assert (any(i -> i == 0, σ) == false)
+
+    solve(ξ, σ; K=K, teacher=W, density=density, kw...)
 end
 
-function solve(; K::Vector{Int} = [101,3], α::Float64=0.6
-            , seedξ::Int=-1, realξ = false
-            , dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[]
-            , teacher = nothing
-            , maketree = false, kw...)
+function solve(; K::Vector{Int} = [101,3], α::Float64=0.6,
+                 seedξ::Int=-1, realξ = false,
+                 dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[],
+                 teacher::Union{VecVecVec, Nothing} = nothing,
+                 maketree = false, kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
@@ -168,6 +169,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 ry::Float64 = 0., rystep::Float64= 0.0,
                 ψ = 0., # dumping coefficient
                 y = 0, # focusing
+                teacher::Union{VecVecVec, Nothing} = nothing,
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
@@ -182,8 +184,8 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-            altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-            verbose=verbose)
+              altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+              verbose=verbose)
 
     E, stab = energy(g)
     return g, getW(g), E, stab
