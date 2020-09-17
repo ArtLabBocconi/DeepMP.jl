@@ -57,12 +57,14 @@ forward(lay::BPRealLayer, ξ::Vector) = forwardReal(lay, ξ)
 forward(lay::ParityLayer, ξ::Vector) = forwardParity(lay, ξ)
 
 sign0(x::T) where{T} = ((x == zero(T)) ? rand([-one(T),one(T)]) : sign(x))
+signB(x::T) where{T} = sign(x + 1e-10)
 function forwardBinary(W::VecVecVec, x::Vector)
     L = length(W)
     for l = 1:L
         Wl = hcat(W[l]...)' |> Matrix
         x = Wl * x
-        x = sign0.(x)
+        #x = sign0.(x)
+        x = signB.(x)
     end
     return x
 end

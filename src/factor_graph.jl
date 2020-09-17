@@ -14,20 +14,21 @@ mutable struct FactorGraph
                 density=1.)
         N, M = size(ξ)
         @assert length(σ) == M
-        println("# N=$N M=$M α=$(M/N)")
+        numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
+        println("# N=$N M=$M α=$(M/numW)")
         @assert K[1]==N
         L = length(K)-1
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
         println("Created InputLayer")
-        
+
         if isa(density, Number)
             density = fill(density, L)
             density[L] = 1
         end
         @assert density[L] == 1
         @assert length(density) == L
-        
+
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
