@@ -188,6 +188,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
               verbose=verbose)
 
     E, stab = energy(g)
+    isa(teacher, Vector) && return g, getW(g), teacher, E, stab
     return g, getW(g), E, stab
 end
 
