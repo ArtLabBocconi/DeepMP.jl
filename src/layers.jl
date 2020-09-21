@@ -57,8 +57,7 @@ forward(lay::AbstractLayer, ξ::Vector) = forwardBinary(lay, ξ)
 forward(lay::BPRealLayer, ξ::Vector) = forwardReal(lay, ξ)
 forward(lay::ParityLayer, ξ::Vector) = forwardParity(lay, ξ)
 
-
-function forward(W::Vector{Vector}, ξ::Vector)
+function forward(W::Vector{Vector{T}}, ξ::Vector) where T <: Number
     stability = map(w->dot(ξ, w), W)
     σks = Int[signB(stability[k]) for k=1:length(W)]
     return σks, stability
@@ -120,4 +119,11 @@ function chain!(lay1::AbstractLayer, lay2::AbstractLayer)
     lay2.bottom_allpu = lay1.allpu
     lay1.top_layer = lay2
     lay2.bottom_layer = lay1
+end
+
+function set_weight_mask!(lay::AbstractLayer, m) 
+    @assert length(lay.weight_mask) == length(m)
+    for k=1:length(m)
+        lay.weight_mask[k] .= m[k]
+    end
 end

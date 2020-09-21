@@ -24,9 +24,7 @@ mutable struct FactorGraph
 
         if isa(density, Number)
             density = fill(density, L)
-            density[L] = 1
         end
-        @assert density[L] == 1
         @assert length(density) == L
 
         for l=1:L
@@ -78,6 +76,14 @@ mutable struct FactorGraph
     end
 end
 
+function set_weight_mask!(g::FactorGraph, W)
+    @assert length(W) == g.L
+    for l=2:g.L-1
+        K = length(W[l])
+        mask = [map(x-> x==0 ? 0 : 1, W[l][k]) for k=1:K]
+        set_weight_mask!(g.layers[l], mask)
+    end
+end
 
 function initrand!(g::FactorGraph)
     @extract g M layers K ξ
