@@ -53,7 +53,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
     end
 end
 
-function rand_teacher(K::Vector{Int}; density=1., sparse_teacher::Bool=true)
+function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
     @assert K[L+1] == 1
 
@@ -64,17 +64,16 @@ function rand_teacher(K::Vector{Int}; density=1., sparse_teacher::Bool=true)
     @assert density[L] == 1
     @assert length(density) == L
 
-    W = Vector{Vector{Vector{Float64}}}()
+    T = Float64
+    W = Vector{Vector{Vector{T}}}()
     for l=1:L
-        push!(W, [rand(Int[-1.0,1.0], K[l]) for k=1:K[l+1]])
-        if sparse_teacher
-            for k in 1:K[l+1]
-                W[l][k] .*= [rand() < density[l] ? 1.0 : 0.0 for i=1:K[l]]
-            end
+        push!(W, T[rand([-1,1], K[l]) for k=1:K[l+1]])    
+        for k in 1:K[l+1]
+            W[l][k] .*= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
         end
     end
     if L > 1
-        W[L][1] .= 1.0
+        W[L][1] .= 1
     end
     return W
 end
@@ -82,7 +81,7 @@ end
 function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
                    seedξ::Int=-1,
                    density = 1,
-                   sparse_teacher::Bool = true,
+                   density_teacher = density,
                    kw...)
     seedξ > 0 && Random.seed!(seedξ)
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
@@ -90,8 +89,7 @@ function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
     ξ = zeros(K[1], 1)
     M = round(Int, α * numW)
     ξ = rand([-1.,1.], K[1], M)
-    # ξ = (2rand(K[1], M) - 1)
-    W = rand_teacher(K; density=density, sparse_teacher=sparse_teacher)
+    W = rand_teacher(K; density=density_teacher)
     σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
     @assert (any(i -> i == 0, σ) == false)
 
@@ -101,7 +99,6 @@ end
 function solve(; K::Vector{Int} = [101,3], α::Float64=0.6,
                  seedξ::Int=-1, realξ = false,
                  dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[],
-                 teacher::Union{VecVecVec, Nothing} = nothing,
                  maketree = false, kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
@@ -191,8 +188,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
               verbose=verbose)
 
     E, stab = energy(g)
-    isa(teacher, Vector) && return g, getW(g), teacher, E, stab
-    return g, getW(g), E, stab
+    return g, getW(g), teacher, E, stab
 end
 
 end #module
