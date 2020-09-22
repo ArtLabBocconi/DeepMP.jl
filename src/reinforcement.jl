@@ -1,5 +1,5 @@
 mutable struct ReinfParams
-    r::Float64         # reinforcement for W variables
+    r::Float64         # reinforcement (γ for focusing) for W variables
     rstep::Float64
     ry::Float64         # reinforcement for Y variables
     rystep::Float64
@@ -19,7 +19,8 @@ function update_reinforcement!(reinfpar::ReinfParams)
             reinfpar.ry = 1 - (1-reinfpar.ry) * (1-reinfpar.rystep)
         else
             # focusing update
-            @assert false #TODO
+            reinfpar.r *= (1.0 + reinfpar.rstep)
+            #@assert false #TODO
         end
     end
 end
