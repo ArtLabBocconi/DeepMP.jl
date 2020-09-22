@@ -16,6 +16,23 @@ function gen_error(w, wT; α=1.0, N=0, M=0)
     return Egen
 end
 
+function ts_overlap(w, wt)
+    L = length(w)
+    Qts = 0.0
+    for l = 1:L
+        K = length(w[l])
+        for k = 1:K
+            w0 = filter(x -> x != 0.0, w[l][k])
+            wt0 = filter(x -> x != 0.0, wt[l][k])
+            n0 = length(w0)
+            @assert length(wt0) == n0
+            Qts += mean(w0 .== wt0)
+        end
+        Qts /= K
+    end
+    return Qts / L
+end
+
 function overlaps(g, l)
     K = g.K
     L = length(K)-1
@@ -27,7 +44,8 @@ function overlaps(g, l)
 
     q0 = Float64[]
     for k=1:K[l+1]
-        norm = K[l] * mean(mask[k])
+        #norm = K[l] * mean(mask[k])
+        norm = sum(mask[k])
         #push!(q0, dot(layers[l].allm[k], layers[l].allm[k])/K[l])
         push!(q0, dot(layer.allm[k], layer.allm[k]) / norm)
     end
@@ -51,9 +69,11 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                   r::Float64 = 0.9,
                   rstep::Float64 = 0.01,
                   maxiters::Int = 1000,
+                  altconv::Bool = false,
+                  ϵ::Float64 = 1e-5,
                   ψ::Float64 = 0.5,
                   density::Union{Float64, Vector{Float64}} = 1.0,
-                  sparse_teacher::Bool = true,
+                  use_teacher_weight_mask::Bool = true,
                   Mtest::Int = 1000,
                   verbose::Int=0,
                   plotinfo::Int=-1,
@@ -79,17 +99,22 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                                            seedξ=seedξ,
                                            seed=seed,
                                            maxiters=maxiters,
+                                           altconv=altconv,
+                                           ϵ=ϵ,
                                            ψ=ψ,
                                            density=density,
-                                           sparse_teacher=sparse_teacher,
+                                           use_teacher_weight_mask=use_teacher_weight_mask,
                                            verbose=verbose,
                                            plotinfo=plotinfo);
 
 
+
+
         #Egen = gen_error(w, wT; αT=1.0, N=numW)
         Egen = gen_error(w, wT; M=Mtest) / Mtest
-        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, ", α, E, Egen)
-        outf = @sprintf("%f %i %f ", α, E, Egen)
+        Qts  = ts_overlap(w, wT)
+        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f", α, E, Egen, Qts)
+        outf = @sprintf("%f %i %f %f ", α, E, Egen, Qts)
         for l = 1:(L-1)
             q0, q0_err, qab, qab_err = overlaps(g, l)
             out  *= @sprintf("δ[%i]=%.2f, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, density[l], q0, q0_err, qab, qab_err)

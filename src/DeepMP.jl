@@ -65,7 +65,7 @@ function rand_teacher(K::Vector{Int}; density=1.)
     T = Float64
     W = Vector{Vector{Vector{T}}}()
     for l=1:L
-        push!(W, [rand(T[-1,1], K[l]) for k=1:K[l+1]])    
+        push!(W, [rand(T[-1,1], K[l]) for k=1:K[l+1]])
         for k in 1:K[l+1]
             W[l][k] .*= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
         end
@@ -172,7 +172,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
                 density = 1., # density of fully connected layer
-                use_teacher_weight_mask = false, 
+                use_teacher_weight_mask = false,
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)

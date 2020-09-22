@@ -26,6 +26,10 @@ mutable struct FactorGraph
             density = fill(density, L)
         end
         @assert length(density) == L
+        if density[L] < 1.0
+            density[L] = 1.0
+            @warn "Setting density[$L] = 1.0"
+        end
 
         for l=1:L
             if  layertype[l] == :tap
@@ -78,10 +82,10 @@ end
 
 function set_weight_mask!(g::FactorGraph, W)
     @assert length(W) == g.L
-    for l=2:g.L-1
+    for l=1:g.L-1
         K = length(W[l])
         mask = [map(x-> x==0 ? 0 : 1, W[l][k]) for k=1:K]
-        set_weight_mask!(g.layers[l], mask)
+        set_weight_mask!(g.layers[l+1], mask)
     end
 end
 
