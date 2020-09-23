@@ -33,12 +33,18 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
                                 , reinfpar::ReinfParams=ReinfParams()
                                 , verbose::Int=1)
 
-    for it=1:maxiters
-        Δ = update!(g, reinfpar)
+    for it = 1:maxiters
 
+        Δ = update!(g, reinfpar)
         E, h = energy(g)
-        verbose > 0 && @printf("it=%d \t r=%.3f ry=%.3f \t E=%d \t Δ=%f \n"
-                , it, reinfpar.r, reinfpar.ry, E, Δ)
+
+        # verbose > 0 && @printf("it=%d \t params E=%d \t Δ=%f \n",
+        #                         it, reinfpar.r, reinfpar.ry, E, Δ)
+        verbose > 0 && (reinfpar.y > 0 ?
+                        @printf("it=%d \t (pol=%.3f, y=%.1f) \t E=%d \t Δ=%f \n",
+                                 it, tanh(reinfpar.r), reinfpar.y, E, Δ) :
+                        @printf("it=%d \t (r=%.3f, ry=%.3f) \t E=%d \t Δ=%f \n",
+                                 it, reinfpar.r, reinfpar.ry, E, Δ))
         # println(h)
         plotinfo >=0  && plot_info(g, plotinfo, verbose=verbose)
         update_reinforcement!(reinfpar)
