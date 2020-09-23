@@ -36,6 +36,8 @@ mutable struct BPExactLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
+    allhext::VecVec
+
     weight_mask::Vector{Vector{Int}}
 end
 
@@ -44,6 +46,7 @@ function BPExactLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
+    allhext = [zeros(N) for i=1:K]
     allux = [zeros(N) for i=1:K]
 
 
@@ -77,6 +80,7 @@ function BPExactLayer(K::Int, N::Int, M::Int; density=1)
         , VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
         , DummyLayer(), DummyLayer(),
+        allhext,
         weight_mask)
 end
 
@@ -183,6 +187,8 @@ mutable struct BPAccurateLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
+    allhext::VecVec
+
     weight_mask::Vector{Vector{Int}}
 end
 
@@ -190,6 +196,7 @@ function BPAccurateLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
+    allhext = [zeros(N) for i=1:K]
     allux = [zeros(N) for i=1:K]
 
     allmcav = [[zeros(N) for i=1:M] for i=1:K]
@@ -213,6 +220,7 @@ function BPAccurateLayer(K::Int, N::Int, M::Int; density=1)
         , allh, allux, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer(),
+        allhext,
         weight_mask)
 end
 
@@ -323,6 +331,8 @@ mutable struct BPLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
+    allhext::VecVec
+
     weight_mask::Vector{Vector{Int}}
 end
 
@@ -331,8 +341,8 @@ function BPLayer(K::Int, N::Int, M::Int; density=1.)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
+    allhext = [zeros(N) for i=1:K]
     allux = [zeros(N) for i=1:K]
-
 
     allmcav = [[zeros(N) for i=1:M] for i=1:K]
     allmycav = [[zeros(N) for i=1:K] for i=1:M]
@@ -355,6 +365,7 @@ function BPLayer(K::Int, N::Int, M::Int; density=1.)
         , allh, allux, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer(),
+        allhext,
         weight_mask)
 end
 
@@ -467,13 +478,14 @@ end
 # end
 
 function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
-    @extract layer: K N M allm allmy allmh allpu allpd allh allux
+    @extract layer: K N M allm allmy allmh allpu allpd allh allux allhext
     @extract layer: bottom_allpu top_allpd
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
     λ = reinfpar.ψ
     m = allm[k]
     h = allh[k]
+    hext = allhext[k]
     ux = allux[k]
     Δ = 0.
     #@assert isfinite(h[i])
@@ -482,7 +494,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLay
     #@assert isfinite(sum(mhw))
 
     if reinfpar.y <= 0.0
-        h[i] = sum(mhw) + reinfpar.r * h[i]
+        h[i] = sum(mhw) + reinfpar.r*h[i] + hext[i]
     else
         pol = tanh(reinfpar.r)
         ρ = reinfpar.y - 1.0

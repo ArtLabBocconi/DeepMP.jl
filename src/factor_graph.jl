@@ -2,25 +2,26 @@
 mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
     M::Int
-    L::Int         # number of hidden layers. L=length(layers)-2
+    L::Int          # Number of hidden layers. L=length(layers)-2
     ξ::Matrix{Float64}
     σ::Vector{Int}
-    layers::Vector{AbstractLayer}
+    layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
+                                   # Weight with layers are those in 2:L+1
     dropout::Dropout
     density # weight density (ONLY FOR bp family as of yet)
 
     function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}
                 , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0,
-                density=1.)
+                density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
         numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
-        println("# N=$N M=$M α=$(M/numW)")
+        verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
         @assert K[1]==N
         L = length(K)-1
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
-        println("Created InputLayer")
+        verbose > 0 &&  println("Created InputLayer")
 
         if isa(density, Number)
             density = fill(density, L)
@@ -34,41 +35,41 @@ mutable struct FactorGraph
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created TapLayer\t $(K[l])")
+                verbose > 0 && println("Created TapLayer\t $(K[l])")
             elseif  layertype[l] == :tapex
                 push!(layers, TapExactLayer(K[l+1], K[l], M))
-                println("Created TapExactLayer\t $(K[l])")
+                verbose > 0 && println("Created TapExactLayer\t $(K[l])")
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPLayer\t $(K[l])")
+                verbose > 0 && println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPAccurateLayer\t $(K[l])")
+                verbose > 0 && println("Created BPAccurateLayer\t $(K[l])")
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPExactLayer\t $(K[l])")
+                verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] == :bpi
                 push!(layers, BPILayer(K[l+1], K[l], M, density=density[l]))
-                println("Created BPILayer\t $(K[l])")
+                verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :ms
                 push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
-                println("Created MaxSumLayer\t $(K[l])")
+                verbose > 0 && println("Created MaxSumLayer\t $(K[l])")
             elseif  layertype[l] == :parity
                 @assert l == L
                 push!(layers, ParityLayer(K[l+1], K[l], M))
-                println("Created ParityLayer\t $(K[l])")
+                verbose > 0 && println("Created ParityLayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
                 @assert l == 1
                 push!(layers, BPRealLayer(K[l+1], K[l], M))
-                println("Created BPRealLayer\t $(K[l])")
+                verbose > 0 && println("Created BPRealLayer\t $(K[l])")
             else
                 error("Wrong Layer Symbol")
             end
         end
 
         push!(layers, OutputLayer(σ,β=β))
-        println("Created OutputLayer")
+        verbose > 0 && println("Created OutputLayer")
 
         for l=1:L+1
             chain!(layers[l], layers[l+1])
@@ -105,8 +106,6 @@ function fixtopbottom!(g::FactorGraph)
     fixY!(g.layers[2], ξ)
 end
 
-
-
 function update!(g::FactorGraph, reinfpar)
     Δ = 0. # Updating layer $(lay.l)")
     for l=2:g.L+1
@@ -116,7 +115,6 @@ function update!(g::FactorGraph, reinfpar)
     end
     return Δ
 end
-
 
 function forward(g::FactorGraph, ξ::Vector)
     @extract g: L layers

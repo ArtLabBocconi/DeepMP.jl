@@ -29,7 +29,7 @@ include("factor_graph.jl")
 include("reinforcement.jl")
 
 function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
-                                , altsolv::Bool=false, altconv = false, plotinfo=-1
+                                , altsolv::Bool=false, altconv = false, plotinfo=0
                                 , reinfpar::ReinfParams=ReinfParams()
                                 , verbose::Int=1)
 
@@ -53,7 +53,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
             break
         end
         if altconv && Δ < ϵ
-            println("Converged!")
+            verbose > 0 && println("Converged!")
             break
         end
     end
@@ -172,13 +172,14 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 r::Float64 = 0., rstep::Float64= 0.001,
                 ry::Float64 = 0., rystep::Float64= 0.0,
                 ψ = 0., # dumping coefficient
-                y = 0, # focusing
+                y = -1, # focusing
                 teacher::Union{VecVecVec, Nothing} = nothing,
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
                 density = 1., # density of fully connected layer
                 use_teacher_weight_mask = false,
+                batchsize=-1, # only supported by some algorithms
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
@@ -191,12 +192,49 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
     maketree && maketree!(g.layers[2])
     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
-    converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-              altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-              verbose=verbose)
+    if batchsize <= 0
+        converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
+                altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+                verbose=verbose)
+    else
+        @assert batchsize == 1 # only support batchsize=1 for the time being
+        @assert r == rstep == 0
+        for epoch=1:maxiters
+            for μ in randperm(size(ξ, 2))
+                gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms, 
+                                rms=rms, ndrops=ndrops, density=density, verbose=0)
+                initrand!(gbatch)
+                fixtopbottom!(gbatch)
+                
+                for l=2:gbatch.L+1
+                    for k in 1:g.layers[l].K
+                        gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
+                    end
+                end
+                
+                converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=reinfpar,
+                    altsolv=false, altconv=true, plotinfo=plotinfo,
+                    verbose=0)
+                
+                for l=2:gbatch.L+1
+                    for k in 1:g.layers[l].K
+                        @assert all(isfinite, gbatch.layers[l].allh[k])
+                        g.layers[l].allhext[k] .= gbatch.layers[l].allh[k]
+                        g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
+                    end
+                end
+                fixtopbottom!(g)            
+            end
+            E, stab = energy(g)
+            println("Epoch $epoch: E=$E")
+            plot_info(g, 0, verbose=verbose)
+            altsolv && (E==0) && break
+        end
+    end
 
     E, stab = energy(g)
     return g, getW(g), teacher, E, stab
 end
+
 
 end #module
