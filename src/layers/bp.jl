@@ -471,6 +471,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLay
     @extract layer: bottom_allpu top_allpd
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
+    λ = reinfpar.ψ
     m = allm[k]
     h = allh[k]
     ux = allux[k]
@@ -480,12 +481,12 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLay
     mcav = allmcav[k]
     #@assert isfinite(sum(mhw))
 
-    if reinfpar.y < 0.0
-        h[i] = sum(mhw) + r*h[i]
+    if reinfpar.y <= 0.0
+        h[i] = sum(mhw) + reinfpar.r * h[i]
     else
         pol = tanh(reinfpar.r)
         ρ = reinfpar.y - 1.0
-        ux[i] = ρ * atanh((h[i] - ux[i]) * pol) * pol
+        ux[i] = λ * ux[i] + (1.0 - λ) * tanh(ρ * atanh( tanh(h[i] - ux[i]) * pol )) * pol
         h[i] = sum(mhw) + ux[i]
     end
     oldm = m[i]
