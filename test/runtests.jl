@@ -5,10 +5,13 @@ using Test, DelimitedFiles, Random, Statistics
     include("perceptron.jl")
 end
 
+@testset "Stochastic BP" begin
+    include("stochastic_bp.jl")
+end
+
 @testset "BPI_MLP" begin
     include("bpi_mlp.jl")
 end
-
 
 @testset "MLP" begin
     include("mlp.jl")

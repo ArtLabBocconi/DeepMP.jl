@@ -465,7 +465,7 @@ end
 #     oldm = m[i]
 #     m[i] = tanh(h[i])
 #     if layer.weight_mask[k][i] == 0
-#         @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
+#         @assert m[i] == 0 "m[i]=$(m[i]) should be 0"
 #     end
 #     for a=1:M
 #         mcav[a][i] = tanh(h[i]-mhw[a])
@@ -505,7 +505,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLay
     oldm = m[i]
     m[i] = tanh(h[i])
     if layer.weight_mask[k][i] == 0
-        @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
+        @assert m[i] == 0 "m[i]=$(m[i]) should be 0"
     end
     for a=1:M
         mcav[a][i] = tanh(h[i]-mhw[a])

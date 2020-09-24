@@ -169,8 +169,8 @@ end
 
 function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 = 1e-4,
                 K::Vector{Int} = [101, 3, 1],layers=[:tap,:tapex,:tapex],
-                r::Float64 = 0., rstep::Float64= 0.001,
-                ry::Float64 = 0., rystep::Float64= 0.0,
+                r = 0., rstep = 0.001,
+                ry = 0., rystep = 0.0,
                 ψ = 0., # dumping coefficient
                 y = -1, # focusing
                 teacher::Union{VecVecVec, Nothing} = nothing,
@@ -198,24 +198,24 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 verbose=verbose)
     else
         @assert batchsize == 1 # only support batchsize=1 for the time being
-        @assert r == rstep == 0
         for epoch=1:maxiters
             for μ in randperm(size(ξ, 2))
                 gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms, 
                                 rms=rms, ndrops=ndrops, density=density, verbose=0)
+                set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
                 fixtopbottom!(gbatch)
                 
                 for l=2:gbatch.L+1
                     for k in 1:g.layers[l].K
-                        gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
+                        gbatch.layers[l].allhext[k] .= reinfpar.r .* g.layers[l].allhext[k]
                     end
                 end
                 
-                converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=reinfpar,
+                converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=ReinfParams(),
                     altsolv=false, altconv=true, plotinfo=plotinfo,
                     verbose=0)
-                
+        
                 for l=2:gbatch.L+1
                     for k in 1:g.layers[l].K
                         @assert all(isfinite, gbatch.layers[l].allh[k])
@@ -226,7 +226,9 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 fixtopbottom!(g)            
             end
             E, stab = energy(g)
-            println("Epoch $epoch: E=$E")
+
+            println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
+            update_reinforcement!(reinfpar)
             plot_info(g, 0, verbose=verbose)
             altsolv && (E==0) && break
         end
