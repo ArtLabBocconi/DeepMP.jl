@@ -200,22 +200,23 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
         @assert batchsize == 1 # only support batchsize=1 for the time being
         for epoch=1:maxiters
             for μ in randperm(size(ξ, 2))
-                gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms, 
+                gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms,
                                 rms=rms, ndrops=ndrops, density=density, verbose=0)
                 set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
                 fixtopbottom!(gbatch)
-                
+
                 for l=2:gbatch.L+1
                     for k in 1:g.layers[l].K
-                        gbatch.layers[l].allhext[k] .= reinfpar.r .* g.layers[l].allhext[k]
+                        #gbatch.layers[l].allhext[k] .= reinfpar.r .* g.layers[l].allhext[k]
+                        gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
                     end
                 end
-                
+
                 converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=ReinfParams(),
                     altsolv=false, altconv=true, plotinfo=plotinfo,
                     verbose=0)
-        
+
                 for l=2:gbatch.L+1
                     for k in 1:g.layers[l].K
                         @assert all(isfinite, gbatch.layers[l].allh[k])
@@ -223,7 +224,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                         g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
                     end
                 end
-                fixtopbottom!(g)            
+                fixtopbottom!(g)
             end
             E, stab = energy(g)
 
