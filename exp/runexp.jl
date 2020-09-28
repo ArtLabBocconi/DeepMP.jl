@@ -69,7 +69,10 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                   r::Float64 = 0.9,
                   rstep::Float64 = 0.01,
                   maxiters::Int = 1000,
+                  epochs::Int = 1000,
+                  batchsize::Int = 1,
                   altconv::Bool = false,
+                  altsolv::Bool = false,
                   ϵ::Float64 = 1e-5,
                   ψ::Float64 = 0.5,
                   density::Union{Float64, Vector{Float64}} = 1.0,
@@ -99,7 +102,10 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                                            seedξ=seedξ,
                                            seed=seed,
                                            maxiters=maxiters,
+                                           epochs=epochs,
+                                           batchsize=batchsize,
                                            altconv=altconv,
+                                           altsolv=altsolv,
                                            ϵ=ϵ,
                                            ψ=ψ,
                                            density=density,
@@ -107,13 +113,10 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                                            verbose=verbose,
                                            plotinfo=plotinfo);
 
-
-
-
         #Egen = gen_error(w, wT; αT=1.0, N=numW)
         Egen = gen_error(w, wT; M=Mtest) / Mtest
         Qts  = ts_overlap(w, wT)
-        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f", α, E, Egen, Qts)
+        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f, ", α, E, Egen, Qts)
         outf = @sprintf("%f %i %f %f ", α, E, Egen, Qts)
         for l = 1:(L-1)
             q0, q0_err, qab, qab_err = overlaps(g, l)

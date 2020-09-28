@@ -49,7 +49,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
         plotinfo >=0  && plot_info(g, plotinfo, verbose=verbose)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
-            println("Found Solution: correctly classified $(g.M) patterns.")
+            verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
             break
         end
         if altconv && Δ < ϵ
@@ -167,6 +167,78 @@ function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
     solve(ξ, σ; K=K, kw...)
 end
 
+# function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 = 1e-4,
+#                 K::Vector{Int} = [101, 3, 1],layers=[:tap,:tapex,:tapex],
+#                 r = 0., rstep = 0.001,
+#                 ry = 0., rystep = 0.0,
+#                 ψ = 0., # dumping coefficient
+#                 y = -1, # focusing
+#                 teacher::Union{VecVecVec, Nothing} = nothing,
+#                 altsolv::Bool = true, altconv::Bool = false,
+#                 seed::Int = -1, plotinfo=0,
+#                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
+#                 density = 1., # density of fully connected layer
+#                 use_teacher_weight_mask = false,
+#                 batchsize=-1, # only supported by some algorithms
+#                 verbose::Int = 1)
+#
+#     seed > 0 && Random.seed!(seed)
+#     g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
+#     if use_teacher_weight_mask
+#         set_weight_mask!(g, teacher)
+#     end
+#     initrand!(g)
+#     fixtopbottom!(g)
+#     maketree && maketree!(g.layers[2])
+#     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
+#
+#     if batchsize <= 0
+#         converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
+#                 altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+#                 verbose=verbose)
+#     else
+#         @assert batchsize == 1 # only support batchsize=1 for the time being
+#         for epoch=1:maxiters
+#             for μ in randperm(size(ξ, 2))
+#                 gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms,
+#                                 rms=rms, ndrops=ndrops, density=density, verbose=0)
+#                 set_weight_mask!(gbatch, g)
+#                 initrand!(gbatch)
+#                 fixtopbottom!(gbatch)
+#
+#                 for l=2:gbatch.L+1
+#                     for k in 1:g.layers[l].K
+#                         #gbatch.layers[l].allhext[k] .= reinfpar.r .* g.layers[l].allhext[k]
+#                         gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
+#                     end
+#                 end
+#
+#                 converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=ReinfParams(),
+#                     altsolv=false, altconv=true, plotinfo=plotinfo,
+#                     verbose=0)
+#
+#                 for l=2:gbatch.L+1
+#                     for k in 1:g.layers[l].K
+#                         @assert all(isfinite, gbatch.layers[l].allh[k])
+#                         g.layers[l].allhext[k] .= gbatch.layers[l].allh[k]
+#                         g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
+#                     end
+#                 end
+#                 fixtopbottom!(g)
+#             end
+#             E, stab = energy(g)
+#
+#             println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
+#             update_reinforcement!(reinfpar)
+#             plot_info(g, 0, verbose=verbose)
+#             altsolv && (E==0) && break
+#         end
+#     end
+#
+#     E, stab = energy(g)
+#     return g, getW(g), teacher, E, stab
+# end
+
 function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 = 1e-4,
                 K::Vector{Int} = [101, 3, 1],layers=[:tap,:tapex,:tapex],
                 r = 0., rstep = 0.001,
@@ -180,53 +252,94 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 density = 1., # density of fully connected layer
                 use_teacher_weight_mask = false,
                 batchsize=-1, # only supported by some algorithms
+                epochs::Int = 1000,
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
-    g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
-    if use_teacher_weight_mask
-        set_weight_mask!(g, teacher)
-    end
-    initrand!(g)
-    fixtopbottom!(g)
-    maketree && maketree!(g.layers[2])
-    reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
+    # g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
+    # if use_teacher_weight_mask
+    #     set_weight_mask!(g, teacher)
+    # end
+    # initrand!(g)
+    # fixtopbottom!(g)
+    # maketree && maketree!(g.layers[2])
+    # reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     if batchsize <= 0
+        g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
+        if use_teacher_weight_mask
+            set_weight_mask!(g, teacher)
+        end
+        initrand!(g)
+        fixtopbottom!(g)
+        maketree && maketree!(g.layers[2])
+        reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
+
         converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-                altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                verbose=verbose)
+                  altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+                  verbose=verbose)
     else
-        @assert batchsize == 1 # only support batchsize=1 for the time being
-        for epoch=1:maxiters
-            for μ in randperm(size(ξ, 2))
-                gbatch = FactorGraph(ξ[:,[μ]], σ[[μ]], K, layers, β=β, βms=βms,
-                                rms=rms, ndrops=ndrops, density=density, verbose=0)
-                set_weight_mask!(gbatch, g)
-                initrand!(gbatch)
-                fixtopbottom!(gbatch)
+        hext = [[0.0.*rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
+        #@assert batchsize == 1 # only support batchsize=1 for the time being
 
-                for l=2:gbatch.L+1
-                    for k in 1:g.layers[l].K
-                        #gbatch.layers[l].allhext[k] .= reinfpar.r .* g.layers[l].allhext[k]
-                        gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
-                    end
-                end
+        g = FactorGraph(ξ[:,[1]], σ[[1]], K, layers, β=β, βms=βms,
+                        rms=rms, ndrops=ndrops, density=density, verbose=0)
+        if use_teacher_weight_mask
+            set_weight_mask!(g, teacher)
+        end
+        initrand!(g)
+        fixtopbottom!(g)
+        reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
-                converge!(gbatch, maxiters=10, ϵ=ϵ, reinfpar=ReinfParams(),
-                    altsolv=false, altconv=true, plotinfo=plotinfo,
-                    verbose=0)
+        M = size(ξ, 2)
+        @info "Num pattern = $M"
+        num_batches = round(Int, M / batchsize)
+        for epoch = 1:epochs
+            #for μ in randperm(M)
+            patt_perm = randperm(M)
+            for b = 1:num_batches
+                first = (batchsize*(b-1)+1)
+                last = (batchsize * b > M ? M : batchsize * b)
+                batch = patt_perm[first:last]
+                #batch = randperm(M)[1:batchsize]
+                g.layers[1] = InputLayer(ξ[:,batch])
+                g.layers[end] = OutputLayer(σ[batch], β=β)
+                # g.layers[1] = InputLayer(ξ[:,[μ]])
+                # g.layers[end] = OutputLayer(σ[[μ]], β=β)
+                # # g.layers[1].ξ = ξ[:,[μ]]
+                # g.layers[end].labels = σ[[μ]]
 
-                for l=2:gbatch.L+1
-                    for k in 1:g.layers[l].K
-                        @assert all(isfinite, gbatch.layers[l].allh[k])
-                        g.layers[l].allhext[k] .= gbatch.layers[l].allh[k]
-                        g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
-                    end
-                end
+                #initrand!(g)
                 fixtopbottom!(g)
+                for l = 1:g.L+1
+                    chain!(g.layers[l], g.layers[l+1])
+                end
+                # TODO
+                #set_weight_mask!(gbatch, g)
+
+                for l=2:g.L+1
+                    for k in 1:g.layers[l].K
+                        g.layers[l].allhext[k] .= hext[l-1][k]
+                    end
+                end
+
+                converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=ReinfParams(),
+                          altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+                          verbose=0)
+
+                for l=2:g.L+1
+                    for k in 1:g.layers[l].K
+                        @assert all(isfinite, g.layers[l].allh[k])
+                        #g.layers[l].allhext[k] .= g.layers[l].allh[k]
+                        hext[l-1][k] .= g.layers[l].allh[k]
+                        #g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
+                    end
+                end
             end
-            E, stab = energy(g)
+            # fixtopbottom!(g)
+            # E, stab = energy(g)
+            w = getW(g)
+            E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
 
             println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
             update_reinforcement!(reinfpar)
@@ -234,10 +347,16 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
             altsolv && (E==0) && break
         end
     end
-
-    E, stab = energy(g)
+    if batchsize > 0
+        w = getW(g)
+        E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
+        stab = -1
+        # g.layers[1] = InputLayer(ξ)
+        # g.layers[end] = OutputLayer(σ, β=β)
+    else
+        E, stab = energy(g)
+    end
     return g, getW(g), teacher, E, stab
 end
-
 
 end #module
