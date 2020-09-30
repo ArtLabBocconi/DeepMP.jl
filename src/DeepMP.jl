@@ -50,13 +50,16 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
-            break
+            return E, Δ
+            #break
         end
         if altconv && Δ < ϵ
             verbose > 0 && println("Converged!")
-            break
+            return E, Δ
+            #break
         end
     end
+    return 1, 1.0
 end
 
 function rand_teacher(K::Vector{Int}; density=1.)
@@ -286,7 +289,9 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
         #M = size(ξ, 2)
         N, M = size(ξ)
         @info "Num pattern = $M (N=$N)"
-        initbatch = randperm(M)[1:batchsize]
+        last = (batchsize > M ? M : batchsize)
+        batchsize > M && (@warn "Batchsize ($batchsize) > M ($M)")
+        initbatch = randperm(M)[1:last]
         g = FactorGraph(ξ[:,initbatch], σ[initbatch], K, layers, β=β, βms=βms,
                         rms=rms, ndrops=ndrops, density=density, verbose=0)
         if use_teacher_weight_mask
@@ -298,7 +303,8 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
 
         num_batches = M ÷ batchsize + ((M % batchsize) == 0 ? 0 : 1)
         for epoch = 1:epochs
-            #for μ in randperm(M)
+            converged = 0
+            solved = 0
             patt_perm = randperm(M)
             for b = 1:num_batches
                 first = (batchsize*(b-1)+1)
@@ -338,9 +344,11 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                     end
                 end
 
-                converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-                          altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                          verbose=verbose_in)
+                e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
+                                    altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+                                    verbose=verbose_in)
+                converged += (δ < ϵ)
+                solved    += (e == 0)
 
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
@@ -356,7 +364,9 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
             w = getW(g)
             E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
 
-            println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
+            #println("Epoch $epoch (conv=$(converged/num_batches), solv=$(solved/num_batches)): E=$E r=$(reinfpar.r) rstep=$(reinfpar.rstep)")
+            @printf("Epoch %i (conv=%.2f, solv=%.2f): E=%i r=%.3f rstep=%f\n",
+                     epoch, (converged/num_batches), (solved/num_batches), E, reinfpar.r, reinfpar.rstep)
             update_reinforcement!(reinfpar)
             plot_info(g, 0, verbose=verbose)
             altsolv && (E==0) && break
