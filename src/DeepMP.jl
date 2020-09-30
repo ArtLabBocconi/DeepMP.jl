@@ -260,14 +260,6 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 verbose_in::Int = 0)
 
     seed > 0 && Random.seed!(seed)
-    # g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
-    # if use_teacher_weight_mask
-    #     set_weight_mask!(g, teacher)
-    # end
-    # initrand!(g)
-    # fixtopbottom!(g)
-    # maketree && maketree!(g.layers[2])
-    # reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     if batchsize <= 0
         g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
@@ -284,9 +276,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                   verbose=verbose)
     else
         hext = [[0.0.*rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
-        #@assert batchsize == 1 # only support batchsize=1 for the time being
 
-        #M = size(ξ, 2)
         N, M = size(ξ)
         @info "Num pattern = $M (N=$N)"
         last = (batchsize > M ? M : batchsize)
@@ -340,7 +330,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
 
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
-                        g.layers[l].allhext[k] .= hext[l-1][k]
+                        g.layers[l].allhext[k] .= hext[l-1][k] .* g.layers[l].weight_mask[k]
                     end
                 end
 
@@ -353,18 +343,13 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
                         @assert all(isfinite, g.layers[l].allh[k])
-                        #g.layers[l].allhext[k] .= g.layers[l].allh[k]
-                        hext[l-1][k] .= g.layers[l].allh[k]
-                        #g.layers[l].allm[k] .= tanh.(g.layers[l].allhext[k])
+                        hext[l-1][k] .= g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
                     end
                 end
             end
-            # fixtopbottom!(g)
-            # E, stab = energy(g)
             w = getW(g)
             E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
 
-            #println("Epoch $epoch (conv=$(converged/num_batches), solv=$(solved/num_batches)): E=$E r=$(reinfpar.r) rstep=$(reinfpar.rstep)")
             @printf("Epoch %i (conv=%.2f, solv=%.2f): E=%i r=%.3f rstep=%f\n",
                      epoch, (converged/num_batches), (solved/num_batches), E, reinfpar.r, reinfpar.rstep)
             update_reinforcement!(reinfpar)
