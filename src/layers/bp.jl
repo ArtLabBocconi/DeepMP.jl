@@ -500,7 +500,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLay
         ρ = reinfpar.y - 1.0
         # ux[i] = λ * ux[i] + (1.0 - λ) * tanh(ρ * atanh( tanh(h[i] - ux[i]) * pol )) * pol # WRONG VERSION
         ux[i] = λ * ux[i] + (1.0 - λ) * atanh(tanh(ρ * atanh( tanh(h[i] - ux[i]) * pol )) * pol)
-        h[i] = sum(mhw) + hext[i] + ux[i]   
+        h[i] = sum(mhw) + hext[i] + ux[i]
     end
     oldm = m[i]
     m[i] = tanh(h[i])

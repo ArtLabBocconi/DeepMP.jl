@@ -253,7 +253,8 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 use_teacher_weight_mask = false,
                 batchsize=-1, # only supported by some algorithms
                 epochs::Int = 1000,
-                verbose::Int = 1)
+                verbose::Int = 1,
+                verbose_in::Int = 0)
 
     seed > 0 && Random.seed!(seed)
     # g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
@@ -282,7 +283,11 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
         hext = [[0.0.*rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
         #@assert batchsize == 1 # only support batchsize=1 for the time being
 
-        g = FactorGraph(ξ[:,[1]], σ[[1]], K, layers, β=β, βms=βms,
+        #M = size(ξ, 2)
+        N, M = size(ξ)
+        @info "Num pattern = $M (N=$N)"
+        initbatch = randperm(M)[1:batchsize]
+        g = FactorGraph(ξ[:,initbatch], σ[initbatch], K, layers, β=β, βms=βms,
                         rms=rms, ndrops=ndrops, density=density, verbose=0)
         if use_teacher_weight_mask
             set_weight_mask!(g, teacher)
@@ -291,9 +296,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
         fixtopbottom!(g)
         reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
-        M = size(ξ, 2)
-        @info "Num pattern = $M"
-        num_batches = round(Int, M / batchsize)
+        num_batches = M ÷ batchsize + ((M % batchsize) == 0 ? 0 : 1)
         for epoch = 1:epochs
             #for μ in randperm(M)
             patt_perm = randperm(M)
@@ -301,21 +304,33 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 first = (batchsize*(b-1)+1)
                 last = (batchsize * b > M ? M : batchsize * b)
                 batch = patt_perm[first:last]
-                #batch = randperm(M)[1:batchsize]
-                g.layers[1] = InputLayer(ξ[:,batch])
-                g.layers[end] = OutputLayer(σ[batch], β=β)
-                # g.layers[1] = InputLayer(ξ[:,[μ]])
-                # g.layers[end] = OutputLayer(σ[[μ]], β=β)
-                # # g.layers[1].ξ = ξ[:,[μ]]
-                # g.layers[end].labels = σ[[μ]]
 
-                #initrand!(g)
+                # g.ξ = ξ[:,batch]
+                # g.σ = σ[batch]
+                # g.M = length(batch)
+                # g.layers[1] = InputLayer(g.ξ)
+                # g.layers[end] = OutputLayer(g.σ, β=β)
+                # for l=2:g.L+1
+                #     for k in 1:g.layers[l].K
+                #         g.layers[l].allh[k] .= 0.0
+                #         #g.layers[l].allh[k] .= 0.1 * rand(K[l-1])
+                #     end
+                #     for m in 1:g.M
+                #         g.layers[l].allhy[m] .= 0.0
+                #     end
+                # end
+                # for l = 1:g.L+1
+                #     chain!(g.layers[l], g.layers[l+1])
+                # end
+                # initrand!(g)
+                # fixtopbottom!(g)
+
+                # SAME AS ABOVE, less clear and redundant ops,
+                # but in the explicit way I have issues with varying batchsize..
+                g = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
+                                rms=rms, ndrops=ndrops, density=density, verbose=0)
+                initrand!(g)
                 fixtopbottom!(g)
-                for l = 1:g.L+1
-                    chain!(g.layers[l], g.layers[l+1])
-                end
-                # TODO
-                #set_weight_mask!(gbatch, g)
 
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
@@ -323,9 +338,9 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                     end
                 end
 
-                converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=ReinfParams(),
+                converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
                           altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                          verbose=0)
+                          verbose=verbose_in)
 
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
