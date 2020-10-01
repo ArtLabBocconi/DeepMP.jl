@@ -125,7 +125,9 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
             out  *= @sprintf("δ[%i]=%.2f, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, density[l], q0, q0_err, qab, qab_err)
             outf *= @sprintf("%f %f %f %f %f ", density[l], q0, q0_err, qab, qab_err)
         end
-        !isempty(outfile) && println(f, "$outf")
+        #!isempty(outfile) && println(f, "$outf")
+        !isempty(outfile) && println(f, outf)
+        !isempty(outfile) && flush(f)
         print("$out\n")
     end
     !isempty(outfile) && close(f)
