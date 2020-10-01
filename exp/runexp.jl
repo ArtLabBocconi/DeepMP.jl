@@ -18,17 +18,19 @@ end
 
 function ts_overlap(w, wt)
     L = length(w)
-    Qts = 0.0
+    Qts = 0
     for l = 1:L
+        Q = 0.0
         K = length(w[l])
         for k = 1:K
             w0 = filter(x -> x != 0.0, w[l][k])
             wt0 = filter(x -> x != 0.0, wt[l][k])
             n0 = length(w0)
             @assert length(wt0) == n0
-            Qts += mean(w0 .== wt0)
+            Q += mean(w0 .== wt0)
         end
-        Qts /= K
+        Q /= K
+        Qts += Q
     end
     return Qts / L
 end
