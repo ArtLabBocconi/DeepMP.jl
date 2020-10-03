@@ -7,7 +7,7 @@ using Printf
 using Random
 using LinearAlgebra
 using Statistics
-using Flux
+# using Flux
 
 # using PyPlot
 
