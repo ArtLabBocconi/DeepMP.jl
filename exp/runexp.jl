@@ -18,7 +18,8 @@ end
 
 function ts_overlap(w, wt)
     L = length(w)
-    Qts = 0
+    L > 1 && (L=L-1)
+    Qts = 0.0
     for l = 1:L
         Q = 0.0
         K = length(w[l])
@@ -27,10 +28,13 @@ function ts_overlap(w, wt)
             wt0 = filter(x -> x != 0.0, wt[l][k])
             n0 = length(w0)
             @assert length(wt0) == n0
-            Q += mean(w0 .== wt0)
+            # Q += mean(w0 .== wt0)
+            Q += dot(w0, wt0) / n0
+            # println("k=$k Q=$Q")
         end
         Q /= K
         Qts += Q
+        # println("l=$l, K=$K Q=$Q Qts=$Qts")
     end
     return Qts / L
 end
@@ -85,7 +89,6 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                   plotinfo::Int=-1,
                   outfile::String = "")
 
-    @assert length(K) < 5 # for now max 2 hidden layers
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
 
     L = length(K)-1

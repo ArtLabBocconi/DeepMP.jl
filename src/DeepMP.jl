@@ -329,8 +329,14 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
 
                 # SAME AS ABOVE, less clear and redundant ops,
                 # but in the explicit way I have issues with varying batchsize..
+                w = getW(g)
                 g = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
-                                rms=rms, ndrops=ndrops, density=density, verbose=0)
+                                rms=rms, ndrops=ndrops, density=1., verbose=0)
+                if use_teacher_weight_mask
+                    set_weight_mask!(g, teacher)
+                else
+                    set_weight_mask!(g, w)
+                end
                 initrand!(g)
                 fixtopbottom!(g)
 
