@@ -355,6 +355,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                 for l=2:g.L+1
                     for k in 1:g.layers[l].K
                         @assert all(isfinite, g.layers[l].allh[k])
+                        # hext[l-1][k] .= reinfpar.r .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
                         hext[l-1][k] .= g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
                     end
                 end
