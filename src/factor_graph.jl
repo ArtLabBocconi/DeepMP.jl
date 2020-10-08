@@ -15,23 +15,20 @@ mutable struct FactorGraph
                 density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
-        numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
-        verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
-        @assert K[1]==N
+        
         L = length(K)-1
+        density = process_density(density, L)
+        numW = length(K)==2 ? K[1]*K[2]*density[1]  : 
+            sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
+        numW = round(Int, numW)
+        @assert K[1]==N
+        verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
+        
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
         verbose > 0 &&  println("Created InputLayer")
 
-        if isa(density, Number)
-            density = fill(density, L)
-        end
-        @assert length(density) == L
-        if density[L] < 1.0
-            density[L] = 1.0
-            # @warn "Setting density[$L] = 1.0"
-        end
-
+        
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
@@ -79,6 +76,19 @@ mutable struct FactorGraph
         add_rand_drops!(dropout, 3, K[2], M, ndrops)
         new(K, M, L, ξ, σ, layers, dropout)
     end
+end
+
+# Turn density into a vector (a value for each layer)
+function process_density(density, L)
+    if isa(density, Number)
+        density = fill(density, L)
+    end
+    @assert length(density) == L
+    if density[L] < 1.0
+        density[L] = 1.0
+        # @warn "Setting density[$L] = 1.0"
+    end
+    return density
 end
 
 function set_weight_mask!(g::FactorGraph, W)

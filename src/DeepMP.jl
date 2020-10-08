@@ -93,7 +93,13 @@ function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
                    density_teacher = density,
                    kw...)
     seedξ > 0 && Random.seed!(seedξ)
-    numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
+    
+    L = length(K) -1
+    density = process_density(density, L)
+    numW = length(K)==2 ? K[1]*K[2]*density[1]  : 
+            sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
+    numW = round(Int, numW)
+    
     N = K[1]
     ξ = zeros(K[1], 1)
     M = round(Int, α * numW)
@@ -108,10 +114,16 @@ end
 function solve(; K::Vector{Int} = [101,3], α=0.6,
                  seedξ::Int=-1, realξ = false,
                  dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[],
-                 maketree = false, kw...)
+                 maketree = false, density=1, kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
-    numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
+    
+    L = length(K) -1
+    density = process_density(density, L)
+    numW = length(K)==2 ? K[1]*K[2]*density[1]  : 
+            sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
+    numW = round(Int, numW)
+    
     maketree && (numW = div(numW, K[2]))
     N = K[1]
     ξ = zeros(K[1], 1)
@@ -126,7 +138,7 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     σ = rand([-1,1], M)
     @assert size(ξ) == (N, M)
     # println("Mean Overlap ξ $(meanoverlap(ξ))")
-    solve(ξ, σ; K=K, maketree=maketree, kw...)
+    solve(ξ, σ; K=K, maketree=maketree, density=density, kw...)
 end
 
 function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
@@ -322,7 +334,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                     end
                 end
 
-                e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
+                e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=ReinfParams(),
                                     altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
                                     teacher=teacher, verbose=verbose_in)
                 converged += (δ < ϵ)
@@ -332,7 +344,7 @@ function solve(ξ::Matrix, σ::Vector{Int}; maxiters::Int = 10000, ϵ::Float64 =
                     for k in 1:g.layers[l].K
                         @assert all(isfinite, g.layers[l].allh[k])
                         # hext[l-1][k] .= reinfpar.r .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
-                        hext[l-1][k] .= g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
+                        hext[l-1][k] .= reinfpar.r * g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
                     end
                 end
                 print("b = $b / $num_batches\r")
