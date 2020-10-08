@@ -116,38 +116,14 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     N = K[1]
     ξ = zeros(K[1], 1)
 
-    if length(nξ) == 0
-        M = round(Int, α * numW)
-        if realξ
-            ξ = randn(K[1], M)
-        else
-            ξ = rand([-1.,1.], K[1], M)
-        end
-        # σ = ones(Int, M)
-        σ = rand([-1,1], M)
+    M = round(Int, α * numW)
+    if realξ
+        ξ = randn(K[1], M)
     else
-        ξ0 = rand([-1.,1.], K[1],1)
-        nξ[end] = round(Int, α * numW / prod(nξ[1:end-1]))
-        M = round(Int, prod(nξ))
-        @assert all(dξ[1:end-1] .>= dξ[2:end])
-        for l=1:length(nξ)
-            nb = size(ξ0, 2)
-            na = nξ[l]
-            d = dξ[l]
-            @assert 0 <= d <= 0.5
-            pflip = 1-sqrt(1-2d)
-            ξ = zeros(N, na*nb)
-            for a=1:na, b=1:nb
-                m = a + (b-1)*na
-                for i=1:N
-                    ξ[i, m] = rand() < pflip ? rand([-1.,1.]) : ξ0[i,b]
-                end
-            end
-            ξ0 = ξ
-        end
-        ξ = ξ0
-        σ = rand([-1,1], M)
+        ξ = rand([-1.,1.], K[1], M)
     end
+    # σ = ones(Int, M)
+    σ = rand([-1,1], M)
     @assert size(ξ) == (N, M)
     # println("Mean Overlap ξ $(meanoverlap(ξ))")
     solve(ξ, σ; K=K, maketree=maketree, kw...)
@@ -185,7 +161,7 @@ end
 #                 seed::Int = -1, plotinfo=0,
 #                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
 #                 density = 1., # density of fully connected layer
-#                 use_teacher_weight_mask = false,
+#                 use_teacher_weight_mask = true,
 #                 batchsize=-1, # only supported by some algorithms
 #                 verbose::Int = 1)
 #
