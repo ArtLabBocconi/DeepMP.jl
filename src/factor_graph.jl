@@ -15,20 +15,20 @@ mutable struct FactorGraph
                 density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
-        
+
         L = length(K)-1
         density = process_density(density, L)
-        numW = length(K)==2 ? K[1]*K[2]*density[1]  : 
+        numW = length(K)==2 ? K[1]*K[2]*density[1]  :
             sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
         numW = round(Int, numW)
         @assert K[1]==N
         verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
-        
+
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
         verbose > 0 &&  println("Created InputLayer")
 
-        
+
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
@@ -93,7 +93,7 @@ end
 
 function set_weight_mask!(g::FactorGraph, W)
     @assert length(W) == g.L
-    for l=1:g.L-1
+    for l=1:g.L
         K = length(W[l])
         mask = [map(x-> x==0 ? 0 : 1, W[l][k]) for k=1:K]
         set_weight_mask!(g.layers[l+1], mask)
@@ -107,6 +107,36 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
+function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
+    # @extract g K
+    # for l = 1:length(K)-1
+    #     @assert length(h0[l]) == K[l+1]
+    #     for k = 1:K[l+1]
+    #         g.layers[l+1].allhext[k] .= ρ .* h0[l][k] .* g.layers[l+1].weight_mask[k]
+    #     end
+    # end
+    for l = 2:g.L+1
+        # @assert length(h0[l]) == K[l+1]
+        for k = 1:g.layers[l].K
+            g.layers[l].allhext[k] .= ρ .* h0[l-1][k] .* g.layers[l].weight_mask[k]
+        end
+    end
+end
+
+function copy_allh(g::FactorGraph, hext; ρ=1.0)
+    for l = 2:g.L+1
+        for k in 1:g.layers[l].K
+            @assert all(isfinite, g.layers[l].allh[k])
+            hext[l-1][k] .= ρ .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
+        end
+    end
+end
+
+function init_hext(K::Vector{Int}; ϵ=0.0)
+    hext = [[ϵ .* rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
+    return hext
+end
+
 function initrand!(g::FactorGraph)
     @extract g M layers K ξ
     for lay in layers[2:end-1]
@@ -117,7 +147,7 @@ end
 function fixtopbottom!(g::FactorGraph)
     @extract g M layers K ξ
     if g.L != 1
-        fixW!(g.layers[end-1], 1.)
+        # fixW!(g.layers[end-1], 1.)
     end
 
     fixY!(g.layers[2], ξ)
@@ -125,7 +155,9 @@ end
 
 function update!(g::FactorGraph, reinfpar)
     Δ = 0. # Updating layer $(lay.l)")
-    for l=2:g.L+1
+    # for l=2:g.L+1
+    # for l in shuffle([2:g.L+1]...)
+    for l = (g.L+1):-1:2
         dropout!(g, l+1)
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)

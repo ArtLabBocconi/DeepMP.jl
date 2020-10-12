@@ -138,6 +138,99 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
     !isempty(outfile) && close(f)
 end
 
+function convert_weights(w)
+    w = [Matrix{Float32}(hcat(w[i]...)') for i = 1:length(w)]
+    return w
+end
+
+function hamming_distance(w1, w2)
+    w1 = convert_weights(w1)
+    w2 = convert_weights(w2)
+    N = sum([length(w1[i]) for i = 1:length(w1)])
+    d = 0.5 * (1.0 - (dot(w1, w2) / N))
+    return d
+end
+
+function forward_sign(w, x)
+    w = convert_weights(w)
+    for i = 1:length(w)
+        x = w[i] * x
+        norm = size(w[1])[2]
+        x = sign.(x ./ √norm)
+    end
+    return vec(x)
+end
+
+
+function runexpMLP(;K::Vector{Int} = [501,5,1],
+                    ρrange::Union{Float64,Vector{Float64}} = 0.6,
+                    layers = [:bpacc, :bpacc, :bpex],
+                    seedξ::Int = -1,
+                    seed::Int = -1,
+                    w0 = [],
+                    h0 = nothing,
+                    xtrn = [], ytrn = [],
+                    xtst = [], ytst = [],
+                    r::Float64 = 0.0,
+                    rstep::Float64 = 0.0,
+                    y::Float64 = 0.0,
+                    maxiters::Int = 100,
+                    epochs::Int = 100,
+                    batchsize::Int = 1,
+                    altconv::Bool = false,
+                    altsolv::Bool = false,
+                    ϵ::Float64 = 1e-4,
+                    ψ::Float64 = 0.0,
+                    verbose::Int=0,
+                    verbose_in::Int=0,
+                    plotinfo::Int=-1,
+                    outfile::String = "")
+
+    numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
+
+    !isempty(outfile) && (f = open(outfile, "w"))
+
+    for ρ in ρrange
+        g, w, wT, E, stab, it = DeepMP.solve(xtrn, ytrn;
+                                             K=K,
+                                             layers=layers,
+                                             h0=h0,
+                                             ρ=ρ,
+                                             r=r,
+                                             rstep=rstep,
+                                             y=y,
+                                             seed=seed,
+                                             maxiters=maxiters,
+                                             epochs=epochs,
+                                             batchsize=batchsize,
+                                             altconv=altconv,
+                                             altsolv=altsolv,
+                                             ϵ=ϵ,
+                                             ψ=ψ,
+                                             density=1,
+                                             verbose=verbose,
+                                             verbose_in=verbose_in,
+                                             plotinfo=plotinfo);
+
+        Egen  = mean(forward_sign(w, xtst) .== ytst)
+        EgenT = mean(forward_sign(h0, xtst) .== ytst)
+        # dist = hamming_distance(w, h0)
+        R = ts_overlap(w, h0)
+        out  = @sprintf("ρ=%.2f, E=%i, Eg=%.3f, EgT=%.3f, R=%.3f, it=%i ", ρ, E, Egen, EgenT, R, it)
+        outf = @sprintf("%f %i %f %f %i ", ρ, E, Egen, R, it)
+        L = length(K)-1
+        for l = 1:(L-1)
+            q0, q0_err, qab, qab_err = overlaps(g, l)
+            out  *= @sprintf("l=%i, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, q0, q0_err, qab, qab_err)
+            outf *= @sprintf("%f %f %f %f ", q0, q0_err, qab, qab_err)
+        end
+        #!isempty(outfile) && println(f, "$outf")
+        !isempty(outfile) && println(f, outf)
+        !isempty(outfile) && flush(f)
+        print("$out\n")
+    end
+    !isempty(outfile) && close(f)
+end
 
 
 end # module
