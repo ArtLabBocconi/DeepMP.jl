@@ -82,6 +82,7 @@ function runexp(;
                                            density=density,
                                            batchsize=1,
                                            ϵ=1e-4,
+                                           r=0.0, rstep=0.0, ρ=0.0, y=0.0,
                                            altsolv=true, altconv=true,
                                            verbose_in=0,
                                            use_teacher_weight_mask=true,
