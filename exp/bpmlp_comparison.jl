@@ -31,6 +31,7 @@ function runexp(;
                 reduce_input=false,
                 outfile="out.dat",
                 lr = 0.01,
+                pdrop=0.0,
                 epochs=50,
                 opt = "SGD",
                 density = 1.0)
@@ -50,6 +51,7 @@ function runexp(;
                        comp_loss=false,
                        opt=opt,
                        lr=lr,
+                       pdrop=pdrop,
                        outfile=nothing,
                        mask_fwd=true,
                        δ=density);
