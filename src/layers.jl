@@ -78,7 +78,7 @@ function forwardBinary(lay::AbstractLayer, ξ::Vector)
 end
 
 function forwardReal(lay::AbstractLayer, ξ::Vector)
-    @extract lay: N 
+    @extract lay: N
     W = getWReal(lay)
     forward(W, ξ)
 end
@@ -121,7 +121,7 @@ function chain!(lay1::AbstractLayer, lay2::AbstractLayer)
     lay2.bottom_layer = lay1
 end
 
-function set_weight_mask!(lay::AbstractLayer, m) 
+function set_weight_mask!(lay::AbstractLayer, m)
     @assert length(lay.weight_mask) == length(m)
     for k=1:length(m)
         lay.weight_mask[k] .= m[k]

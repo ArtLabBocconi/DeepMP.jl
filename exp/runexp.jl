@@ -18,17 +18,23 @@ end
 
 function ts_overlap(w, wt)
     L = length(w)
+    L > 1 && (L=L-1)
     Qts = 0.0
     for l = 1:L
+        Q = 0.0
         K = length(w[l])
         for k = 1:K
             w0 = filter(x -> x != 0.0, w[l][k])
             wt0 = filter(x -> x != 0.0, wt[l][k])
             n0 = length(w0)
             @assert length(wt0) == n0
-            Qts += mean(w0 .== wt0)
+            # Q += mean(w0 .== wt0)
+            Q += dot(w0, wt0) / n0
+            # println("k=$k Q=$Q")
         end
-        Qts /= K
+        Q /= K
+        Qts += Q
+        # println("l=$l, K=$K Q=$Q Qts=$Qts")
     end
     return Qts / L
 end
@@ -68,8 +74,12 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                   seed::Int = -1,
                   r::Float64 = 0.9,
                   rstep::Float64 = 0.01,
+                  y::Float64 = 0.0,
                   maxiters::Int = 1000,
+                  epochs::Int = 1000,
+                  batchsize::Int = 1,
                   altconv::Bool = false,
+                  altsolv::Bool = false,
                   ϵ::Float64 = 1e-5,
                   ψ::Float64 = 0.5,
                   density::Union{Float64, Vector{Float64}} = 1.0,
@@ -79,7 +89,6 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                   plotinfo::Int=-1,
                   outfile::String = "")
 
-    @assert length(K) < 5 # for now max 2 hidden layers
     numW = length(K)==2 ? K[1]*K[2]  : sum(l->K[l]*K[l+1],1:length(K)-2)
 
     L = length(K)-1
@@ -96,10 +105,14 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                                            layers=layers,
                                            r=r,
                                            rstep=rstep,
+                                           y=y,
                                            seedξ=seedξ,
                                            seed=seed,
                                            maxiters=maxiters,
+                                           epochs=epochs,
+                                           batchsize=batchsize,
                                            altconv=altconv,
+                                           altsolv=altsolv,
                                            ϵ=ϵ,
                                            ψ=ψ,
                                            density=density,
@@ -107,20 +120,19 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
                                            verbose=verbose,
                                            plotinfo=plotinfo);
 
-
-
-
         #Egen = gen_error(w, wT; αT=1.0, N=numW)
         Egen = gen_error(w, wT; M=Mtest) / Mtest
         Qts  = ts_overlap(w, wT)
-        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f", α, E, Egen, Qts)
+        out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f, ", α, E, Egen, Qts)
         outf = @sprintf("%f %i %f %f ", α, E, Egen, Qts)
         for l = 1:(L-1)
             q0, q0_err, qab, qab_err = overlaps(g, l)
             out  *= @sprintf("δ[%i]=%.2f, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, density[l], q0, q0_err, qab, qab_err)
             outf *= @sprintf("%f %f %f %f %f ", density[l], q0, q0_err, qab, qab_err)
         end
-        !isempty(outfile) && println(f, "$outf")
+        #!isempty(outfile) && println(f, "$outf")
+        !isempty(outfile) && println(f, outf)
+        !isempty(outfile) && flush(f)
         print("$out\n")
     end
     !isempty(outfile) && close(f)
