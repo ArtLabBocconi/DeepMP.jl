@@ -111,8 +111,8 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
         ξ = rand([-1.,1.], K[1], M)
     end
     if TS
-        W = rand_teacher(K; density=density_teacher)
-        σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
+        teacher = rand_teacher(K; density=density_teacher)
+        σ = Int[forward(teacher, ξ[:, a])[1][1] for a=1:M]
     else
         teacher = nothing
         σ = rand([-1,1], M)

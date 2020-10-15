@@ -9,8 +9,8 @@ end
 
 # teacher-student
 for lay in [:tap,:bp]
-    @time g, W, teacher, E = DeepMP.solveTS(α=0.7, K=[1001,1]
-            , layers=[lay], verbose=0
+    @time g, W, teacher, E = DeepMP.solve(α=0.7, K=[1001,1]
+            , layers=[lay], verbose=0, TS=true
             ,r=.2,rstep=0.01, seedξ=1,maxiters=500);
             
     @test E == 0

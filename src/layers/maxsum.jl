@@ -136,7 +136,7 @@ function initYBottom!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
     my = allmy[a]
     hy = allhy[a]
     ξ = layer.bottom_layer.ξ
-    @assert layer.bottom_layer.isbinary
+    @assert all(x -> x==1 || x==-1, ξ) # works only on binary input
     for i=1:N
         hy[i] = sign(ξ[i, a]) * 100
         my[i] = hy[i]
