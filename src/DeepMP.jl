@@ -64,6 +64,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
     return maxiters, 1, 1.0
 end
 
+#TODO use vector of matrix teacher
 function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
     @assert K[L+1] == 1
@@ -89,7 +90,6 @@ end
 
 function solve(; K::Vector{Int} = [101,3], α=0.6,
                  seedξ::Int=-1, 
-                 realξ = false,
                  density=1,
                  TS = false,
                  density_teacher = density,
@@ -105,14 +105,10 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
 
     N = K[1]
     M = round(Int, α * numW)
-    if realξ
-        ξ = randn(K[1], M)
-    else
-        ξ = rand([-1.,1.], K[1], M)
-    end
+    ξ = rand([-1.,1.], N, M)
     if TS
         teacher = rand_teacher(K; density=density_teacher)
-        σ = Int[forward(teacher, ξ[:, a])[1][1] for a=1:M]
+        σ = Int.(forward(teacher, ξ) |> vec)
     else
         teacher = nothing
         σ = rand([-1,1], M)
@@ -301,11 +297,13 @@ function solve(ξ::Matrix, σ::Vector{Int};
 
                 print("b = $b / $(length(minibatches))\r")
             end
-            w = getW(g)
-            E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
+            
+            E = sum(vec(forward(g, ξ)) .!= σ)
             num_batches = length(minibatches)
             Eg = 0.0
-            !isempty(ytest) && ( Eg = mean(Int[forward(w, xtest[:, a])[1][1] != ytest[a] for a=1:length(ytest)]))
+            if !isempty(ytest) 
+                Eg = mean(vec(forward(g, xtest)) .!= ytest)
+            end
             @printf("Epoch %i (conv=%g, solv=%g <it>=%g): E=%i Eg=%g r=%g rstep=%g ρ=%g\n",
                      epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                      E, Eg, reinfpar.r, reinfpar.rstep, ρ)
@@ -317,14 +315,8 @@ function solve(ξ::Matrix, σ::Vector{Int};
             # ρ < 0.0 && break
         end
     end
-    if batchsize > 0
-        w = getW(g)
-        E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
-        # g.layers[1] = InputLayer(ξ)
-        # g.layers[end] = OutputLayer(σ, β=β)
-    else
-        E = energy(g)
-    end
+    
+    E = sum(vec(forward(g, ξ)) .!= σ)
     return g, getW(g), teacher, E,  it
 end
 

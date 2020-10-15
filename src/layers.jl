@@ -32,19 +32,23 @@ end
 signB(x::T) where {T} = sign(x + 1e-10)
 
 
-function forward(W::Vector{Vector{T}}, ξ::Vector) where T <: Number
-    stability = map(w->dot(ξ, w), W)
-    σks = Int[signB(stability[k]) for k=1:length(W)]
-    return σks
+function forward(W::Vector{Vector{T}}, x) where T <: Number
+    Wmat =  vcat([w' for w in W]...)
+    forward(Wmat, x)
 end
 
-function forward(W::VecVecVec, x::Vector)
+function forward(W::Matrix{T}, x) where T <: Number
+    return signB.(W*x) 
+end
+
+function forward(W::Vector, x)
     L = length(W)
     for l = 1:L
         x = forward(W[l], x)
     end
     return x
 end
+
 
 # initYBottom!(lay::AbstractLayer, a::Int) = updateVarY!(lay, a) #TODO define for every layer mutable struct
 

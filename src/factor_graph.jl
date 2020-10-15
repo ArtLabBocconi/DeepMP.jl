@@ -165,25 +165,18 @@ function update!(g::FactorGraph, reinfpar)
     return Δ
 end
 
-function forward(g::FactorGraph, x::Vector)
+function forward(g::FactorGraph, x)
     @extract g: L layers
-    σks = deepcopy(ξ)
    for l=2:L+1
-        σks = forward(layers[l], σks)
+        x = forward(layers[l], x)
     end
-    return σks
+    return x
 end
 
 function energy(g::FactorGraph)
-    @extract g: M ξ σ
-    E = 0
-
-    for a=1:M
-        y = forward(g, ξ[:,a])
-        E += σ[a] != y[1,1]
-    end
-
-    E
+    @extract g: ξ σ
+    y = forward(g, ξ) |> vec
+    return sum(y .!= σ)
 end
 
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
