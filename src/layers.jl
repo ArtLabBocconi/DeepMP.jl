@@ -8,8 +8,7 @@ and modifies its allpu and allpd
 # using .Magnetizations
 
 abstract type AbstractLayer end
-mutable struct DummyLayer <: AbstractLayer
-end
+mutable struct DummyLayer <: AbstractLayer end
 
 include("layers/input.jl")
 include("layers/output.jl")
@@ -30,32 +29,8 @@ function Base.show(io::IO, layer::L) where {L <: Union{TapExactLayer,TapLayer}}
     println(io, "my=$(allmy[1])")
 end
 
-getW(lay::AbstractLayer) = getWBinary(lay)
-getW(lay::BPRealLayer) = getWReal(lay)
-getWReal(lay::AbstractLayer) = lay.allm
-
-function getWBinary(lay::AbstractLayer)
-    W = [Float64[1-2signbit(m) for m in magk] for magk in getWReal(lay)] # TODO return BitArray
-    if hasproperty(lay, :weight_mask)
-        for k in 1:length(W)
-            W[k] .*= lay.weight_mask[k]
-        end
-    end
-    return W
-end
-
-function energy(lay::OutputLayer, ξ::Vector, a)
-    @extract lay: labels
-    @assert length(ξ) == 1
-    return all((labels[a] .* ξ) .> 0) ? 0 : 1
-end
-
 signB(x::T) where {T} = sign(x + 1e-10)
 
-
-forward(lay::AbstractLayer, ξ::Vector) = forwardBinary(lay, ξ)
-forward(lay::BPRealLayer, ξ::Vector) = forwardReal(lay, ξ)
-forward(lay::ParityLayer, ξ::Vector) = forwardParity(lay, ξ)
 
 function forward(W::Vector{Vector{T}}, ξ::Vector) where T <: Number
     stability = map(w->dot(ξ, w), W)
@@ -69,28 +44,6 @@ function forward(W::VecVecVec, x::Vector)
         x = forward(W[l], x)
     end
     return x
-end
-
-function forwardBinary(lay::AbstractLayer, ξ::Vector)
-    @extract lay: N K
-    W = getWBinary(lay)
-    forward(W, ξ)
-end
-
-function forwardReal(lay::AbstractLayer, ξ::Vector)
-    @extract lay: N
-    W = getWReal(lay)
-    forward(W, ξ)
-end
-
-function forwardParity(lay::AbstractLayer, ξ::Vector)
-    @extract lay: N K
-    @assert N==2
-    @assert K==1
-    W = getWReal(lay)
-    σks = [sign(ξ[1]*ξ[2])]
-
-    return σks
 end
 
 # initYBottom!(lay::AbstractLayer, a::Int) = updateVarY!(lay, a) #TODO define for every layer mutable struct

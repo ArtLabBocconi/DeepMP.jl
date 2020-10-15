@@ -65,7 +65,7 @@ mutable struct FactorGraph
             end
         end
 
-        push!(layers, OutputLayer(σ,β=β))
+        push!(layers, OutputLayer(σ, β=β))
         verbose > 0 && println("Created OutputLayer")
 
         for l=1:L+1
@@ -165,7 +165,7 @@ function update!(g::FactorGraph, reinfpar)
     return Δ
 end
 
-function forward(g::FactorGraph, ξ::Vector)
+function forward(g::FactorGraph, x::Vector)
     @extract g: L layers
     σks = deepcopy(ξ)
    for l=2:L+1
@@ -175,11 +175,12 @@ function forward(g::FactorGraph, ξ::Vector)
 end
 
 function energy(g::FactorGraph)
-    @extract g: M ξ
+    @extract g: M ξ σ
     E = 0
+
     for a=1:M
-        σks = forward(g, ξ[:,a])
-        E += energy(g.layers[end], σks, a)
+        y = forward(g, ξ[:,a])
+        E += σ[a] != y[1,1]
     end
 
     E
@@ -199,7 +200,6 @@ function dropout!(g::FactorGraph, level::Int)
 end
 
 function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
-    #W = getW(g)
     K = g.K
     L = length(K)-1
     N = K[1]

@@ -395,3 +395,18 @@ function fixY!(layer::MaxSumLayer, ξ::Matrix)
         allmy[a][i] = ξ[i,a]
     end
 end
+
+function getW(layer::L) where L <: Union{MaxSumLayer}
+    @extract layer: allm K
+    # TODO add weight_mask
+    return vcat([(sign.(allm[k] .+ 1e-10))' for k in 1:K]...)
+end
+
+function forward(layer::L, x) where L <: Union{MaxSumLayer}
+    @extract layer: N K
+    @assert size(x, 1) == N
+    W = getW(layer)
+    @assert size(W) == (K, N)
+    return sign.(W*x .+ 1e-10)
+end
+
