@@ -33,6 +33,7 @@ function runexp(;
                 lr = 0.01,
                 pdrop=0.0,
                 epochs=50,
+                B=100,
                 opt = "SGD",
                 density = 1.0)
 
@@ -45,7 +46,7 @@ function runexp(;
                        dataset=dataset,
                        cl1=cl1,
                        cl2=cl2,
-                       B=100,
+                       B=B,
                        dim_train=numex,
                        reduce_input=reduce_input,
                        comp_loss=false,
