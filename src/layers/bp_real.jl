@@ -330,24 +330,3 @@ function rangeW(layer::BPRealLayer, k)
         return 1:N
     end
 end
-
-function maketree!(layer::BPRealLayer)
-    @extract layer: K N M allm allmy allmh allpu allpd top_allpd
-    @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
-
-    @assert N % K == 0
-    layer.istree = true
-    for k=1:K
-        for i=1:N
-            (i in rangeW(layer, k)) && continue
-            allm[k][i] = 0
-        end
-    end
-    for k=1:K, a=1:M
-        for i=1:N
-            (i in rangeW(layer, k)) && continue
-            allmcav[k][a][i] = 0
-            allρcav[k][a][i] = 0
-        end
-    end
-end

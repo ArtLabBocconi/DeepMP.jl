@@ -10,7 +10,7 @@ end
 ##### COME MAI è così lento????
 ## @time g, W, teacher, E = DeepMP.solve(K=[301,5,1] ,layers=[:bpreal,:bpex]
 ##                    ,r=0.2,rstep=0.002, ry=0.2, altconv=true, altsolv=true, seedξ=1,
-##                    maxiters=1000, plotinfo=0,β=Inf, α=2.,maketree=false);
+##                    maxiters=1000, plotinfo=0,β=Inf, α=2.);
 ## @test E == 0
 ##
 ## ## 3 LAYERS

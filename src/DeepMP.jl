@@ -106,6 +106,7 @@ function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
     ξ = rand([-1.,1.], K[1], M)
     W = rand_teacher(K; density=density_teacher)
     σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
+    
     @assert (any(i -> i == 0, σ) == false)
 
     solve(ξ, σ; K=K, teacher=W, density=density, kw...)
@@ -113,8 +114,8 @@ end
 
 function solve(; K::Vector{Int} = [101,3], α=0.6,
                  seedξ::Int=-1, realξ = false,
-                 dξ::Vector{Float64} = Float64[], nξ::Vector{Int} = Int[],
-                 maketree = false, density=1, kw...)
+                 density=1, 
+                 kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
 
@@ -124,7 +125,6 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
             sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
     numW = round(Int, numW)
 
-    maketree && (numW = div(numW, K[2]))
     N = K[1]
     ξ = zeros(K[1], 1)
 
@@ -138,7 +138,7 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     σ = rand([-1,1], M)
     @assert size(ξ) == (N, M)
     # println("Mean Overlap ξ $(meanoverlap(ξ))")
-    solve(ξ, σ; K=K, maketree=maketree, density=density, kw...)
+    solve(ξ, σ; K=K, density=density, kw...)
 end
 
 function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
@@ -171,7 +171,7 @@ end
 #                 teacher::Union{VecVecVec, Nothing} = nothing,
 #                 altsolv::Bool = true, altconv::Bool = false,
 #                 seed::Int = -1, plotinfo=0,
-#                 β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
+#                 β=Inf, βms = 1., rms = 1., ndrops = 0, 
 #                 density = 1., # density of fully connected layer
 #                 use_teacher_weight_mask = true,
 #                 batchsize=-1, # only supported by some algorithms
@@ -184,7 +184,6 @@ end
 #     end
 #     initrand!(g)
 #     fixtopbottom!(g)
-#     maketree && maketree!(g.layers[2])
 #     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 #
 #     if batchsize <= 0
@@ -254,7 +253,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 teacher = nothing,
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
-                β=Inf, βms = 1., rms = 1., ndrops = 0, maketree=false,
+                β=Inf, βms = 1., rms = 1., ndrops = 0,
                 density = 1., # density of fully connected layer
                 use_teacher_weight_mask = true,
                 batchsize=-1, # only supported by some algorithms
