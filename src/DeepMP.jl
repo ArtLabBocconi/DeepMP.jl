@@ -87,34 +87,12 @@ function rand_teacher(K::Vector{Int}; density=1.)
     return W
 end
 
-function solveTS(; K::Vector{Int} = [101,3], α::Float64=0.6,
-                   seedξ::Int=-1,
-                   density = 1,
-                   density_teacher = density,
-                   kw...)
-    seedξ > 0 && Random.seed!(seedξ)
-
-    L = length(K) -1
-    density = process_density(density, L)
-    numW = length(K)==2 ? K[1]*K[2]*density[1]  :
-            sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
-    numW = round(Int, numW)
-
-    N = K[1]
-    ξ = zeros(K[1], 1)
-    M = round(Int, α * numW)
-    ξ = rand([-1.,1.], K[1], M)
-    W = rand_teacher(K; density=density_teacher)
-    σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
-    
-    @assert (any(i -> i == 0, σ) == false)
-
-    solve(ξ, σ; K=K, teacher=W, density=density, kw...)
-end
-
 function solve(; K::Vector{Int} = [101,3], α=0.6,
-                 seedξ::Int=-1, realξ = false,
-                 density=1, 
+                 seedξ::Int=-1, 
+                 realξ = false,
+                 density=1,
+                 TS = false,
+                 density_teacher = density,
                  kw...)
 
     seedξ > 0 && Random.seed!(seedξ)
@@ -126,19 +104,25 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     numW = round(Int, numW)
 
     N = K[1]
-    ξ = zeros(K[1], 1)
-
     M = round(Int, α * numW)
     if realξ
         ξ = randn(K[1], M)
     else
         ξ = rand([-1.,1.], K[1], M)
     end
-    # σ = ones(Int, M)
-    σ = rand([-1,1], M)
+    if TS
+        W = rand_teacher(K; density=density_teacher)
+        σ = Int[forward(W, ξ[:, a])[1][1] for a=1:M]
+    else
+        teacher = nothing
+        σ = rand([-1,1], M)
+    end
+    
     @assert size(ξ) == (N, M)
-    # println("Mean Overlap ξ $(meanoverlap(ξ))")
-    solve(ξ, σ; K=K, density=density, kw...)
+    @assert size(σ) == (M,)
+    @assert all(x -> x == -1 || x == 1, σ)
+
+    solve(ξ, σ; K=K, density=density, teacher=teacher, kw...)
 end
 
 function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
