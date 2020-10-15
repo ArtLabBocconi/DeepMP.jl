@@ -100,7 +100,7 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
     !isempty(outfile) && (f = open(outfile, "w"))
 
     for α in αrange
-        g, w, wT, E, stab = DeepMP.solveTS(α=α;
+        g, w, wT, E = DeepMP.solveTS(α=α;
                                            K=K,
                                            layers=layers,
                                            r=r,
@@ -191,7 +191,7 @@ function runexpMLP(;K::Vector{Int} = [501,5,1],
     !isempty(outfile) && (f = open(outfile, "w"))
 
     for ρ in ρrange
-        g, w, wT, E, stab, it = DeepMP.solve(xtrn, ytrn;
+        g, w, wT, E, it = DeepMP.solve(xtrn, ytrn;
                                              K=K,
                                              layers=layers,
                                              h0=h0,

@@ -38,7 +38,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
     for it = 1:maxiters
 
         Δ = update!(g, reinfpar)
-        E, h = energy(g)
+        E = energy(g)
 
         # verbose > 0 && @printf("it=%d \t params E=%d \t Δ=%f \n",
         #                         it, reinfpar.r, reinfpar.ry, E, Δ)
@@ -223,7 +223,7 @@ end
 #                 end
 #                 fixtopbottom!(g)
 #             end
-#             E, stab = energy(g)
+#             E = energy(g)
 #
 #             println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
 #             update_reinforcement!(reinfpar)
@@ -232,8 +232,8 @@ end
 #         end
 #     end
 #
-#     E, stab = energy(g)
-#     return g, getW(g), teacher, E, stab
+#     E = energy(g)
+#     return g, getW(g), teacher, E
 # end
 
 function solve(ξ::Matrix, σ::Vector{Int};
@@ -337,13 +337,12 @@ function solve(ξ::Matrix, σ::Vector{Int};
     if batchsize > 0
         w = getW(g)
         E = sum(Int[forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
-        stab = -1
         # g.layers[1] = InputLayer(ξ)
         # g.layers[end] = OutputLayer(σ, β=β)
     else
-        E, stab = energy(g)
+        E = energy(g)
     end
-    return g, getW(g), teacher, E, stab, it
+    return g, getW(g), teacher, E,  it
 end
 
 end #module

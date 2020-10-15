@@ -73,7 +73,7 @@ function runexp(;
     K = [size(xtrn)[1], h..., 1]
     layers = [:bpacc for _ = 1:length(K)-1]
 
-    g, wbp, wt, E, stab, it = DeepMP.solve(Array{Float64}(xtrn), ytrn,
+    g, wbp, wt, E, it = DeepMP.solve(Array{Float64}(xtrn), ytrn,
                                            seed=seed,
                                            K=K,
                                            layers=layers,

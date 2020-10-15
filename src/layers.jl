@@ -60,13 +60,13 @@ forward(lay::ParityLayer, ξ::Vector) = forwardParity(lay, ξ)
 function forward(W::Vector{Vector{T}}, ξ::Vector) where T <: Number
     stability = map(w->dot(ξ, w), W)
     σks = Int[signB(stability[k]) for k=1:length(W)]
-    return σks, stability
+    return σks
 end
 
 function forward(W::VecVecVec, x::Vector)
     L = length(W)
     for l = 1:L
-        x, _ = forward(W[l], x)
+        x = forward(W[l], x)
     end
     return x
 end
@@ -88,10 +88,9 @@ function forwardParity(lay::AbstractLayer, ξ::Vector)
     @assert N==2
     @assert K==1
     W = getWReal(lay)
-    stability = 0.
     σks = [sign(ξ[1]*ξ[2])]
 
-    return σks, stability
+    return σks
 end
 
 # initYBottom!(lay::AbstractLayer, a::Int) = updateVarY!(lay, a) #TODO define for every layer mutable struct

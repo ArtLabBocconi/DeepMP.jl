@@ -168,24 +168,21 @@ end
 function forward(g::FactorGraph, ξ::Vector)
     @extract g: L layers
     σks = deepcopy(ξ)
-    stability = Vec()
-    for l=2:L+1
-        σks, stability = forward(layers[l], σks)
+   for l=2:L+1
+        σks = forward(layers[l], σks)
     end
-    return σks, stability
+    return σks
 end
 
 function energy(g::FactorGraph)
     @extract g: M ξ
     E = 0
-    stability = zeros(M)
     for a=1:M
-        σks, stab = forward(g, ξ[:,a])
-        stability[a] = sum(stab)
+        σks = forward(g, ξ[:,a])
         E += energy(g.layers[end], σks, a)
     end
 
-    E, stability
+    E
 end
 
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
