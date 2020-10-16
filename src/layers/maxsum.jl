@@ -27,10 +27,9 @@ mutable struct MaxSumLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     βms::Float64
-    rms::Float64
 end
 
-function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., rms=1.)
+function MaxSumLayer(K::Int, N::Int, M::Int; βms=1.)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -55,12 +54,12 @@ function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., rms=1.)
         , allh, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
-        , βms, rms)
+        , βms)
 end
 
 
-function updateVarW!(layer::MaxSumLayer, k::Int, r::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy allh rms
+function updateVarW!(layer::MaxSumLayer, k::Int, r=1.)
+    @extract layer K N M allm allmy allmh allpu allpd allhy allh
     @extract layer bottom_allpu top_allpd
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -73,7 +72,7 @@ function updateVarW!(layer::MaxSumLayer, k::Int, r::Float64=0.)
     for i=1:N
         mhw = allmhcavtow[k][i]
         mcav = allmcav[k]
-        h[i] = sum(mhw) + rms*h[i]
+        h[i] = sum(mhw) + r*h[i]
         h[i] += h[i] == 0 ? rand([-1,1]) : 0
         oldm = m[i]
         m[i] = h[i]
@@ -136,7 +135,7 @@ function initYBottom!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
     my = allmy[a]
     hy = allhy[a]
     ξ = layer.bottom_layer.ξ
-    @assert layer.bottom_layer.isbinary
+    @assert all(x -> x==1 || x==-1, ξ) # works only on binary input
     for i=1:N
         hy[i] = sign(ξ[i, a]) * 100
         my[i] = hy[i]
@@ -395,3 +394,18 @@ function fixY!(layer::MaxSumLayer, ξ::Matrix)
         allmy[a][i] = ξ[i,a]
     end
 end
+
+function getW(layer::L) where L <: Union{MaxSumLayer}
+    @extract layer: allm K
+    # TODO add weight_mask
+    return vcat([(sign.(allm[k] .+ 1e-10))' for k in 1:K]...)
+end
+
+function forward(layer::L, x) where L <: Union{MaxSumLayer}
+    @extract layer: N K
+    @assert size(x, 1) == N
+    W = getW(layer)
+    @assert size(W) == (K, N)
+    return sign.(W*x .+ 1e-10)
+end
+

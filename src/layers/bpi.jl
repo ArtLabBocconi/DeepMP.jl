@@ -222,3 +222,16 @@ function fixY!(layer::L, ξ::Matrix) where {L <: Union{BPILayer}}
         allmy[a][i] = ξ[i,a]
     end
 end
+
+function getW(layer::L) where L <: Union{BPILayer}
+    @extract layer: weight_mask allm K
+    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k])' for k in 1:K]...)
+end
+
+function forward(layer::L, x) where L <: Union{BPILayer}
+    @extract layer: N K
+    @assert size(x, 1) == N
+    W = getW(layer)
+    @assert size(W) == (K, N)
+    return sign.(W*x .+ 1e-10)
+end

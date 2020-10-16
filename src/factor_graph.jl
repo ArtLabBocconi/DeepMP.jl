@@ -1,34 +1,34 @@
-
 mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
-    M::Int
+    M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
     ξ::Matrix{Float64}
     σ::Vector{Int}
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
                                    # Weight with layers are those in 2:L+1
-    dropout::Dropout
     density # weight density (ONLY FOR bp family as of yet)
 
-    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}
-                , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0,
+    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}, 
+                K::Vector{Int}, 
+                layertype::Vector{Symbol}; 
+                β=Inf, βms = 1.,
                 density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
-        
+
         L = length(K)-1
         density = process_density(density, L)
-        numW = length(K)==2 ? K[1]*K[2]*density[1]  : 
+        numW = length(K)==2 ? K[1]*K[2]*density[1]  :
             sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
         numW = round(Int, numW)
         @assert K[1]==N
         verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
-        
+
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(ξ))
         verbose > 0 &&  println("Created InputLayer")
 
-        
+
         for l=1:L
             if  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
@@ -50,7 +50,7 @@ mutable struct FactorGraph
                 push!(layers, BPILayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :ms
-                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
+                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms))
                 verbose > 0 && println("Created MaxSumLayer\t $(K[l])")
             elseif  layertype[l] == :parity
                 @assert l == L
@@ -65,16 +65,14 @@ mutable struct FactorGraph
             end
         end
 
-        push!(layers, OutputLayer(σ,β=β))
+        push!(layers, OutputLayer(σ, β=β))
         verbose > 0 && println("Created OutputLayer")
 
         for l=1:L+1
             chain!(layers[l], layers[l+1])
         end
 
-        dropout = Dropout()
-        add_rand_drops!(dropout, 3, K[2], M, ndrops)
-        new(K, M, L, ξ, σ, layers, dropout)
+        new(K, M, L, ξ, σ, layers)
     end
 end
 
@@ -93,7 +91,7 @@ end
 
 function set_weight_mask!(g::FactorGraph, W)
     @assert length(W) == g.L
-    for l=1:g.L-1
+    for l=1:g.L
         K = length(W[l])
         mask = [map(x-> x==0 ? 0 : 1, W[l][k]) for k=1:K]
         set_weight_mask!(g.layers[l+1], mask)
@@ -107,15 +105,50 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
+function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
+    for l = 2:g.L+1
+        for k = 1:g.layers[l].K
+            g.layers[l].allhext[k] .= ρ .* h0[l-1][k] .* g.layers[l].weight_mask[k]
+        end
+    end
+end
+
+function copy_mags!(g1::FactorGraph, g2::FactorGraph)
+    for l = 2:g1.L+1
+        for k in 1:g1.layers[l].K
+            g1.layers[l].allm[k] .= g2.layers[l].allm[k]
+        end
+    end
+end
+
+
+function copy_allh!(hext, g::FactorGraph; ρ=1.0)
+    for l = 2:g.L+1
+        for k in 1:g.layers[l].K
+            @assert all(isfinite, g.layers[l].allh[k])
+            hext[l-1][k] .= ρ .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
+        end
+    end
+end
+
+function get_allh(g::FactorGraph)
+    [layer.allh for layer in g.layers[2:g.L+1]]
+end
+
+function init_hext(K::Vector{Int}; ϵ=0.0)
+    hext = [[ϵ .* rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
+    return hext
+end
+
 function initrand!(g::FactorGraph)
-    @extract g M layers K ξ
+    @extract g: M layers K ξ
     for lay in layers[2:end-1]
         initrand!(lay)
     end
 end
 
 function fixtopbottom!(g::FactorGraph)
-    @extract g M layers K ξ
+    @extract g: M layers K ξ
     if g.L != 1
         fixW!(g.layers[end-1], 1.)
     end
@@ -125,56 +158,37 @@ end
 
 function update!(g::FactorGraph, reinfpar)
     Δ = 0. # Updating layer $(lay.l)")
-    for l=2:g.L+1
-        dropout!(g, l+1)
+    # for l=2:g.L+1
+    # for l in shuffle([2:g.L+1]...)
+    for l = (g.L+1):-1:2
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end
     return Δ
 end
 
-function forward(g::FactorGraph, ξ::Vector)
+function forward(g::FactorGraph, x)
     @extract g: L layers
-    σks = deepcopy(ξ)
-    stability = Vec()
-    for l=2:L+1
-        σks, stability = forward(layers[l], σks)
+   for l=2:L+1
+        x = forward(layers[l], x)
     end
-    return σks, stability
+    return x
 end
 
 function energy(g::FactorGraph)
-    @extract g: M ξ
-    E = 0
-    stability = zeros(M)
-    for a=1:M
-        σks, stab = forward(g, ξ[:,a])
-        stability[a] = sum(stab)
-        E += energy(g.layers[end], σks, a)
-    end
-
-    E, stability
+    @extract g: ξ σ
+    y = forward(g, ξ) |> vec
+    return sum(y .!= σ)
 end
 
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
 
 getW(g::FactorGraph) = [getW(lay) for lay in g.layers[2:end-1]]
 
-function dropout!(g::FactorGraph, level::Int)
-    @extract g: dropout layers
-    !haskey(dropout.drops, level) && return
-    pd = layers[level].allpd
-    for (k, μ) in dropout.drops[level]
-        pd[k][μ] = 0.5
-    end
-end
-
 function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
-    #W = getW(g)
     K = g.K
     L = length(K)-1
     N = K[1]
-    #N = length(W[1][1])
     layers = g.layers[2:end-1]
     @assert length(layers) == L
     width = info

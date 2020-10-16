@@ -599,7 +599,6 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
                 δ = updateVarW!(layer, k, i, reinfpar)
                 Δ = max(δ, Δ)
             end
-
         end
     end
     if !isbottomlayer(layer)
@@ -686,3 +685,16 @@ function fixY!(layer::L, ξ::Matrix) where {L <: Union{BPLayer, BPAccurateLayer,
         allmycav[a][k][i] = allmy[a][i]
     end
 end
+
+function getW(layer::L) where L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}
+    @extract layer: weight_mask allm K
+    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k])' for k in 1:K]...)
+end
+
+function forward(layer::L, x) where L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}
+    @extract layer: N K
+    @assert size(x, 1) == N
+    W = getW(layer)
+    return sign.(W*x .+ 1e-10)
+end
+
