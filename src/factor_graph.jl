@@ -204,7 +204,7 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
 
         info == 0 && continue
 
-        subplot(L,width,width*(L-l)+1)
+        subplot(L, width,width*(L-l)+1)
         title("W Overlaps Layer $l")
         xlim(-1.01,1.01)
         #plt[:hist](q)
