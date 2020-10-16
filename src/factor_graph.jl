@@ -12,7 +12,7 @@ mutable struct FactorGraph
     function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}, 
                 K::Vector{Int}, 
                 layertype::Vector{Symbol}; 
-                β=Inf, βms = 1.,rms =1.,
+                β=Inf, βms = 1.,
                 density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
@@ -51,7 +51,7 @@ mutable struct FactorGraph
                 push!(layers, BPILayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :ms
-                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms, rms=rms))
+                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms))
                 verbose > 0 && println("Created MaxSumLayer\t $(K[l])")
             elseif  layertype[l] == :parity
                 @assert l == L

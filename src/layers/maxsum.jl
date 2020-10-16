@@ -27,10 +27,9 @@ mutable struct MaxSumLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     βms::Float64
-    rms::Float64
 end
 
-function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., rms=1.)
+function MaxSumLayer(K::Int, N::Int, M::Int; βms=1.)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -55,12 +54,12 @@ function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., rms=1.)
         , allh, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
-        , βms, rms)
+        , βms)
 end
 
 
-function updateVarW!(layer::MaxSumLayer, k::Int, r::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy allh rms
+function updateVarW!(layer::MaxSumLayer, k::Int, r=1.)
+    @extract layer K N M allm allmy allmh allpu allpd allhy allh
     @extract layer bottom_allpu top_allpd
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -73,7 +72,7 @@ function updateVarW!(layer::MaxSumLayer, k::Int, r::Float64=0.)
     for i=1:N
         mhw = allmhcavtow[k][i]
         mcav = allmcav[k]
-        h[i] = sum(mhw) + rms*h[i]
+        h[i] = sum(mhw) + r*h[i]
         h[i] += h[i] == 0 ? rand([-1,1]) : 0
         oldm = m[i]
         m[i] = h[i]
