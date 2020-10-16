@@ -107,28 +107,33 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
 end
 
 function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
-    # @extract g K
-    # for l = 1:length(K)-1
-    #     @assert length(h0[l]) == K[l+1]
-    #     for k = 1:K[l+1]
-    #         g.layers[l+1].allhext[k] .= ρ .* h0[l][k] .* g.layers[l+1].weight_mask[k]
-    #     end
-    # end
     for l = 2:g.L+1
-        # @assert length(h0[l]) == K[l+1]
         for k = 1:g.layers[l].K
             g.layers[l].allhext[k] .= ρ .* h0[l-1][k] .* g.layers[l].weight_mask[k]
         end
     end
 end
 
-function copy_allh(g::FactorGraph, hext; ρ=1.0)
+function copy_mags!(g1::FactorGraph, g2::FactorGraph)
+    for l = 2:g1.L+1
+        for k in 1:g1.layers[l].K
+            g1.layers[l].allm[k] .= g2.layers[l].allm[k]
+        end
+    end
+end
+
+
+function copy_allh!(hext, g::FactorGraph; ρ=1.0)
     for l = 2:g.L+1
         for k in 1:g.layers[l].K
             @assert all(isfinite, g.layers[l].allh[k])
             hext[l-1][k] .= ρ .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
         end
     end
+end
+
+function get_allh(g::FactorGraph)
+    [layer.allh for layer in g.layers[2:g.L+1]]
 end
 
 function init_hext(K::Vector{Int}; ϵ=0.0)

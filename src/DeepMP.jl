@@ -217,82 +217,62 @@ end
 function solve(ξ::Matrix, σ::Vector{Int};
                 xtest = [], ytest = [],
                 maxiters::Int = 10000,
-                ϵ::Float64 = 1e-4,
+                ϵ::Float64 = 1e-4,              # convergence criteirum
                 K::Vector{Int} = [101, 3, 1],
                 layers=[:tap,:tapex,:tapex],
-                r = 0., rstep = 0.001,
-                ry = 0., rystep = 0.0,
-                ψ = 0., # dumping coefficient
-                y = -1, # focusing
-                # h0::Union{VecVecVec, Nothing} = nothing,
-                h0 = nothing,
-                ρ = 1.0,
-                ρstep = 1.0,
-                # teacher::Union{VecVecVec, Nothing} = nothing,
+                r = 0., rstep = 0.001,          # reinforcement parameters for W vars
+                ry = 0., rystep = 0.0,          # reinforcement parameters for Y vars
+                ψ = 0.,                         # dumping coefficient
+                y = -1,                         # focusing BP parameter
+                h0 = nothing,                   # external field
+                ρ = 1.0,                        # coefficient for external field
                 teacher = nothing,
-                altsolv::Bool = true, altconv::Bool = false,
+                altsolv::Bool = true, 
+                altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1., 
-                density = 1., # density of fully connected layer
-                use_teacher_weight_mask = true,
-                batchsize=-1, # only supported by some algorithms
+                density = 1.,                   # density of fully connected layer
+                batchsize=-1,                   # only supported by some algorithms
                 epochs::Int = 1000,
-                verbose::Int = 1,
-                verbose_in::Int = 0)
+                verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
+    N, M = size(ξ)
+    g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, density=density)
+    h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
+    teacher !== nothing && set_weight_mask!(g, teacher)
+    initrand!(g)
+    fixtopbottom!(g)
+    reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     if batchsize <= 0
-        g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, density=density)
-
-        (h0 != nothing) && (set_external_fields!(g, h0; ρ=ρ);
-                            teacher = deepcopy(h0))
-        (teacher != nothing) && set_weight_mask!(g, teacher)
-        initrand!(g)
-        fixtopbottom!(g)
-        reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
-
         it, e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-                                altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                                teacher=teacher, verbose=verbose)
+                            altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
+                            teacher=teacher, verbose=verbose)
     else
-        N, M = size(ξ)
-        @info "Num pattern = $M (N=$N)"
-
-        initbatch = create_minibatch(M, batchsize)
-        g = FactorGraph(ξ[:,initbatch], σ[initbatch], K, layers, β=β, βms=βms,
-                        density=density, verbose=0)
-        (h0 == nothing) ? (hext = init_hext(K; ϵ=0.0)) :
-                          (hext = deepcopy(h0); teacher = deepcopy(h0))
-        set_external_fields!(g, hext; ρ=ρ)
-        (teacher != nothing) && set_weight_mask!(g, teacher)
-        initrand!(g)
-        fixtopbottom!(g)
-        reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
-
+        hext = get_allh(g)
+        
         for epoch = 1:epochs
-            converged = 0
-            solved = 0
-            meaniters = 0
+            converged = solved = meaniters = 0
             minibatches = create_minibatches(M, batchsize)
             for (b, batch) in enumerate(minibatches)
 
-                w = getW(g)
-                g = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
-                                density=1., verbose=0)
-                (teacher != nothing) ? set_weight_mask!(g, teacher) : set_weight_mask!(g, w)
-                initrand!(g)
-                fixtopbottom!(g)
-                set_external_fields!(g, hext; ρ=1.0)
+                gbatch = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
+                                density=density, verbose=0)
+                (teacher != nothing) && set_weight_mask!(g, teacher)
+                initrand!(gbatch)
+                fixtopbottom!(gbatch)
+                set_external_fields!(gbatch, hext; ρ=ρ)
 
-                it, e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, #reinfpar=ReinfParams(),
+                it, e, δ = converge!(gbatch, maxiters=maxiters, ϵ=ϵ, #reinfpar=ReinfParams(),
                                         reinfpar=reinfpar,
                                         altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                                        teacher=teacher, verbose=verbose_in)
+                                        teacher=teacher, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)
                 meaniters += it
-                copy_allh(g, hext; ρ=1.0)
+                copy_allh!(hext, gbatch)
+                copy_mags!(g, gbatch)
 
                 print("b = $b / $(length(minibatches))\r")
             end
@@ -306,12 +286,8 @@ function solve(ξ::Matrix, σ::Vector{Int};
             @printf("Epoch %i (conv=%g, solv=%g <it>=%g): E=%i Eg=%g r=%g rstep=%g ρ=%g\n",
                      epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                      E, Eg, reinfpar.r, reinfpar.rstep, ρ)
-            update_reinforcement!(reinfpar)
             plot_info(g, 0, verbose=verbose, teacher=teacher)
-            altsolv && (E==0) && break
-            #ρ *= (1.0 - ρstep)
-            # ρ -= ρstep
-            # ρ < 0.0 && break
+            E==0 && break
         end
     end
     
