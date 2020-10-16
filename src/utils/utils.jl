@@ -21,24 +21,23 @@ function meanoverlap(ξ::Matrix)
     return q / N / (0.5*M*(M-1))
 end
 
-function create_minibatches(M::Int, batchsize::Int)
-    batchsize > M && (@warn "Batchsize ($batchsize) > M ($M)")
-
-    num_batches = M ÷ batchsize + ((M % batchsize) == 0 ? 0 : 1)
-    patt_perm = randperm(M)
-    minibatches = Vector{Int}[]
-    for b = 1:num_batches
-        first = (batchsize*(b-1)+1)
-        last = (batchsize * b > M ? M : batchsize * b)
-        batch = patt_perm[first:last]
-        push!(minibatches, batch)
+#TODO use vector of matrix teacher
+function rand_teacher(K::Vector{Int}; density=1.)
+    L = length(K)-1
+    @assert K[L+1] == 1
+    density = process_density(density, L)
+    
+    T = Float64
+    W = Vector{Vector{Vector{T}}}()
+    for l=1:L
+        push!(W, [rand(T[-1,1], K[l]) for k=1:K[l+1]])
+        for k in 1:K[l+1]
+            W[l][k] .*= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
+        end
     end
-    @assert length(minibatches) == num_batches
-    return minibatches
+    if L > 1
+        W[L][1] .= 1
+    end
+    return W
 end
-function create_minibatch(M::Int, batchsize::Int)
-    batchsize > M && (@warn "Batchsize ($batchsize) > M ($M)")
-    last = (batchsize > M ? M : batchsize)
-    batch = randperm(M)[1:last]
-    return batch
-end
+

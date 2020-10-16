@@ -2,6 +2,7 @@
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,7,1]
                 , layers=[:bpi, :bpex]
+                , verbose=0
                 , r=.8, rstep=0.01, ry=0., seedξ=2, maxiters=500);
 @test E == 0
 
@@ -9,12 +10,15 @@
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,11,3,1]
            , layers=[:bpi, :bpacc, :bpex]
+           , verbose=0
            , r=0.9, rstep=0.01, ry=0.0, seedξ=1, maxiters=300);
 @test E == 0
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,11,3,1]
            , layers=[:bpi, :bpi, :bpex]
+           , verbose=0
            , r=0.9, rstep=0.01, ry=0.0, seedξ=1, maxiters=300);
+           
 @test E == 0
 
 # for lay in [:tapex] #TODO  :bpex non ce la fa

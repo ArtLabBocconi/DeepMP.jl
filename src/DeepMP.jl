@@ -7,7 +7,7 @@ using Printf
 using Random
 using LinearAlgebra
 using Statistics
-# using Flux
+using Base: @propagate_inbounds # for DataLoader
 
 # using PyPlot
 
@@ -21,6 +21,7 @@ const IVecVecVec = Vector{IVecVec}
 
 include("utils/utils.jl")
 include("utils/functions.jl")
+include("utils/dataloader.jl")
 include("utils/Magnetizations.jl")
 using .Magnetizations
 
@@ -39,52 +40,21 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
         Δ = update!(g, reinfpar)
         E = energy(g)
 
-        # verbose > 0 && @printf("it=%d \t params E=%d \t Δ=%f \n",
-        #                         it, reinfpar.r, reinfpar.ry, E, Δ)
-        verbose > 0 && (reinfpar.y > 0 ?
-                        @printf("it=%d \t (pol=%.3f, y=%.1f) \t E=%d \t Δ=%f \n",
-                                 it, tanh(reinfpar.r), reinfpar.y, E, Δ) :
-                        @printf("it=%d \t (r=%.3f, ry=%.3f) \t E=%d \t Δ=%f \n",
-                                 it, reinfpar.r, reinfpar.ry, E, Δ))
-        # println(h)
+        verbose > 0 && @printf("it=%d \t (r=%f ry=%f) E=%d \t Δ=%f \n",
+                                it, reinfpar.r, reinfpar.ry, E, Δ)
+        
         plotinfo >=0  && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
             return it, E, Δ
-            #break
         end
         if altconv && Δ < ϵ
             verbose > 0 && println("Converged!")
             return it, E, Δ
-            #break
         end
     end
     return maxiters, 1, 1.0
-end
-
-#TODO use vector of matrix teacher
-function rand_teacher(K::Vector{Int}; density=1.)
-    L = length(K)-1
-    @assert K[L+1] == 1
-
-    if isa(density, Number)
-        density = fill(density, L)
-    end
-    @assert length(density) == L
-
-    T = Float64
-    W = Vector{Vector{Vector{T}}}()
-    for l=1:L
-        push!(W, [rand(T[-1,1], K[l]) for k=1:K[l+1]])
-        for k in 1:K[l+1]
-            W[l][k] .*= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
-        end
-    end
-    if L > 1
-        W[L][1] .= 1
-    end
-    return W
 end
 
 function solve(; K::Vector{Int} = [101,3], α=0.6,
@@ -129,90 +99,13 @@ function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
     m = mean(ξ0)
     m1, m2 = minimum(ξ0), maximum(ξ0)
     Δ = max(abs(m1-m), abs(m2-m))
-    ξ = zeros(N, M)
-    for i=1:N, a=1:M
-        ξ[i,a] = (ξ0[i,a] - m) / Δ
-    end
+    ξ = (ξ0 .- m) ./ Δ
     @assert all(-1 .<= ξ .<= 1.)
     σ = round(Int, reshape(h5["label"][:,1:M], M) + 1)
     σ = Int[σ==1 ? 1 : -1 for σ in σ]
     solve(ξ, σ; K=K, kw...)
 end
 
-# function solve(ξ::Matrix, σ::Vector{Int};
-#                 maxiters::Int = 10000, ϵ::Float64 = 1e-4,
-#                 epochs::Int = 10000,
-#                 K::Vector{Int} = [101, 3, 1],layers=[:tap,:tapex,:tapex],
-#                 r = 0., rstep = 0.001,
-#                 ry = 0., rystep = 0.0,
-#                 ψ = 0., # dumping coefficient
-#                 y = -1, # focusing
-#                 teacher::Union{VecVecVec, Nothing} = nothing,
-#                 altsolv::Bool = true, altconv::Bool = false,
-#                 seed::Int = -1, plotinfo=0,
-#                 β=Inf, βms = 1., rms = 1., ndrops = 0, 
-#                 density = 1., # density of fully connected layer
-#                 use_teacher_weight_mask = true,
-#                 batchsize=-1, # only supported by some algorithms
-#                 verbose::Int = 1)
-#
-#     seed > 0 && Random.seed!(seed)
-#     g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
-#     if use_teacher_weight_mask
-#         set_weight_mask!(g, teacher)
-#     end
-#     initrand!(g)
-#     fixtopbottom!(g)
-#     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
-#
-#     if batchsize <= 0
-#         converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-#                 altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-#                 teacher=teacher, verbose=verbose)
-#     else
-#         dtrain = Flux.Data.DataLoader((ξ, σ), batchsize=batchsize, shuffle=true)
-#         for epoch=1:epochs
-#             for (x, y) in dtrain
-#                 gbatch = FactorGraph(x, y, K, layers, β=β, βms=βms,
-#                                 rms=rms, ndrops=ndrops, density=density, verbose=0)
-#                 set_weight_mask!(gbatch, g)
-#                 initrand!(gbatch)
-#                 fixtopbottom!(gbatch)
-#
-#                 for l=2:gbatch.L+1
-#                     for k in 1:g.layers[l].K
-#                         gbatch.layers[l].allhext[k] .= g.layers[l].allhext[k]
-#                         # gbatch.layers[l].allh[k] .= g.layers[l].allh[k]
-#                     end
-#                 end
-#
-#                 converge!(gbatch, maxiters=maxiters, ϵ=ϵ, reinfpar=ReinfParams(),
-#                     altsolv=false, altconv=true, plotinfo=plotinfo,
-#                     teacher=teacher, verbose=0)
-#
-#                 for l=2:gbatch.L+1
-#                     for k in 1:g.layers[l].K
-#                         @assert all(isfinite, gbatch.layers[l].allh[k])
-#                         # g.layers[l].allhext[k] .= reinfpar.r * gbatch.layers[l].allh[k]
-#                         g.layers[l].allhext[k] .= gbatch.layers[l].allh[k]
-#                         # g.layers[l].allh[k] .= gbatch.layers[l].allh[k]
-#                         g.layers[l].allm[k] .= tanh.(gbatch.layers[l].allh[k])
-#                     end
-#                 end
-#                 fixtopbottom!(g)
-#             end
-#             E = energy(g)
-#
-#             println("Epoch $epoch: E=$E r=$(reinfpar.r)  rstep=$(reinfpar.rstep)")
-#             update_reinforcement!(reinfpar)
-#             plot_info(g, 0, verbose=verbose, teacher=teacher)
-#             altsolv && (E==0) && break
-#         end
-#     end
-#
-#     E = energy(g)
-#     return g, getW(g), teacher, E
-# end
 
 function solve(ξ::Matrix, σ::Vector{Int};
                 xtest = [], ytest = [],
@@ -237,12 +130,13 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
-    N, M = size(ξ)
+    
     g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, density=density)
     h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
     fixtopbottom!(g)
+    
     reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
 
     if batchsize <= 0
@@ -251,15 +145,14 @@ function solve(ξ::Matrix, σ::Vector{Int};
                             teacher=teacher, verbose=verbose)
     else
         hext = get_allh(g)
-        
+        dtrain = DataLoader((ξ, σ), batchsize=batchsize, shuffle=true)
+            
         for epoch = 1:epochs
             converged = solved = meaniters = 0
-            minibatches = create_minibatches(M, batchsize)
-            for (b, batch) in enumerate(minibatches)
-
-                gbatch = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
+            for (b, (x, y)) in enumerate(dtrain)
+                gbatch = FactorGraph(x, y, K, layers, β=β, βms=βms,
                                 density=density, verbose=0)
-                (teacher != nothing) && set_weight_mask!(g, teacher)
+                (teacher !== nothing) && set_weight_mask!(g, teacher)
                 initrand!(gbatch)
                 fixtopbottom!(gbatch)
                 set_external_fields!(gbatch, hext; ρ=ρ)
@@ -274,11 +167,11 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 copy_allh!(hext, gbatch)
                 copy_mags!(g, gbatch)
 
-                print("b = $b / $(length(minibatches))\r")
+                print("b = $b / $(length(dtrain))\r")
             end
             
             E = sum(vec(forward(g, ξ)) .!= σ)
-            num_batches = length(minibatches)
+            num_batches = length(dtrain)
             Eg = 0.0
             if !isempty(ytest) 
                 Eg = mean(vec(forward(g, xtest)) .!= ytest)
