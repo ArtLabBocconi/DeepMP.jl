@@ -7,11 +7,12 @@ mutable struct FactorGraph
     σ::Vector{Int}
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
                                    # Weight with layers are those in 2:L+1
-    dropout::Dropout
     density # weight density (ONLY FOR bp family as of yet)
 
-    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}
-                , K::Vector{Int}, layertype::Vector{Symbol}; β=Inf, βms = 1.,rms =1., ndrops=0,
+    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}, 
+                K::Vector{Int}, 
+                layertype::Vector{Symbol}; 
+                β=Inf, βms = 1.,rms =1.,
                 density=1., verbose=1)
         N, M = size(ξ)
         @assert length(σ) == M
@@ -72,9 +73,7 @@ mutable struct FactorGraph
             chain!(layers[l], layers[l+1])
         end
 
-        dropout = Dropout()
-        add_rand_drops!(dropout, 3, K[2], M, ndrops)
-        new(K, M, L, ξ, σ, layers, dropout)
+        new(K, M, L, ξ, σ, layers)
     end
 end
 
@@ -158,7 +157,6 @@ function update!(g::FactorGraph, reinfpar)
     # for l=2:g.L+1
     # for l in shuffle([2:g.L+1]...)
     for l = (g.L+1):-1:2
-        dropout!(g, l+1)
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end
@@ -182,15 +180,6 @@ end
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
 
 getW(g::FactorGraph) = [getW(lay) for lay in g.layers[2:end-1]]
-
-function dropout!(g::FactorGraph, level::Int)
-    @extract g: dropout layers
-    !haskey(dropout.drops, level) && return
-    pd = layers[level].allpd
-    for (k, μ) in dropout.drops[level]
-        pd[k][μ] = 0.5
-    end
-end
 
 function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     K = g.K

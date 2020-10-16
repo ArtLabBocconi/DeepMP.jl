@@ -25,7 +25,6 @@ include("utils/Magnetizations.jl")
 using .Magnetizations
 
 include("layers.jl")
-include("dropout.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
 
@@ -233,7 +232,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 teacher = nothing,
                 altsolv::Bool = true, altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
-                β=Inf, βms = 1., rms = 1., ndrops = 0,
+                β=Inf, βms = 1., rms = 1.,
                 density = 1., # density of fully connected layer
                 use_teacher_weight_mask = true,
                 batchsize=-1, # only supported by some algorithms
@@ -244,7 +243,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
     seed > 0 && Random.seed!(seed)
 
     if batchsize <= 0
-        g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, ndrops=ndrops, density=density)
+        g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, rms=rms, density=density)
 
         (h0 != nothing) && (set_external_fields!(g, h0; ρ=ρ);
                             teacher = deepcopy(h0))
@@ -262,7 +261,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
 
         initbatch = create_minibatch(M, batchsize)
         g = FactorGraph(ξ[:,initbatch], σ[initbatch], K, layers, β=β, βms=βms,
-                        rms=rms, ndrops=ndrops, density=density, verbose=0)
+                        rms=rms, density=density, verbose=0)
         (h0 == nothing) ? (hext = init_hext(K; ϵ=0.0)) :
                           (hext = deepcopy(h0); teacher = deepcopy(h0))
         set_external_fields!(g, hext; ρ=ρ)
@@ -280,7 +279,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
 
                 w = getW(g)
                 g = FactorGraph(ξ[:,batch], σ[batch], K, layers, β=β, βms=βms,
-                                rms=rms, ndrops=ndrops, density=1., verbose=0)
+                                rms=rms, density=1., verbose=0)
                 (teacher != nothing) ? set_weight_mask!(g, teacher) : set_weight_mask!(g, w)
                 initrand!(g)
                 fixtopbottom!(g)
