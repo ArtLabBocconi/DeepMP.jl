@@ -594,13 +594,11 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
             k = (u-M-1) ÷ N + 1
             i = (u-M-1) % N + 1
 
-            # if !istoplayer(layer) || isonlylayer(layer)
-            if true
+            if !istoplayer(layer) || isonlylayer(layer)
                 # println("Updating W")
                 δ = updateVarW!(layer, k, i, reinfpar)
                 Δ = max(δ, Δ)
             end
-
         end
     end
     if !isbottomlayer(layer)

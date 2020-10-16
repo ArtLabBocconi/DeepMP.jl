@@ -146,7 +146,7 @@ end
 function fixtopbottom!(g::FactorGraph)
     @extract g M layers K ξ
     if g.L != 1
-        # fixW!(g.layers[end-1], 1.)
+        fixW!(g.layers[end-1], 1.)
     end
 
     fixY!(g.layers[2], ξ)
