@@ -2,18 +2,16 @@ module runexp
 
 using Statistics, LinearAlgebra, Random, Printf
 
-include("../src/DeepMP.jl")
+using DeepMP
 
 function gen_error(w, wT; α=1.0, N=0, M=0)
 
     N == 0 && (N = length(w[1][1]))
     M == 0 && (M = round(Int, N * α))
-    ξ = rand([-1.,1.], length(w[1][1]), M)
-    σ = Int[DeepMP.forward(wT, ξ[:, a])[1][1] for a=1:M]
-    @assert (any(i -> i == 0, σ) == false)
-
-    Egen =  sum(Int[DeepMP.forward(w, ξ[:, a])[1][1] != σ[a] for a=1:(size(ξ)[2])])
-    return Egen
+    x = rand([-1.,1.], N, M)
+    y = Int.(DeepMP.forward(wT, x)) |> vec
+    ŷ = Int.(DeepMP.forward(w, x)) |> vec
+    return sum(y .!= ŷ)    
 end
 
 function ts_overlap(w, wt)
@@ -37,34 +35,6 @@ function ts_overlap(w, wt)
         # println("l=$l, K=$K Q=$Q Qts=$Qts")
     end
     return Qts / L
-end
-
-function overlaps(g, l)
-    K = g.K
-    L = length(K)-1
-    @assert (l <= L)
-    N = K[1]
-    layer = g.layers[2:end-1][l]
-
-    mask = layer.weight_mask
-
-    q0 = Float64[]
-    for k=1:K[l+1]
-        #norm = K[l] * mean(mask[k])
-        norm = sum(mask[k])
-        #push!(q0, dot(layers[l].allm[k], layers[l].allm[k])/K[l])
-        push!(q0, dot(layer.allm[k], layer.allm[k]) / norm)
-    end
-    qab = Float64[]
-    for k=1:K[l+1]
-        for p=k+1:K[l+1]
-            norm = sqrt(q0[k] * q0[p]) * K[l] * sqrt(mean(mask[k]) * mean(mask[p]))
-            #push!(qWαβ, dot(layers[l].allm[k],layers[l].allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-            push!(qab, dot(layer.allm[k],layer.allm[p]) / norm)
-        end
-    end
-
-    return mean(q0), std(q0), mean(qab), std(qab)
 end
 
 function runexpTS(;K::Vector{Int} = [501,5,1],
@@ -126,8 +96,11 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
         out  = @sprintf("α=%.2f, E=%i, Eg=%.3f, Qts=%.3f, ", α, E, Egen, Qts)
         outf = @sprintf("%f %i %f %f ", α, E, Egen, Qts)
         for l = 1:(L-1)
-            q0, q0_err, qab, qab_err = overlaps(g, l)
-            out  *= @sprintf("δ[%i]=%.2f, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, density[l], q0, q0_err, qab, qab_err)
+            q0, qab, R = DeepMP.compute_overlaps(g.layers[l+1])
+            q0, q0_err, qab, qab_err = mean(q0), std(q0), mean(qab), std(qab)
+    
+            out  *= @sprintf("δ[%i]=%.2f, q0=%.2f±%.2f, qab=%.2f±%.2f ", 
+                        l, density[l], q0, q0_err, qab, qab_err)
             outf *= @sprintf("%f %f %f %f %f ", density[l], q0, q0_err, qab, qab_err)
         end
         #!isempty(outfile) && println(f, "$outf")
@@ -138,7 +111,8 @@ function runexpTS(;K::Vector{Int} = [501,5,1],
     !isempty(outfile) && close(f)
 end
 
-function convert_weights(w)
+const VecVecVec = Vector{Vector{Vector{<:Number}}}
+function convert_weights(w::VecVecVec)
     w = [Matrix{Float32}(hcat(w[i]...)') for i = 1:length(w)]
     return w
 end
@@ -146,7 +120,7 @@ end
 function hamming_distance(w1, w2)
     w1 = convert_weights(w1)
     w2 = convert_weights(w2)
-    N = sum([length(w1[i]) for i = 1:length(w1)])
+    N = sum(length, w1)
     d = 0.5 * (1.0 - (dot(w1, w2) / N))
     return d
 end
@@ -212,15 +186,17 @@ function runexpMLP(;K::Vector{Int} = [501,5,1],
                                              verbose_in=verbose_in,
                                              plotinfo=plotinfo);
 
-        Egen  = mean(forward_sign(w, xtst) .== ytst)
-        EgenT = mean(forward_sign(h0, xtst) .== ytst)
+        Egen  = mean(vec(DeepMP.forward(w, xtst)) .== ytst)
+        EgenT = mean(vec(DeepMP.forward(h0, xtst)) .== ytst)
+
         # dist = hamming_distance(w, h0)
         R = ts_overlap(w, h0)
         out  = @sprintf("ρ=%.2f, E=%i, Eg=%.3f, EgT=%.3f, R=%.3f, it=%i ", ρ, E, Egen, EgenT, R, it)
         outf = @sprintf("%f %i %f %f %i ", ρ, E, Egen, R, it)
         L = length(K)-1
         for l = 1:(L-1)
-            q0, q0_err, qab, qab_err = overlaps(g, l)
+            q0, qab, R = DeepMP.compute_overlaps(g.layers[l+1])
+            q0, q0_err, qab, qab_err = mean(q0), std(q0), mean(qab), std(qab)
             out  *= @sprintf("l=%i, q0=%.2f±%.2f, qab=%.2f±%.2f ", l, q0, q0_err, qab, qab_err)
             outf *= @sprintf("%f %f %f %f ", q0, q0_err, qab, qab_err)
         end

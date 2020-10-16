@@ -177,8 +177,8 @@ end
 
 function energy(g::FactorGraph)
     @extract g: ξ σ
-    y = forward(g, ξ) |> vec
-    return sum(y .!= σ)
+    ŷ = forward(g, ξ) |> vec
+    return sum(ŷ .!= σ)
 end
 
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
@@ -194,34 +194,9 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     width = info
     info > 0 && clf()
     for l=1:L
+        wt = teacher != nothing ? teacher[l] : nothing
+        q0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
 
-        q0 = Float64[]
-        qWαβ = Float64[]
-        R = Float64[]
-        for k=1:K[l+1]
-            if hasproperty(layers[l], :weight_mask)
-                Nk = sum(layers[l].weight_mask[k])
-            else
-                Nk = K[l]
-            end
-            push!(q0, dot(layers[l].allm[k], layers[l].allm[k]) / Nk)
-
-            if teacher !== nothing
-                @assert length(teacher) == L
-                push!(R, dot(layers[l].allm[k], teacher[l][k]) / Nk)
-            end
-            for p=k+1:K[l+1]
-                if hasproperty(layers[l], :weight_mask)
-                    Np = sum(layers[l].weight_mask[p])
-                else
-                    Np = K[l]
-                end
-                # push!(q, dot(W[l][k],W[l][p])/K[l])
-                # push!(qWαβ, dot(layers[l].allm[k], layers[l].allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-                push!(qWαβ, dot(layers[l].allm[k], layers[l].allm[p])
-                    / sqrt(Nk*Np))
-            end
-        end
 
         verbose > 0 && printvec(q0, "layer $l q0=")
         verbose > 0 && printvec(qWαβ, "layer $l qWαβ=")
