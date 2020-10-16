@@ -12,7 +12,7 @@ using DeepMP
 
 g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
                    , layers=[:tap,:bp,:bpex]
-                   ,r=.9,rstep=0.002, seedξ=1,maxiters=800);
+                   ,r=.9,rstep=0.002, seedx=1,maxiters=800);
 
 @assert E == 0 # zero training error
 ```

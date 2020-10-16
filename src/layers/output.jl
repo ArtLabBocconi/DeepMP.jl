@@ -5,17 +5,17 @@ mutable struct OutputLayer <: AbstractLayer
     β::Float64
 end
 
-function OutputLayer(σ::Vector{Int}; β=Inf)
+function OutputLayer(y::Vector{Int}; β=Inf)
     @assert β >= 0.
     allpd = VecVec()
-    K = maximum(σ)
+    K = maximum(y)
     if K<=1 #binary classification
-        push!(allpd, Float64[β*σ[a] for a=1:length(σ)])
-        out = OutputLayer(-1, σ, allpd, β)
+        push!(allpd, Float64[β*y[a] for a=1:length(y)])
+        out = OutputLayer(-1, y, allpd, β)
     elseif K >= 2 # K-ary classification
         for k=1:K
-            push!(allpd, Float64[σ[a]==k ? β : -β for a=1:length(σ)])
-            out = OutputLayer(-1, σ, allpd, β)
+            push!(allpd, Float64[y[a]==k ? β : -β for a=1:length(y)])
+            out = OutputLayer(-1, y, allpd, β)
         end
     end
 

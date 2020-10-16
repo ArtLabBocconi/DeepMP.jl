@@ -255,7 +255,7 @@ function updateFact!(layer::TapLayer, k::Int, reinfpar)
     for a=1:M
         my = allmy[a]
         MYt = MYtot[a]
-        # Mhtot = dot(sub(ξ,:,a),m)
+        # Mhtot = dot(sub(x,:,a),m)
         Mhtot = 0.
         Chtot = 0.
         #TODO controllare il termine di reazione
@@ -362,10 +362,10 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLay
 
     @assert isbottomlayer(layer)
 
-    ξ = layer.bottom_layer.ξ
+    x = layer.bottom_layer.x
     my=allmy[a]
     for i=1:N
-        my[i] = ξ[i, a]
+        my[i] = x[i, a]
     end
 end
 
@@ -435,11 +435,11 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapLayer, TapExactLayer}}
     end
 end
 
-function fixY!(layer::L, ξ::Matrix) where {L <: Union{TapLayer, TapExactLayer}}
+function fixY!(layer::L, x::Matrix) where {L <: Union{TapLayer, TapExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd
 
     for a=1:M, i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
 end
 

@@ -58,13 +58,13 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
 end
 
 function solve(; K::Vector{Int} = [101,3], α=0.6,
-                 seedξ::Int=-1, 
+                 seedx::Int=-1, 
                  density=1,
                  TS = false,
                  density_teacher = density,
                  kw...)
 
-    seedξ > 0 && Random.seed!(seedξ)
+    seedx > 0 && Random.seed!(seedx)
 
     L = length(K) -1
     density = process_density(density, L)
@@ -74,20 +74,20 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
 
     N = K[1]
     M = round(Int, α * numW)
-    ξ = rand([-1.,1.], N, M)
+    xtrain = rand([-1.,1.], N, M)
     if TS
         teacher = rand_teacher(K; density=density_teacher)
-        σ = Int.(forward(teacher, ξ) |> vec)
+        ytrain = Int.(forward(teacher, xtrain) |> vec)
     else
         teacher = nothing
-        σ = rand([-1,1], M)
+        ytrain = rand([-1,1], M)
     end
     
-    @assert size(ξ) == (N, M)
-    @assert size(σ) == (M,)
-    @assert all(x -> x == -1 || x == 1, σ)
+    @assert size(xtrain) == (N, M)
+    @assert size(ytrain) == (M,)
+    @assert all(x -> x == -1 || x == 1, y)
 
-    solve(ξ, σ; K=K, density=density, teacher=teacher, kw...)
+    solve(xtrain, ytrain; K=K, density=density, teacher=teacher, kw...)
 end
 
 function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
@@ -95,19 +95,19 @@ function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
     # @assert K[end] == 10
     N = 784; M=round(Int, α*60000)
     h5 = h5open("data/mnist/train.hdf5", "r")
-    ξ0 = reshape(h5["data"][:,:,1,1:M], N, M)
-    m = mean(ξ0)
-    m1, m2 = minimum(ξ0), maximum(ξ0)
+    x0 = reshape(h5["data"][:,:,1,1:M], N, M)
+    m = mean(x0)
+    m1, m2 = minimum(x0), maximum(x0)
     Δ = max(abs(m1-m), abs(m2-m))
-    ξ = (ξ0 .- m) ./ Δ
-    @assert all(-1 .<= ξ .<= 1.)
-    σ = round(Int, reshape(h5["label"][:,1:M], M) + 1)
-    σ = Int[σ==1 ? 1 : -1 for σ in σ]
-    solve(ξ, σ; K=K, kw...)
+    xtrain = (x0 .- m) ./ Δ
+    @assert all(-1 .<= x .<= 1.)
+    ytrain = round(Int, reshape(h5["label"][:,1:M], M) + 1)
+    ytrain = Int[y==1 ? 1 : -1 for y in y]
+    solve(xtrain, ytrain; K=K, kw...)
 end
 
 
-function solve(ξ::Matrix, σ::Vector{Int};
+function solve(xtrain::Matrix, ytrain::Vector{Int};
                 xtest = [], ytest = [],
                 maxiters::Int = 10000,
                 ϵ::Float64 = 1e-4,              # convergence criteirum
@@ -116,7 +116,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 r = 0., rstep = 0.001,          # reinforcement parameters for W vars
                 ry = 0., rystep = 0.0,          # reinforcement parameters for Y vars
                 ψ = 0.,                         # dumping coefficient
-                y = -1,                         # focusing BP parameter
+                yy = -1,                         # focusing BP parameter
                 h0 = nothing,                   # external field
                 ρ = 1.0,                        # coefficient for external field
                 teacher = nothing,
@@ -131,13 +131,13 @@ function solve(ξ::Matrix, σ::Vector{Int};
 
     seed > 0 && Random.seed!(seed)
     
-    g = FactorGraph(ξ, σ, K, layers, β=β, βms=βms, density=density)
+    g = FactorGraph(xtrain, ytrain, K, layers, β=β, βms=βms, density=density)
     h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
     fixtopbottom!(g)
     
-    reinfpar = ReinfParams(r, rstep, ry, rystep, y, ψ)
+    reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
 
     if batchsize <= 0
         it, e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
@@ -145,7 +145,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
                             teacher=teacher, verbose=verbose)
     else
         hext = get_allh(g)
-        dtrain = DataLoader((ξ, σ), batchsize=batchsize, shuffle=true)
+        dtrain = DataLoader((xtrain, ytrain), batchsize=batchsize, shuffle=true)
             
         for epoch = 1:epochs
             converged = solved = meaniters = 0
@@ -170,7 +170,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
                 print("b = $b / $(length(dtrain))\r")
             end
             
-            E = sum(vec(forward(g, ξ)) .!= σ)
+            E = sum(vec(forward(g, xtrain)) .!= ytrain)
             num_batches = length(dtrain)
             Eg = 0.0
             if !isempty(ytest) 
@@ -184,7 +184,7 @@ function solve(ξ::Matrix, σ::Vector{Int};
         end
     end
     
-    E = sum(vec(forward(g, ξ)) .!= σ)
+    E = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, E,  it
 end
 
