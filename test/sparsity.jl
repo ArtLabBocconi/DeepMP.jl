@@ -1,5 +1,5 @@
-y = Int.(readdlm("../fmnist/seed7/Y.txt")) |> vec
-X = readdlm("../fmnist/seed7/X.txt")
+y = Int.(readdlm(@__DIR__() * "/../fmnist/seed7/Y.txt")) |> vec
+X = readdlm(@__DIR__() * "/../fmnist/seed7/X.txt")
 
 @time g, W, teacher, E = DeepMP.solve(X,y, K=[784,5, 1]
                    , layers=[:bpacc, :bpex]

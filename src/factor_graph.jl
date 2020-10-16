@@ -1,7 +1,6 @@
-
 mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
-    M::Int
+    M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
     ξ::Matrix{Float64}
     σ::Vector{Int}
@@ -142,14 +141,14 @@ function init_hext(K::Vector{Int}; ϵ=0.0)
 end
 
 function initrand!(g::FactorGraph)
-    @extract g M layers K ξ
+    @extract g: M layers K ξ
     for lay in layers[2:end-1]
         initrand!(lay)
     end
 end
 
 function fixtopbottom!(g::FactorGraph)
-    @extract g M layers K ξ
+    @extract g: M layers K ξ
     if g.L != 1
         fixW!(g.layers[end-1], 1.)
     end
@@ -190,7 +189,6 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     K = g.K
     L = length(K)-1
     N = K[1]
-    #N = length(W[1][1])
     layers = g.layers[2:end-1]
     @assert length(layers) == L
     width = info
