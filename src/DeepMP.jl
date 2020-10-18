@@ -85,7 +85,7 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     
     @assert size(xtrain) == (N, M)
     @assert size(ytrain) == (M,)
-    @assert all(x -> x == -1 || x == 1, y)
+    @assert all(x -> x == -1 || x == 1, ytrain)
 
     solve(xtrain, ytrain; K=K, density=density, teacher=teacher, kw...)
 end
@@ -100,7 +100,7 @@ function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
     m1, m2 = minimum(x0), maximum(x0)
     Δ = max(abs(m1-m), abs(m2-m))
     xtrain = (x0 .- m) ./ Δ
-    @assert all(-1 .<= x .<= 1.)
+    @assert all(-1 .<= xtrain .<= 1.)
     ytrain = round(Int, reshape(h5["label"][:,1:M], M) + 1)
     ytrain = Int[y==1 ? 1 : -1 for y in y]
     solve(xtrain, ytrain; K=K, kw...)
@@ -108,7 +108,7 @@ end
 
 
 function solve(xtrain::Matrix, ytrain::Vector{Int};
-                xtest = [], ytest = [],
+                xtest = nothing, ytest = nothing,
                 maxiters::Int = 10000,
                 ϵ::Float64 = 1e-4,              # convergence criteirum
                 K::Vector{Int} = [101, 3, 1],
@@ -170,22 +170,22 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 print("b = $b / $(length(dtrain))\r")
             end
             
-            E = sum(vec(forward(g, xtrain)) .!= ytrain)
+            Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
-            Eg = 0.0
-            if !isempty(ytest) 
-                Eg = mean(vec(forward(g, xtest)) .!= ytest)
+            Etest = 1.0
+            if !isempty(ytest)
+                Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): E=%i Eg=%g r=%g rstep=%g ρ=%g\n",
+            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.3f%% Etest=%.3f%% r=%g rstep=%g ρ=%g\n",
                      epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                     E, Eg, reinfpar.r, reinfpar.rstep, ρ)
+                     Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
             plot_info(g, 0, verbose=verbose, teacher=teacher)
-            E==0 && break
+            Etrain == 0 && break
         end
     end
     
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
-    return g, getW(g), teacher, E,  it
+    return g, getW(g), teacher, E, it
 end
 
 end #module

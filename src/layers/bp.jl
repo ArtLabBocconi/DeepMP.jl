@@ -448,35 +448,6 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
 
 end
 
-# function updateVarW!(layer::L, k::Int, i::Int, r::Float64=0.) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
-#     @extract layer: K N M allm allmy allmh allpu allpd allh
-#     @extract layer: bottom_allpu top_allpd
-#     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
-#
-#     m = allm[k]
-#     h = allh[k]
-#     Δ = 0.
-#     #@assert isfinite(h[i])
-#     mhw = allmhcavtow[k][i]
-#     mcav = allmcav[k]
-#     #@assert isfinite(sum(mhw))
-#
-#     h[i] = sum(mhw) + r*h[i]
-#     oldm = m[i]
-#     m[i] = tanh(h[i])
-#     if layer.weight_mask[k][i] == 0
-#         @assert m[i] == 0 "m[i]=$(m[i]) should be 0"
-#     end
-#     for a=1:M
-#         mcav[a][i] = tanh(h[i]-mhw[a])
-#         #@assert isfinite(h[i])
-#         #@assert isfinite(mhw[a])
-#         #@assert isfinite(mcav[a][i])
-#     end
-#     Δ = max(Δ, abs(m[i] - oldm))
-#     return Δ
-# end
-
 function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh allpu allpd allh allux allhext
     @extract layer: bottom_allpu top_allpd
