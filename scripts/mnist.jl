@@ -29,7 +29,7 @@ function run_experiment(i)
         end
     elseif i == 2
         @testset "SBP on PERCEPTRON" begin
-        M = 200 # 
+        M = 300 # 
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 1]
         
@@ -48,7 +48,7 @@ function run_experiment(i)
         DeepMP.solve(xtrain, ytrain, 
             xtest=xtest, ytest=ytest,
             K = K,
-            maxiters=10,
+            maxiters=100,
             r = 0., rstep=0.,
             batchsize=10, epochs = 50,
             altsolv =false, altconv=true, 
@@ -70,7 +70,7 @@ function run_experiment(i)
             r = 0., rstep=0.,
             batchsize=batchsize, epochs = 50,
             altsolv =false, altconv=true, 
-            ρ = 1 - batchsize/(2M), 
+            ρ = 1, 
             layers=[:tap])
         
         batchsize = 10
@@ -81,7 +81,7 @@ function run_experiment(i)
             r = 0., rstep=0.,
             batchsize=batchsize, epochs = 50,
             altsolv =false, altconv=true, 
-            ρ = 1- batchsize/(2M), 
+            ρ = 1, 
             layers=[:tap])
         end
     end

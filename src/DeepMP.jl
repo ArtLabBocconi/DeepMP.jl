@@ -173,7 +173,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
             Etest = 1.0
-            if !isempty(ytest)
+            if ytest != nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
             @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.3f%% Etest=%.3f%% r=%g rstep=%g ρ=%g\n",
