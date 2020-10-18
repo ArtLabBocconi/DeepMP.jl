@@ -2,19 +2,19 @@ mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
     M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
-    ξ::Matrix{Float64}
-    σ::Vector{Int}
+    x::Matrix{Float64}
+    y::Vector{Int}
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
                                    # Weight with layers are those in 2:L+1
     density # weight density (ONLY FOR bp family as of yet)
 
-    function FactorGraph(ξ::Matrix{Float64}, σ::Vector{Int}, 
+    function FactorGraph(x::Matrix{Float64}, y::Vector{Int}, 
                 K::Vector{Int}, 
                 layertype::Vector{Symbol}; 
                 β=Inf, βms = 1.,
                 density=1., verbose=1)
-        N, M = size(ξ)
-        @assert length(σ) == M
+        N, M = size(x)
+        @assert length(y) == M
 
         L = length(K)-1
         density = process_density(density, L)
@@ -25,7 +25,7 @@ mutable struct FactorGraph
         verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
 
         layers = Vector{AbstractLayer}()
-        push!(layers, InputLayer(ξ))
+        push!(layers, InputLayer(x))
         verbose > 0 &&  println("Created InputLayer")
 
 
@@ -65,14 +65,14 @@ mutable struct FactorGraph
             end
         end
 
-        push!(layers, OutputLayer(σ, β=β))
+        push!(layers, OutputLayer(y, β=β))
         verbose > 0 && println("Created OutputLayer")
 
         for l=1:L+1
             chain!(layers[l], layers[l+1])
         end
 
-        new(K, M, L, ξ, σ, layers)
+        new(K, M, L, x, y, layers)
     end
 end
 
@@ -141,19 +141,19 @@ function init_hext(K::Vector{Int}; ϵ=0.0)
 end
 
 function initrand!(g::FactorGraph)
-    @extract g: M layers K ξ
+    @extract g: M layers K x
     for lay in layers[2:end-1]
         initrand!(lay)
     end
 end
 
 function fixtopbottom!(g::FactorGraph)
-    @extract g: M layers K ξ
+    @extract g: M layers K x
     if g.L != 1
         fixW!(g.layers[end-1], 1.)
     end
 
-    fixY!(g.layers[2], ξ)
+    fixY!(g.layers[2], x)
 end
 
 function update!(g::FactorGraph, reinfpar)
@@ -176,9 +176,9 @@ function forward(g::FactorGraph, x)
 end
 
 function energy(g::FactorGraph)
-    @extract g: ξ σ
-    y = forward(g, ξ) |> vec
-    return sum(y .!= σ)
+    @extract g: x y
+    ŷ = forward(g, x) |> vec
+    return sum(ŷ .!= y)
 end
 
 mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
@@ -194,34 +194,9 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     width = info
     info > 0 && clf()
     for l=1:L
+        wt = teacher != nothing ? teacher[l] : nothing
+        q0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
 
-        q0 = Float64[]
-        qWαβ = Float64[]
-        R = Float64[]
-        for k=1:K[l+1]
-            if hasproperty(layers[l], :weight_mask)
-                Nk = sum(layers[l].weight_mask[k])
-            else
-                Nk = K[l]
-            end
-            push!(q0, dot(layers[l].allm[k], layers[l].allm[k]) / Nk)
-
-            if teacher !== nothing
-                @assert length(teacher) == L
-                push!(R, dot(layers[l].allm[k], teacher[l][k]) / Nk)
-            end
-            for p=k+1:K[l+1]
-                if hasproperty(layers[l], :weight_mask)
-                    Np = sum(layers[l].weight_mask[p])
-                else
-                    Np = K[l]
-                end
-                # push!(q, dot(W[l][k],W[l][p])/K[l])
-                # push!(qWαβ, dot(layers[l].allm[k], layers[l].allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-                push!(qWαβ, dot(layers[l].allm[k], layers[l].allm[p])
-                    / sqrt(Nk*Np))
-            end
-        end
 
         verbose > 0 && printvec(q0, "layer $l q0=")
         verbose > 0 && printvec(qWαβ, "layer $l qWαβ=")
@@ -229,7 +204,7 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
 
         info == 0 && continue
 
-        subplot(L,width,width*(L-l)+1)
+        subplot(L, width,width*(L-l)+1)
         title("W Overlaps Layer $l")
         xlim(-1.01,1.01)
         #plt[:hist](q)

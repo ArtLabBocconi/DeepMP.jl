@@ -448,35 +448,6 @@ function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
 
 end
 
-# function updateVarW!(layer::L, k::Int, i::Int, r::Float64=0.) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
-#     @extract layer: K N M allm allmy allmh allpu allpd allh
-#     @extract layer: bottom_allpu top_allpd
-#     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
-#
-#     m = allm[k]
-#     h = allh[k]
-#     Δ = 0.
-#     #@assert isfinite(h[i])
-#     mhw = allmhcavtow[k][i]
-#     mcav = allmcav[k]
-#     #@assert isfinite(sum(mhw))
-#
-#     h[i] = sum(mhw) + r*h[i]
-#     oldm = m[i]
-#     m[i] = tanh(h[i])
-#     if layer.weight_mask[k][i] == 0
-#         @assert m[i] == 0 "m[i]=$(m[i]) should be 0"
-#     end
-#     for a=1:M
-#         mcav[a][i] = tanh(h[i]-mhw[a])
-#         #@assert isfinite(h[i])
-#         #@assert isfinite(mhw[a])
-#         #@assert isfinite(mcav[a][i])
-#     end
-#     Δ = max(Δ, abs(m[i] - oldm))
-#     return Δ
-# end
-
 function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh allpu allpd allh allux allhext
     @extract layer: bottom_allpu top_allpd
@@ -562,12 +533,12 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPLaye
     @assert isbottomlayer(layer)
 
     my = allmy[a]
-    ξ = layer.bottom_layer.ξ
+    x = layer.bottom_layer.x
     for i=1:N
-        my[i] = ξ[i, a]
+        my[i] = x[i, a]
         mycav = allmycav[a]
         for k=1:K
-            mycav[k][i] = ξ[i, a]
+            mycav[k][i] = x[i, a]
         end
     end
 end
@@ -674,12 +645,12 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPLayer, BPAccurateLayer, BPExa
     end
 end
 
-function fixY!(layer::L, ξ::Matrix) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
+function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd top_allpd
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     for a=1:M,i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
     for a=1:M, k=1:K, i=1:N
         allmycav[a][k][i] = allmy[a][i]

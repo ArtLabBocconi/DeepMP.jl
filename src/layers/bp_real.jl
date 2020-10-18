@@ -198,12 +198,12 @@ function initYBottom!(layer::BPRealLayer, a::Int)
 
     @assert isbottomlayer(layer)
     my = allmy[a]
-    ξ = layer.bottom_layer.ξ
+    x = layer.bottom_layer.x
     for i=1:N
-        my[i] = ξ[i, a]
+        my[i] = x[i, a]
         mycav = allmycav[a]
         for k=1:K
-            mycav[k][i] = ξ[i, a]
+            mycav[k][i] = x[i, a]
         end
     end
 end
@@ -309,12 +309,12 @@ function fixW!(layer::BPRealLayer, w=1.)
     end
 end
 
-function fixY!(layer::BPRealLayer, ξ::Matrix)
+function fixY!(layer::BPRealLayer, x::Matrix)
     @extract layer K N M allm allmy allmh allpu allpd top_allpd
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     for a=1:M,i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
     for a=1:M, k=1:K, i=1:N
         allmycav[a][k][i] = allmy[a][i]

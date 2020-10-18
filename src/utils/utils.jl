@@ -10,16 +10,6 @@ function printvec(q::Vector{Float64}, head = "")
     println()
 end
 
-function meanoverlap(ξ::Matrix)
-    N, M =size(ξ)
-    q = 0.
-    for a=1:M
-        for b=a+1:M
-            q += dot(ξ[:,a],ξ[:,b])
-        end
-    end
-    return q / N / (0.5*M*(M-1))
-end
 
 #TODO use vector of matrix teacher
 function rand_teacher(K::Vector{Int}; density=1.)

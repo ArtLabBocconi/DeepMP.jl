@@ -134,10 +134,10 @@ function initYBottom!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
     #TODO check βms
     my = allmy[a]
     hy = allhy[a]
-    ξ = layer.bottom_layer.ξ
-    @assert all(x -> x==1 || x==-1, ξ) # works only on binary input
+    x = layer.bottom_layer.x
+    @assert all(x -> x==1 || x==-1, x) # works only on binary input
     for i=1:N
-        hy[i] = sign(ξ[i, a]) * 100
+        hy[i] = sign(x[i, a]) * 100
         my[i] = hy[i]
         mycav = allmycav[a]
         for k=1:K
@@ -387,11 +387,11 @@ function initrand!(layer::MaxSumLayer)
 end
 
 
-function fixY!(layer::MaxSumLayer, ξ::Matrix)
+function fixY!(layer::MaxSumLayer, x::Matrix)
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd
 
     for a=1:M, i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
 end
 

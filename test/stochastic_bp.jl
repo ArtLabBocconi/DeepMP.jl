@@ -1,7 +1,7 @@
 @time g, W, teacher, E, it = DeepMP.solve(α=0.5, K=[1001, 1],
                     layers=[:bp], verbose=1,
                     r=0., rstep=0.0, ρ=1, 
-                    seedξ=2, 
+                    seedx=2, 
                     maxiters=10, epochs=30, 
                     batchsize=1, density=1, altsolv=false, altconv=true);
 @test E == 0
@@ -12,6 +12,6 @@
                     ρ = 1,
                     altsolv=false, altconv=true,
                     maxiters=10, epochs=30,
-                    seedξ=2, batchsize=1, density=0.5);
+                    seedx=2, batchsize=1, density=0.5);
 
 @test_broken E == 0

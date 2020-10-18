@@ -145,10 +145,10 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILay
 
     @assert isbottomlayer(layer)
 
-    ξ = layer.bottom_layer.ξ
+    x = layer.bottom_layer.x
     my = allmy[a]
     for i=1:N
-        my[i] = ξ[i, a]
+        my[i] = x[i, a]
     end
 end
 
@@ -215,11 +215,11 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPILayer}}
     end
 end
 
-function fixY!(layer::L, ξ::Matrix) where {L <: Union{BPILayer}}
+function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
     @extract layer K N M allm allmy allpu allpd  top_allpd
 
     for a=1:M, i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
 end
 

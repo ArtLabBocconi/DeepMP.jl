@@ -83,3 +83,32 @@ function set_weight_mask!(lay::AbstractLayer, m)
         lay.weight_mask[k] .= m[k]
     end
 end
+
+function compute_overlaps(layer::AbstractLayer; teacher=nothing)
+    @extract layer: K
+    q0 = Float64[]
+    qWαβ = Float64[]
+    R = Float64[]
+    
+    for k=1:K
+        Nk = hasproperty(layer, :weight_mask) ?  
+                sum(layer.weight_mask[k]) : K
+        push!(q0, dot(layer.allm[k], layer.allm[k]) / Nk)
+
+        if teacher !== nothing
+            push!(R, dot(layer.allm[k], teacher[k]) / Nk)
+        end
+        for p=k+1:K
+            if hasproperty(layer, :weight_mask)
+                Np = sum(layer.weight_mask[p])
+            else
+                Np = K
+            end
+            # push!(q, dot(W[l][k],W[l][p])/K[l])
+            # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])
+            push!(qWαβ, dot(layer.allm[k], layer.allm[p])
+                / sqrt(Nk*Np))
+        end
+    end
+    q0, qWαβ, R
+end

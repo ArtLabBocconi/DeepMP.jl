@@ -13,6 +13,7 @@ mutable struct TapExactLayer <: AbstractLayer
     allmh::VecVec
 
     allh::VecVec # for W reinforcement
+    allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
     allpu::VecVec # p(σ=up) from fact ↑ to y
@@ -36,6 +37,8 @@ mutable struct TapExactLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
+    
+
     weight_mask::Vector{Vector{Int}}
 end
 
@@ -45,7 +48,8 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1)
     allh = [zeros(N) for i=1:K]
     Mtot = [zeros(N) for i=1:K]
     Ctot = zeros(K)
-
+    allhext = [zeros(N) for i=1:K]
+    
     # for variables Y
     allmy = [zeros(N) for a=1:M]
     allhy = [zeros(N) for a=1:M]
@@ -68,7 +72,8 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1)
 
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
-    return TapExactLayer(-1, K, N, M, allm, allmy, allmh, allh, allhy, allpu,allpd
+    return TapExactLayer(-1, K, N, M, allm, allmy, allmh 
+        , allh, allhext, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
         , DummyLayer(), DummyLayer(),
@@ -198,6 +203,7 @@ mutable struct TapLayer <: AbstractLayer
     allmh::VecVec
 
     allh::VecVec # for W reinforcement
+    allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
     allpu::VecVec # p(σ=up) from fact ↑ to y
@@ -221,6 +227,7 @@ function TapLayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
+    allhext = [zeros(N) for i=1:K]
     Mtot = [zeros(N) for i=1:K]
     Ctot = zeros(K)
 
@@ -238,7 +245,8 @@ function TapLayer(K::Int, N::Int, M::Int; density=1)
 
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
-    return TapLayer(-1, K, N, M, allm, allmy, allmh, allh, allhy, allpu,allpd
+    return TapLayer(-1, K, N, M, allm, allmy, allmh
+        , allh, allhext, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
         , weight_mask)
@@ -255,7 +263,7 @@ function updateFact!(layer::TapLayer, k::Int, reinfpar)
     for a=1:M
         my = allmy[a]
         MYt = MYtot[a]
-        # Mhtot = dot(sub(ξ,:,a),m)
+        # Mhtot = dot(sub(x,:,a),m)
         Mhtot = 0.
         Chtot = 0.
         #TODO controllare il termine di reazione
@@ -304,17 +312,18 @@ function updateFact!(layer::TapLayer, k::Int, reinfpar)
 end
 
 function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd l
-    @extract layer CYtot MYtot Mtot Ctot bottom_allpu allh
+    @extract layer: K N M allm allmy allmh allpu allpd l
+    @extract layer: CYtot MYtot Mtot Ctot bottom_allpu allh allhext
     Δ = 0.
     m=allm[k];
     Mt=Mtot[k]; Ct = Ctot;
     h=allh[k]
+    hext = allhext[k]
     for i=1:N
         if layer.weight_mask[k][i] == 0
             @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
         end
-        h[i] = Mt[i] + m[i] * Ct[k] + r*h[i]
+        h[i] = Mt[i] + m[i] * Ct[k] + r*h[i] + hext[i]
         oldm = m[i]
         m[i] = tanh(h[i])
         Δ = max(Δ, abs(m[i] - oldm))
@@ -362,10 +371,10 @@ function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLay
 
     @assert isbottomlayer(layer)
 
-    ξ = layer.bottom_layer.ξ
+    x = layer.bottom_layer.x
     my=allmy[a]
     for i=1:N
-        my[i] = ξ[i, a]
+        my[i] = x[i, a]
     end
 end
 
@@ -435,11 +444,11 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapLayer, TapExactLayer}}
     end
 end
 
-function fixY!(layer::L, ξ::Matrix) where {L <: Union{TapLayer, TapExactLayer}}
+function fixY!(layer::L, x::Matrix) where {L <: Union{TapLayer, TapExactLayer}}
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd
 
     for a=1:M, i=1:N
-        allmy[a][i] = ξ[i,a]
+        allmy[a][i] = x[i,a]
     end
 end
 
