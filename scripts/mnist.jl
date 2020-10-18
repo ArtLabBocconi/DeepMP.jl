@@ -2,7 +2,7 @@ using MLDatasets: MNIST
 using DeepMP
 using Test
 
-function get_mnist(M=5000)
+function get_mnist(M=60000)
     datadir = joinpath(homedir(), "Datasets", "MNIST")
     xtrain, ytrain = MNIST.traindata(Float64, dir=datadir)
     xtest, ytest = MNIST.testdata(Float64, dir=datadir)
@@ -29,7 +29,7 @@ function run_experiment(i)
         end
     elseif i == 2
         @testset "SBP on PERCEPTRON" begin
-        M = 200 # 
+        M = 300 # 
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 1]
         
@@ -48,7 +48,7 @@ function run_experiment(i)
         DeepMP.solve(xtrain, ytrain, 
             xtest=xtest, ytest=ytest,
             K = K,
-            maxiters=10,
+            maxiters=100,
             r = 0., rstep=0.,
             batchsize=10, epochs = 50,
             altsolv =false, altconv=true, 
@@ -70,7 +70,7 @@ function run_experiment(i)
             r = 0., rstep=0.,
             batchsize=batchsize, epochs = 50,
             altsolv =false, altconv=true, 
-            ρ = 1 - batchsize/(2M), 
+            ρ = 1, 
             layers=[:tap])
         
         batchsize = 10
@@ -81,8 +81,45 @@ function run_experiment(i)
             r = 0., rstep=0.,
             batchsize=batchsize, epochs = 50,
             altsolv =false, altconv=true, 
-            ρ = 1- batchsize/(2M), 
+            ρ = 1, 
             layers=[:tap])
+        end
+    elseif i == 4
+        @testset "SBP accurate on PERCEPTRON" begin
+        M = 300 # 
+        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        K = [28*28, 1]
+        
+        batchsize = 1
+        DeepMP.solve(xtrain, ytrain, 
+            xtest=xtest, ytest=ytest,
+            K = K,
+            maxiters=100,
+            r = 0., rstep=0.,
+            batchsize=1, epochs = 50,
+            altsolv =false, altconv=true, 
+            ρ = 1, 
+            layers=[:bpacc])
+        end
+    elseif i == 5
+        @testset "SBP on COMMETTEE" begin
+        # NOT WORKING!!!
+        M = 1000
+        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        K = [28*28, 7, 1]
+        
+        batchsize = 1
+        DeepMP.solve(xtrain, ytrain, 
+            xtest=xtest, ytest=ytest,
+            K = K,
+            maxiters=100,
+            r = 0., rstep=0.,
+            batchsize=batchsize, epochs = 50,
+            altsolv =false, altconv=true,
+            ρ = 10., 
+            layers=[:bpacc, :bpacc],
+            density = [0.5, 1.] 
+            )
         end
     end
 end
