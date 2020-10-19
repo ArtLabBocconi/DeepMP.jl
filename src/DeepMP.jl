@@ -25,7 +25,7 @@ include("utils/dataloader.jl")
 include("utils/Magnetizations.jl")
 using .Magnetizations
 
-include("layers.jl")
+include("layers/layers.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
 
