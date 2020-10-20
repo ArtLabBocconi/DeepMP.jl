@@ -25,7 +25,7 @@ include("utils/dataloader.jl")
 include("utils/Magnetizations.jl")
 using .Magnetizations
 
-include("layers.jl")
+include("layers/layers.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
 
@@ -66,7 +66,7 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
 
     seedx > 0 && Random.seed!(seedx)
 
-    L = length(K) -1
+    L = length(K) - 1
     density = process_density(density, L)
     numW = length(K)==2 ? K[1]*K[2]*density[1]  :
             sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
@@ -88,22 +88,6 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
     @assert all(x -> x == -1 || x == 1, ytrain)
 
     solve(xtrain, ytrain; K=K, density=density, teacher=teacher, kw...)
-end
-
-function solveMNIST(; α=0.01, K::Vector{Int} = [784,10], kw...)
-    @assert K[1] == 28*28
-    # @assert K[end] == 10
-    N = 784; M=round(Int, α*60000)
-    h5 = h5open("data/mnist/train.hdf5", "r")
-    x0 = reshape(h5["data"][:,:,1,1:M], N, M)
-    m = mean(x0)
-    m1, m2 = minimum(x0), maximum(x0)
-    Δ = max(abs(m1-m), abs(m2-m))
-    xtrain = (x0 .- m) ./ Δ
-    @assert all(-1 .<= xtrain .<= 1.)
-    ytrain = round(Int, reshape(h5["label"][:,1:M], M) + 1)
-    ytrain = Int[y==1 ? 1 : -1 for y in y]
-    solve(xtrain, ytrain; K=K, kw...)
 end
 
 
@@ -152,7 +136,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             for (b, (x, y)) in enumerate(dtrain)
                 gbatch = FactorGraph(x, y, K, layers, β=β, βms=βms,
                                 density=density, verbose=0)
-                (teacher !== nothing) && set_weight_mask!(g, teacher)
+                set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
                 fixtopbottom!(gbatch)
                 set_external_fields!(gbatch, hext; ρ=ρ)
@@ -172,11 +156,11 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
-            Etest = 1.0
+            Etest = 100.0
             if ytest != nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.3f%% Etest=%.3f%% r=%g rstep=%g ρ=%g\n",
+            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% r=%g rstep=%g ρ=%g\n",
                      epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                      Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
             plot_info(g, 0, verbose=verbose, teacher=teacher)

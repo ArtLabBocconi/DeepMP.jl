@@ -10,14 +10,14 @@ and modifies its allpu and allpd
 abstract type AbstractLayer end
 mutable struct DummyLayer <: AbstractLayer end
 
-include("layers/input.jl")
-include("layers/output.jl")
-include("layers/maxsum.jl")
-include("layers/bp.jl")
-include("layers/tap.jl")
-include("layers/bpi.jl")
-include("layers/parity.jl")
-include("layers/bp_real.jl")
+include("input.jl")
+include("output.jl")
+include("maxsum.jl")
+include("bp.jl")
+include("tap.jl")
+include("bpi.jl")
+include("parity.jl")
+include("bp_real.jl")
 
 istoplayer(layer::AbstractLayer) = (typeof(layer.top_layer) == OutputLayer)
 isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)

@@ -1,16 +1,36 @@
-using MLDatasets: MNIST
+using MLDatasets: MNIST, FashionMNIST
 using DeepMP
 using Test
+using Random, Statistics
 
-function get_mnist(M=60000)
+# Odd vs Even or 1 class vs another
+function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     datadir = joinpath(homedir(), "Datasets", "MNIST")
-    xtrain, ytrain = MNIST.traindata(Float64, dir=datadir)
-    xtest, ytest = MNIST.testdata(Float64, dir=datadir)
+    Dataset = fashion ? FashionMNIST : MNIST
+    xtrain, ytrain = Dataset.traindata(Float64, dir=datadir)
+    xtest, ytest = Dataset.testdata(Float64, dir=datadir)
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
-    ytrain = map(x-> isodd(x) ? 1 : -1, ytrain)
-    ytest = map(x-> isodd(x) ? 1 : -1, ytest)
-    return xtrain[:,1:M], ytrain[1:M], xtest, ytest
+    if !isempty(classes)
+        @assert length(classes) == 2
+        seed > 0 && Random.seed!(seed)
+        filter = x -> x==classes[1] || x==classes[2]
+        idxtrain = findall(filter, ytrain) |> shuffle
+        idxtest = findall(filter, ytest) |> shuffle
+        xtrain = xtrain[:, idxtrain]
+        xtest = xtest[:, idxtest] 
+        ytrain = ytrain[idxtrain]
+        ytest = ytest[idxtest]
+        relabel = x -> x == classes[1] ? 1 : -1
+        ytrain = map(relabel, ytrain)
+        ytest = map(relabel, ytest)
+    else
+        ytrain = map(x-> isodd(x) ? 1 : -1, ytrain)
+        ytest = map(x-> isodd(x) ? 1 : -1, ytest)
+    end
+    M = min(M, length(ytrain))
+    xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
+    return xtrain, ytrain, xtest, ytest
 end
 
 function run_experiment(i)
@@ -120,6 +140,43 @@ function run_experiment(i)
             layers=[:bpacc, :bpacc],
             density = [0.5, 1.] 
             )
+        end
+    elseif i == 6
+        @testset "SBP on MLP" begin
+        # M = 10000
+        # xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, 
+        #                                     classes=[4,5])
+        # K = [28*28, 1]
+        
+        # batchsize = 1
+        # DeepMP.solve(xtrain, ytrain, 
+        #     xtest=xtest, ytest=ytest,
+        #     K = K,
+        #     maxiters=10,
+        #     r = 0., rstep=0.,
+        #     batchsize=batchsize, epochs = 50,
+        #     altsolv =false, altconv=true,
+        #     ρ = 1., 
+        #     layers=[:bpacc],
+        #     density = 1)
+        # end
+
+        M = 2000
+        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, 
+                                            classes=[4,5])
+        K = [28*28, 15, 15, 1]
+        
+        batchsize = 10
+        DeepMP.solve(xtrain, ytrain, 
+            xtest=xtest, ytest=ytest,
+            K = K,
+            maxiters=10,
+            r = 0., rstep=0.,
+            batchsize=batchsize, epochs = 50,
+            altsolv =false, altconv=true,
+            ρ = 1.0, 
+            layers=[:bpacc, :bpacc, :bpacc],
+            density = [0.5, 0.5, 1])
         end
     end
 end
