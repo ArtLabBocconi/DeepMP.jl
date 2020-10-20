@@ -8,6 +8,8 @@ using Random
 using LinearAlgebra
 using Statistics
 using Base: @propagate_inbounds # for DataLoader
+using LoopVectorization
+using Tullio
 
 # using PyPlot
 

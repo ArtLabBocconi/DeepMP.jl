@@ -624,8 +624,8 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPLayer, BPAccurateLayer, BPExa
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer, BPAccurateLayer, BPExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd top_allpd
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh allpu allpd top_allpd
+    @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
     for a=1:M,i=1:N
         allmy[a][i] = x[i,a]

@@ -39,6 +39,9 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
+            elseif  layertype[l] == :bp2
+                push!(layers, BPLayer2(K[l+1], K[l], M, density=density[l]))
+                verbose > 0 && println("Created BPLayer2\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
