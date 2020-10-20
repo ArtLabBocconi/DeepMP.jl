@@ -20,6 +20,7 @@ end
 for lay in [:bpi, :ms]
     @time g, W, teacher, E = DeepMP.solve(α=0.5, K=[201,1]
                 , layers=[lay], verbose=0
+                , altsolv=true, altconv=false
                 ,r=1.,rstep=0.0, seedx=1,maxiters=1000);
     @test E == 0
 end

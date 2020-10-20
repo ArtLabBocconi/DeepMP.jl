@@ -164,10 +164,10 @@ function update!(g::FactorGraph, reinfpar)
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end
-    for l = 2:g.L+1
-        δ = update!(g.layers[l], reinfpar)
-        Δ = max(δ, Δ)
-    end
+    # for l = 2:g.L+1
+    #     δ = update!(g.layers[l], reinfpar)
+    #     Δ = max(δ, Δ)
+    # end
     return Δ
 end
 
