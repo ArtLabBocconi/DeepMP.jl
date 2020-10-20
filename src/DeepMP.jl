@@ -156,11 +156,11 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
-            Etest = 1.0
+            Etest = 100.0
             if ytest != nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.3f%% Etest=%.3f%% r=%g rstep=%g ρ=%g\n",
+            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% r=%g rstep=%g ρ=%g\n",
                      epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                      Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
             plot_info(g, 0, verbose=verbose, teacher=teacher)
