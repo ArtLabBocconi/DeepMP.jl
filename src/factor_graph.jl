@@ -100,7 +100,7 @@ end
 
 function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     @assert g2.L == g.L
-    for l=2:g.L
+    for l=2:g.L+1
         set_weight_mask!(g.layers[l], g2.layers[l].weight_mask)
     end
 end
@@ -161,6 +161,10 @@ function update!(g::FactorGraph, reinfpar)
     # for l=2:g.L+1
     # for l in shuffle([2:g.L+1]...)
     for l = (g.L+1):-1:2
+        δ = update!(g.layers[l], reinfpar)
+        Δ = max(δ, Δ)
+    end
+    for l = 2:g.L+1
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end

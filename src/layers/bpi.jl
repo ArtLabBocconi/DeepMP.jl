@@ -13,6 +13,7 @@ mutable struct BPILayer <: AbstractLayer
     allmy::VecVec
 
     allh::VecVec # for W reinforcement
+    allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
     allpu::VecVec # p(σ=up) from fact ↑ to y
@@ -34,6 +35,7 @@ function BPILayer(K::Int, N::Int, M::Int; density=1)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
+    allhext = [zeros(N) for i=1:K]
     Mtot = [zeros(N) for i=1:K]
 
     # for variables Y
@@ -47,7 +49,9 @@ function BPILayer(K::Int, N::Int, M::Int; density=1)
 
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
-    return BPILayer(-1, K, N, M, allm, allmy, allh, allhy, allpu,allpd
+    return BPILayer(-1, K, N, M
+        , allm, allmy
+        , allh, allhext, allhy, allpu,allpd
         , Mtot, MYtot, VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
         , weight_mask)
@@ -65,7 +69,7 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
         my = allmy[a]
         MYt = MYtot[a]
         Mhtot = 0.
-        Chtot = 0.
+        Chtot = 1e-10
         if !isbottomlayer(layer)
             for i=1:N
                 Mhtot += my[i]*m[i] * mask[i]
@@ -78,16 +82,8 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
             end
         end
 
-        Chtot == 0 && (Chtot = 1e-8) #;print("!");
-
-        # mh = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
         for i=1:N
             mask[i] == 1 || continue
-            # mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i] * mask[i]) / √Chtot)
-            # Mt[i] += my[i] * mh * mask[i]
-            # if !isbottomlayer(layer)
-            #     MYt[i] += m[i] * mh * mask[i]
-            # end
             mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i]) / √Chtot)
             Mt[i] += my[i] * mh
             if !isbottomlayer(layer)
@@ -101,18 +97,19 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
 end
 
 function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy  allpu allpd l
-    @extract layer MYtot Mtot  bottom_allpu allh
+    @extract layer: K N M allm allmy  allpu allpd l
+    @extract layer: MYtot Mtot  bottom_allpu allh allhext
     Δ = 0.
-    m=allm[k]
-    Mt=Mtot[k]
-    h=allh[k]
+    m = allm[k]
+    Mt = Mtot[k]
+    h = allh[k]
+    hext = allhext[k]
 
     for i=1:N
         if layer.weight_mask[k][i] == 0
             @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
         end
-        h[i] = Mt[i] + r*h[i]
+        h[i] = Mt[i] + r*h[i] + hext[i]
         oldm = m[i]
         m[i] = tanh(h[i])
         Δ = max(Δ, abs(m[i] - oldm))
