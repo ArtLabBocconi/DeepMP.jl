@@ -18,19 +18,15 @@ include("tap.jl")
 include("bpi.jl")
 include("parity.jl")
 include("bp_real.jl")
+include("bp2.jl")
 
-istoplayer(layer::AbstractLayer) = (typeof(layer.top_layer) == OutputLayer)
+isfrozen(layer::AbstractLayer) = layer.isfrozen
+freeze!(layer::AbstractLayer) = layer.isfrozen = true
+unfreeze!(layer::AbstractLayer) = layer.isfrozen = false
+
 isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
-isonlylayer(layer::AbstractLayer) = istoplayer(layer) && isbottomlayer(layer)
-
-function Base.show(io::IO, layer::L) where {L <: Union{TapExactLayer,TapLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd
-    println(io, "m=$(allm[1])")
-    println(io, "my=$(allmy[1])")
-end
 
 signB(x::T) where {T} = sign(x + 1e-10)
-
 
 function forward(W::Vector{Vector{T}}, x) where T <: Number
     Wmat =  vcat([w' for w in W]...)
@@ -49,9 +45,6 @@ function forward(W::Vector, x)
     return x
 end
 
-
-# initYBottom!(lay::AbstractLayer, a::Int) = updateVarY!(lay, a) #TODO define for every layer mutable struct
-
 chain!(lay1::InputLayer, lay2::OutputLayer) = error("Cannot chain InputLayer and OutputLayer")
 
 function chain!(lay1::AbstractLayer, lay2::OutputLayer)
@@ -67,6 +60,16 @@ function chain!(lay1::InputLayer, lay2::AbstractLayer)
     for a=1:lay2.M
         initYBottom!(lay2, a)
     end
+end
+
+function chain!(lay1::BPLayer2, lay2::OutputLayer)
+    lay2.l = lay1.l+1
+    lay1.top_layer = lay2
+end
+
+function chain!(lay1::InputLayer, lay2::BPLayer2)
+    lay2.l = lay1.l+1
+    lay2.bottom_layer = lay1
 end
 
 function chain!(lay1::AbstractLayer, lay2::AbstractLayer)
@@ -93,8 +96,11 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     for k=1:K
         Nk = hasproperty(layer, :weight_mask) ?  
                 sum(layer.weight_mask[k]) : K
-        push!(q0, dot(layer.allm[k], layer.allm[k]) / Nk)
-
+        if hasproperty(layer, :allm)
+            push!(q0, dot(layer.allm[k], layer.allm[k]) / Nk)
+        elseif hasproperty(layer, :m)
+            push!(q0, dot(layer.m[k,:], layer.m[k,:]) / Nk)
+        end
         if teacher !== nothing
             push!(R, dot(layer.allm[k], teacher[k]) / Nk)
         end
@@ -104,10 +110,15 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
             else
                 Np = K
             end
+            if hasproperty(layer, :allm)
+                push!(qWαβ, dot(layer.allm[k], layer.allm[p])
+                        / sqrt(Nk*Np))
+            elseif hasproperty(layer, :m)
+                push!(qWαβ, dot(layer.m[k], layer.m[p])
+                        / sqrt(Nk*Np))
+            end
             # push!(q, dot(W[l][k],W[l][p])/K[l])
             # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-            push!(qWαβ, dot(layer.allm[k], layer.allm[p])
-                / sqrt(Nk*Np))
         end
     end
     q0, qWαβ, R

@@ -29,10 +29,12 @@ mutable struct ParityLayer <: AbstractLayer
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
+
+    isfrozen::Bool
 end
 
 
-function ParityLayer(K::Int, N::Int, M::Int)
+function ParityLayer(K::Int, N::Int, M::Int; isfrozen=false)
     @assert K == 1
     @assert N == 2
     # for variables W
@@ -58,7 +60,7 @@ function ParityLayer(K::Int, N::Int, M::Int)
         , allmcav, allmycav, allmhcavtoy,allmhcavtow
         , allh, allhy, allpu,allpd
         , VecVec(), VecVec()
-        , DummyLayer(), DummyLayer())
+        , DummyLayer(), DummyLayer(), isfrozen)
 end
 
 

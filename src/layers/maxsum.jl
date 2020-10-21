@@ -27,9 +27,11 @@ mutable struct MaxSumLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     βms::Float64
+
+    isfrozen::Bool
 end
 
-function MaxSumLayer(K::Int, N::Int, M::Int; βms=1.)
+function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -54,7 +56,7 @@ function MaxSumLayer(K::Int, N::Int, M::Int; βms=1.)
         , allh, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
-        , βms)
+        , βms, isfrozen)
 end
 
 
@@ -337,14 +339,14 @@ function update!(layer::MaxSumLayer, reinfpar)
         updateFact!(layer, k)
     end
     Δ = 0.
-    if !istoplayer(layer) || isonlylayer(layer)
+    if !isfrozen(layer)
         for k=1:K
             δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)
         end
     end
 
-    if !istoplayer(layer) && !isbottomlayer(layer)
+    if !isbottomlayer(layer)
         for a=1:M
             updateVarY!(layer, a, reinfpar.ry)
         end
@@ -352,13 +354,6 @@ function update!(layer::MaxSumLayer, reinfpar)
 
     return Δ
 end
-
-function Base.show(io::IO, layer::MaxSumLayer)
-    for f in fieldnames(layer)
-        println(io, "$f=$(getfield(layer,f))")
-    end
-end
-
 
 function initrand!(layer::MaxSumLayer)
     @extract layer K N M allm allmy allmh allpu allpd  top_allpd

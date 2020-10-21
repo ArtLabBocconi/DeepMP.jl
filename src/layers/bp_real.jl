@@ -248,7 +248,7 @@ function update!(layer::BPRealLayer, r::Float64, ry::Float64)
     end
     # println("mhcavw=$(allmhcavtow[1][1])")
     Δ = 0.
-    if !istoplayer(layer) || isonlylayer(layer)
+    if !isfrozen(layer)
         # println("Updating W")
         for k=1:K
             δ = updateVarW!(layer, k, r)

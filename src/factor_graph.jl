@@ -39,6 +39,9 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
+            elseif  layertype[l] == :bp2
+                push!(layers, BPLayer2(K[l+1], K[l], M, density=density[l]))
+                verbose > 0 && println("Created BPLayer2\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
@@ -145,15 +148,13 @@ function initrand!(g::FactorGraph)
     for lay in layers[2:end-1]
         initrand!(lay)
     end
+    fixY!(g.layers[2], g.x) # fix input to first layer
 end
 
-function fixtopbottom!(g::FactorGraph)
-    @extract g: M layers K x
+function freezetop!(g::FactorGraph, w)
     if g.L != 1
-        fixW!(g.layers[end-1], 1.)
+        fixW!(g.layers[end-1], w)
     end
-
-    fixY!(g.layers[2], x)
 end
 
 function update!(g::FactorGraph, reinfpar)

@@ -29,9 +29,10 @@ mutable struct BPILayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
-function BPILayer(K::Int, N::Int, M::Int; density=1)
+function BPILayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -54,7 +55,7 @@ function BPILayer(K::Int, N::Int, M::Int; density=1)
         , allh, allhext, allhy, allpu,allpd
         , Mtot, MYtot, VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
-        , weight_mask)
+        , weight_mask, isfrozen)
 end
 
 function updateFact!(layer::BPILayer, k::Int, reinfpar)
@@ -166,7 +167,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPILayer}}
         updateFact!(layer, k, reinfpar)
     end
     Δ = 0.
-    if !istoplayer(layer) || isonlylayer(layer)
+    if !isfrozen(layer)
         for k=1:K
             δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)

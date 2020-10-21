@@ -256,7 +256,7 @@ As the initial condition for the iterations, we set to zero the following
 \end_inset
 
  and 
-\begin_inset Formula $_{k}^{\ell,t=0}=0$
+\begin_inset Formula $g_{k}^{\ell,t=0}=0$
 \end_inset
 
 .
@@ -279,12 +279,12 @@ As the initial condition for the iterations, we set to zero the following
 \begin_layout Standard
 \begin_inset Formula 
 \begin{align}
-\hat{x}_{ia\to k}^{\ell,t} & =\partial_{B}\varphi_{ia\to k}^{\ell,t^{-}}\label{eq:upd-h-2}\\
-\Delta_{ia\to k}^{\ell,t} & =\partial_{B}^{2}\varphi_{ia\to k}^{\ell,t^{-}}\label{eq:upd-sigma-2}\\
-m_{ki\to a}^{\ell,t} & =\partial_{H}\psi_{ki\to a}^{\ell,t^{-}}\\
-\sigma_{ki\to a}^{\ell,t} & =\partial_{H}^{2}\psi_{ki\to a}^{\ell,t^{-}}\\
+\hat{x}_{ia\to k}^{\ell,t} & =\partial_{B}\varphi_{ia\to k}^{\ell}\left(B_{ia\to k}^{\ell,t-1},A_{ia}^{\ell,t-1},\omega_{ia}^{\ell-1,t},V_{ia}^{\ell-1,t}\right)\\
+\Delta_{ia\to k}^{\ell+1,t} & =\partial_{B}^{2}\varphi_{ia\to k}^{\ell+1,t}\\
+m_{ki\to a}^{\ell,t} & =\partial_{H}\psi_{ki}^{\ell}(H_{ki\to a}^{t-1},G_{ki}^{t-1})\\
+\sigma_{ki\to a}^{\ell,t} & =\partial_{H}^{2}\psi_{ki}^{\ell}(H_{ki\to a}^{t-1},G_{ki}^{t-1})\\
 V_{ka}^{\ell,t} & =\sum_{i}\left(\left(m_{ki\to a}^{\ell,t}\right)^{2}\Delta_{ia\to k}^{\ell,t}+\Sigma_{ki\to a}^{\ell,t}(\hat{x}_{ia\to k}^{\ell,t})^{2}+\sigma_{ki\to a}^{\ell,t}\Delta_{ia\to k}^{\ell,t}\right)\label{eq:upd-V-2}\\
-\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki\to a}^{\ell,t}\hat{x}_{ia\to k}^{\ell,t}\label{eq:upd-w-2}
+\omega_{ka\to i}^{\ell,t} & =\sum_{i'\neq i}m_{ki\to a}^{\ell,t}\hat{x}_{ia\to k}^{\ell,t}\label{eq:upd-w-2}
 \end{align}
 
 \end_inset
@@ -322,7 +322,7 @@ In the BACKWARD sweep, starting from
 \begin_inset Formula $\ell=L$
 \end_inset
 
- and up to 
+ and down to 
 \begin_inset Formula $\ell=0$
 \end_inset
 
@@ -332,12 +332,12 @@ In the BACKWARD sweep, starting from
 \begin_layout Standard
 \begin_inset Formula 
 \begin{align}
-g_{ka\to i}^{\ell,t} & =\partial_{\omega}\varphi_{ka\to i}^{\ell+1,t}\label{eq:upd-g-2}\\
+g_{ka\to i}^{\ell,t} & =\partial_{\omega}\varphi_{ka\to i}^{\ell+1}\left(B_{ka}^{\ell+1,t},A_{ka}^{\ell+1,t},\omega_{ka\to i}^{\ell,t},V_{ka}^{\ell,t}\right)\label{eq:upd-g-2}\\
 \Gamma_{ka\to i}^{\ell,t} & =-\partial_{\omega}^{2}\varphi_{ka\to i}^{\ell+1,t}\label{eq:upd-dwg-2}\\
 A_{ia}^{\ell,t} & =\sum_{k}\left((m_{ki\to a}^{\ell,t})^{2}+\sigma_{ki\to a}^{\ell,t}\right)\Gamma_{ka\to i}^{\ell,t}-\sigma_{ki\to a}^{\ell,t}\left(g_{ka\to i}^{\ell,t}\right)^{2}\label{eq:upd-A-2}\\
-B_{ia}^{\ell,t} & =\sum_{k}m_{ki\to a}^{\ell}g_{ka\to i}^{\ell,t}\label{eq:upd-B-2}\\
+B_{ia\to k}^{\ell,t} & =\sum_{k'\neq k}m_{k'i\to a}^{\ell}g_{k'a\to i}^{\ell,t}\label{eq:upd-B-2}\\
 G_{ki}^{\ell,t} & =\sum_{a}\left((\hat{x}_{ia\to k}^{\ell,t})^{2}+\Delta_{ia\to k}\right)\Gamma_{ka\to i}^{\ell,t}-\Delta_{ia\to k}\left(g_{ka\to i}^{\ell,t}\right)^{2}\\
-H_{ki} & =\sum_{a}\hat{x}_{ia\to k}^{\ell,t}g_{ka\to i}^{\ell,t}
+H_{ki\to a} & =\sum_{a'\neq a}\hat{x}_{ia'\to k}^{\ell,t}g_{ka'\to i}^{\ell,t}
 \end{align}
 
 \end_inset
@@ -380,7 +380,7 @@ As the initial condition for the iterations, we set to zero the following
 \end_inset
 
  and 
-\begin_inset Formula $_{k}^{\ell,t=0}=0$
+\begin_inset Formula $g_{k}^{\ell,t=0}=0$
 \end_inset
 
 .
@@ -407,8 +407,8 @@ As the initial condition for the iterations, we set to zero the following
 \Delta_{ia}^{\ell,t} & =\partial_{B}^{2}\varphi_{ia}^{\ell,t^{-}}\label{eq:upd-sigma-2-1}\\
 m_{ki}^{\ell,t} & =\partial_{H}\psi_{ki}^{\ell,t^{-}}\\
 \sigma_{ki}^{\ell,t} & =\partial_{H}^{2}\psi_{ki}^{\ell,t^{-}}\\
-V_{ka}^{\ell,t} & =\sum_{i}\left(\left(m_{ki}^{\ell,t}\right)^{2}\Delta_{ia}^{\ell,t}+\Sigma_{ki}^{\ell,t}(\hat{x}_{ia}^{\ell,t})^{2}+\sigma_{ki}^{\ell,t}\Delta_{ia}^{\ell,t}\right)\label{eq:upd-V-2-1}\\
-\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsager\label{eq:upd-w-2-1}
+V_{ka}^{\ell,t} & =\sum_{i}\left(\left(m_{ki}^{\ell,t}\right)^{2}\Delta_{ia}^{\ell,t}+\sigma_{ki}^{\ell,t}(\hat{x}_{ia}^{\ell,t})^{2}+\sigma_{ki}^{\ell,t}\Delta_{ia}^{\ell,t}\right)\label{eq:upd-V-2-1}\\
+\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsagsize(x̂)er\label{eq:upd-w-2-1}
 \end{align}
 
 \end_inset
@@ -456,8 +456,8 @@ In the BACKWARD sweep, starting from
 \begin_layout Standard
 \begin_inset Formula 
 \begin{align}
-g_{ka\to i}^{\ell,t} & =\partial_{\omega}\varphi_{ka}^{\ell+1,t}\label{eq:upd-g-2-1}\\
-\Gamma_{ka\to i}^{\ell,t} & =-\partial_{\omega}^{2}\varphi_{ka}^{\ell+1,t}\label{eq:upd-dwg-2-1}\\
+g_{ka}^{\ell,t} & =\partial_{\omega}\varphi_{ka}^{\ell+1,t}\label{eq:upd-g-2-1}\\
+\Gamma_{ka}^{\ell,t} & =-\partial_{\omega}^{2}\varphi_{ka}^{\ell+1,t}\label{eq:upd-dwg-2-1}\\
 A_{ia}^{\ell,t} & =\sum_{k}\left((m_{ki}^{\ell,t})^{2}+\sigma_{ki}^{\ell,t}\right)\Gamma_{ka}^{\ell,t}-\sigma_{ki}^{\ell,t}\left(g_{ka}^{\ell,t}\right)^{2}\label{eq:upd-A-2-1}\\
 B_{ia}^{\ell,t} & =\sum_{k}m_{ki}^{\ell}g_{ka}^{\ell,t}+TODO:onsager\label{eq:upd-B-2-1}\\
 G_{ki}^{\ell,t} & =\sum_{a}\left((\hat{x}_{ia}^{\ell,t})^{2}+\Delta_{ia}\right)\Gamma_{ka}^{\ell,t}-\Delta_{ia}\left(g_{ka}^{\ell,t}\right)^{2}\\

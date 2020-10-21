@@ -8,6 +8,8 @@ using Random
 using LinearAlgebra
 using Statistics
 using Base: @propagate_inbounds # for DataLoader
+using LoopVectorization
+using Tullio
 
 # using PyPlot
 
@@ -103,6 +105,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 yy = -1,                         # focusing BP parameter
                 h0 = nothing,                   # external field
                 ρ = 1.0,                        # coefficient for external field
+                freezetop=true,                # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true, 
                 altconv::Bool = false,
@@ -119,7 +122,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
     h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
-    fixtopbottom!(g)
+    freezetop && freezetop!(g, 1)
     
     reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
 
@@ -138,7 +141,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                                 density=density, verbose=0)
                 set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
-                fixtopbottom!(gbatch)
+                freezetop && freezetop!(g, 1)
                 set_external_fields!(gbatch, hext; ρ=ρ)
 
                 it, e, δ = converge!(gbatch, maxiters=maxiters, ϵ=ϵ, #reinfpar=ReinfParams(),
