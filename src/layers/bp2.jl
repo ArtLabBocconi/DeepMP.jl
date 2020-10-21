@@ -28,12 +28,12 @@ mutable struct BPLayer2 <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext
-
     weight_mask
+    isfrozen::Bool
 end
 
 
-function BPLayer2(K::Int, N::Int, M::Int; density=1.)
+function BPLayer2(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     # for variables W
     x̂ = zeros(N, M)
     x̂cav = zeros(K, N, M)
@@ -63,7 +63,7 @@ function BPLayer2(K::Int, N::Int, M::Int; density=1.)
             B, Bcav, A, H, Hcav,
             ω, ωcav, V,
             DummyLayer(), DummyLayer(),
-            allhext, weight_mask)
+            allhext, weight_mask, isfrozen)
 end
 
 

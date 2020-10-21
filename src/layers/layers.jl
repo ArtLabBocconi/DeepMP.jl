@@ -20,18 +20,13 @@ include("parity.jl")
 include("bp_real.jl")
 include("bp2.jl")
 
-istoplayer(layer::AbstractLayer) = (typeof(layer.top_layer) == OutputLayer)
-isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
-isonlylayer(layer::AbstractLayer) = istoplayer(layer) && isbottomlayer(layer)
+isfrozen(layer::AbstractLayer) = layer.isfrozen
+freeze!(layer::AbstractLayer) = layer.isfrozen = true
+unfreeze!(layer::AbstractLayer) = layer.isfrozen = false
 
-function Base.show(io::IO, layer::L) where {L <: Union{TapExactLayer,TapLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd
-    println(io, "m=$(allm[1])")
-    println(io, "my=$(allmy[1])")
-end
+isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
 
 signB(x::T) where {T} = sign(x + 1e-10)
-
 
 function forward(W::Vector{Vector{T}}, x) where T <: Number
     Wmat =  vcat([w' for w in W]...)

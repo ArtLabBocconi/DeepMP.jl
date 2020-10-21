@@ -37,12 +37,11 @@ mutable struct TapExactLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    
-
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
-function TapExactLayer(K::Int, N::Int, M::Int; density=1)
+function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -77,7 +76,7 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1)
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
         , DummyLayer(), DummyLayer(),
-        weight_mask)
+        weight_mask, isfrozen)
 end
 
 
@@ -120,28 +119,17 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
         my = allmy[a]
         MYt = MYtot[a];
         X = ones(Complex{Float64}, N+1)
-        if istoplayer(layer)
-            for p=1:N+1
-                for i=1:N
-                    #TODO il termine di reazione si può anche omettere
-                    magY = my[i]
-                    magW = m[i]
-                    pup = (1+magY*magW)/2
-                    X[p] *= (1-pup) + pup*expf[p]
-                end
-            end
-        else
-            for p=1:N+1
-                for i=1:N
-                    # magY = my[i]-mh[a]*m[i]*(1-my[i]^2)
-                    # magW = m[i]-mh[a]*my[i]*(1-m[i]^2)
-                    # pup = (1+magY*magW)/2
-                    pup = (1+my[i]*m[i])/2
-                    X[p] *= (1-pup) + pup*expf[p]
-                end
+    
+        for p=1:N+1
+            for i=1:N
+                # magY = my[i]-mh[a]*m[i]*(1-my[i]^2)
+                # magW = m[i]-mh[a]*my[i]*(1-m[i]^2)
+                # pup = (1+magY*magW)/2
+                pup = (1+my[i]*m[i])/2
+                X[p] *= (1-pup) + pup*expf[p]
             end
         end
-
+        
         vH = tanh(pdtop[a])
         s2P = Complex{Float64}(0.)
         s2M = Complex{Float64}(0.)
@@ -175,7 +163,7 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
             @assert isfinite(sr)
             sr > 1 && (sr=1. - 1e-12) #print("!")
             sr < -1 && (sr=-1. + 1e-12) #print("!")
-            # if istoplayer(layer) && !isonlylayer(layer)
+            # if isfrozen(layer)
             #     allpd[i][a] = atanh(m[i]*sr)
             # else
             MYt[i] +=  myatanh(m[i] * sr)
@@ -221,9 +209,10 @@ mutable struct TapLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
-function TapLayer(K::Int, N::Int, M::Int; density=1)
+function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -249,7 +238,7 @@ function TapLayer(K::Int, N::Int, M::Int; density=1)
         , allh, allhext, allhy, allpu,allpd
         , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
         , DummyLayer(), DummyLayer()
-        , weight_mask)
+        , weight_mask, isfrozen)
 end
 
 function updateFact!(layer::TapLayer, k::Int, reinfpar)
@@ -398,7 +387,7 @@ function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
         updateFact!(layer, k, reinfpar)
     end
     Δ = 0.
-    if !istoplayer(layer) || isonlylayer(layer)
+    if !isfrozen(layer)
         for k=1:K
             δ = updateVarW!(layer, k, reinfpar.r)
             Δ = max(δ, Δ)

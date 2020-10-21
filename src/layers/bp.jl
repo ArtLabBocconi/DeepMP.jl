@@ -37,12 +37,12 @@ mutable struct BPExactLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext::VecVec
-
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
 
-function BPExactLayer(K::Int, N::Int, M::Int; density=1)
+function BPExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -80,8 +80,7 @@ function BPExactLayer(K::Int, N::Int, M::Int; density=1)
         , VecVec(), VecVec()
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
         , DummyLayer(), DummyLayer(),
-        allhext,
-        weight_mask)
+        allhext, weight_mask, isfrozen)
 end
 
 
@@ -109,7 +108,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     end
 
     vH = tanh(pdtop[a])
-    if !istoplayer(layer)
+    if !isfrozen(layer)
         s2P = Complex{Float64}(0.)
         s2M = Complex{Float64}(0.)
         for p=1:N+1
@@ -138,7 +137,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
         sr = vH * real(s0 / (pp*(s0 + 2s2p) + pm*(s0 + 2s2m)))
         sr > 1 && (sr=1 - 1e-10) #print("!")
         sr < -1 && (sr=-1 + 1e-10) #print("!")
-        if !istoplayer(layer) || isonlylayer(layer)
+        if !isfrozen(layer)
             mhw[i][a] =  myatanh(mycav[i] * sr)
             !isfinite(mhw[i][a]) && (mhw[i][a] = sign(mhw[i][a])*20) #print("!")
             @assert isfinite(mhw[i][a]) "mhw[i][a]=$(mhw[i][a]) $(mycav[i]) $sr"
@@ -188,11 +187,11 @@ mutable struct BPAccurateLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext::VecVec
-
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
-function BPAccurateLayer(K::Int, N::Int, M::Int; density=1)
+function BPAccurateLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -220,8 +219,7 @@ function BPAccurateLayer(K::Int, N::Int, M::Int; density=1)
         , allh, allux, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer(),
-        allhext,
-        weight_mask)
+        allhext, weight_mask, isfrozen)
 end
 
 
@@ -332,12 +330,12 @@ mutable struct BPLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext::VecVec
-
     weight_mask::Vector{Vector{Int}}
+    isfrozen::Bool
 end
 
 
-function BPLayer(K::Int, N::Int, M::Int; density=1.)
+function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     # for variables W
     allm = [zeros(N) for i=1:K]
     allh = [zeros(N) for i=1:K]
@@ -365,8 +363,7 @@ function BPLayer(K::Int, N::Int, M::Int; density=1.)
         , allh, allux, allhy, allpu,allpd
         , VecVec(), VecVec()
         , DummyLayer(), DummyLayer(),
-        allhext,
-        weight_mask)
+        allhext, weight_mask, isfrozen)
 end
 
 function updateFact!(layer::BPLayer, k::Int, a::Int, reinfpar)
@@ -543,7 +540,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
             k = (u-M-1) ÷ N + 1
             i = (u-M-1) % N + 1
 
-            if !istoplayer(layer) || isonlylayer(layer)
+            if !isfrozen(layer)
                 # println("Updating W")
                 δ = updateVarW!(layer, k, i, reinfpar)
                 Δ = max(δ, Δ)
@@ -562,7 +559,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
     # end
 
     # for k in 1:K, i in 1:N
-    #     if !istoplayer(layer) || isonlylayer(layer)
+    #     if !isfrozen(layer)
     #         # println("Updating W")
     #         δ = updateVarW!(layer, k, i, reinfpar.r)
     #         Δ = max(δ, Δ)

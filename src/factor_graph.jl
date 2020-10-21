@@ -148,15 +148,13 @@ function initrand!(g::FactorGraph)
     for lay in layers[2:end-1]
         initrand!(lay)
     end
+    fixY!(g.layers[2], g.x) # fix input to first layer
 end
 
-function fixtopbottom!(g::FactorGraph)
-    @extract g: M layers K x
+function freezetop!(g::FactorGraph, w)
     if g.L != 1
-        fixW!(g.layers[end-1], 1.)
+        fixW!(g.layers[end-1], w)
     end
-
-    fixY!(g.layers[2], x)
 end
 
 function update!(g::FactorGraph, reinfpar)
