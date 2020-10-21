@@ -118,7 +118,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer2}}
     @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
     
     
-    @tullio H[k,i] = gcav[k,i,a] * x̂cav[k,i,a] + r * H[k,i]  
+    @tullio H[k,i] = gcav[k,i,a] * x̂cav[k,i,a] #+ r * H[k,i]  
     @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
     mcav .= tanh.(Hcav)
     mnew = tanh.(H)
