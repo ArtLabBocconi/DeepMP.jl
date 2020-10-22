@@ -8,9 +8,9 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (ONLY FOR bp family as of yet)
 
-    function FactorGraph(x::Matrix{Float64}, y::Vector{Int}, 
-                K::Vector{Int}, 
-                layertype::Vector{Symbol}; 
+    function FactorGraph(x::Matrix{Float64}, y::Vector{Int},
+                K::Vector{Int},
+                layertype::Vector{Symbol};
                 β=Inf, βms = 1.,
                 density=1., verbose=1)
         N, M = size(x)
@@ -154,6 +154,7 @@ end
 function freezetop!(g::FactorGraph, w)
     if g.L != 1
         fixW!(g.layers[end-1], w)
+        freeze!(g.layers[end-1])
     end
 end
 

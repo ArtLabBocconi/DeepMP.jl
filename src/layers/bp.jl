@@ -643,4 +643,3 @@ function forward(layer::L, x) where L <: Union{BPLayer, BPAccurateLayer, BPExact
     W = getW(layer)
     return sign.(W*x .+ 1e-10)
 end
-

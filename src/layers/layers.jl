@@ -34,7 +34,7 @@ function forward(W::Vector{Vector{T}}, x) where T <: Number
 end
 
 function forward(W::Matrix{T}, x) where T <: Number
-    return signB.(W*x) 
+    return signB.(W*x)
 end
 
 function forward(W::Vector, x)
@@ -92,9 +92,9 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     q0 = Float64[]
     qWαβ = Float64[]
     R = Float64[]
-    
+
     for k=1:K
-        Nk = hasproperty(layer, :weight_mask) ?  
+        Nk = hasproperty(layer, :weight_mask) ?
                 sum(layer.weight_mask[k]) : K
         if hasproperty(layer, :allm)
             push!(q0, dot(layer.allm[k], layer.allm[k]) / Nk)
