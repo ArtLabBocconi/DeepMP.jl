@@ -541,7 +541,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer, BPAccurateLayer,
             i = (u-M-1) % N + 1
 
             if !isfrozen(layer)
-                # println("Updating W")
+                # println("Updating W for layer with K,N = $(layer.K), $(layer.N) isf=$(isfrozen(layer))")
                 δ = updateVarW!(layer, k, i, reinfpar)
                 Δ = max(δ, Δ)
             end

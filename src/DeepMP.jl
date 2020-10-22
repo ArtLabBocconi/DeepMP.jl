@@ -123,7 +123,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
     freezetop && freezetop!(g, 1)
-    # @show teacher
+    # @show getW(g)
     reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
 
     if batchsize <= 0
@@ -141,7 +141,8 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                                      density=density, verbose=0)
                 set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
-                freezetop && freezetop!(g, 1)
+                freezetop && freezetop!(gbatch, 1)
+                # freezetop && @assert isfrozen(g.layers[end-1])
                 set_external_fields!(gbatch, hext; ρ=ρ)
 
                 it, e, δ = converge!(gbatch, maxiters=maxiters, ϵ=ϵ, #reinfpar=ReinfParams(),
