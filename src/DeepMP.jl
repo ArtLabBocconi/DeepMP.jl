@@ -44,7 +44,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
 
         verbose > 0 && @printf("it=%d \t (r=%f ry=%f) E=%d \t Δ=%f \n",
                                 it, reinfpar.r, reinfpar.ry, E, Δ)
-        
+
         plotinfo >=0  && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
@@ -60,7 +60,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
 end
 
 function solve(; K::Vector{Int} = [101,3], α=0.6,
-                 seedx::Int=-1, 
+                 seedx::Int=-1,
                  density=1,
                  TS = false,
                  density_teacher = density,
@@ -84,7 +84,7 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
         teacher = nothing
         ytrain = rand([-1,1], M)
     end
-    
+
     @assert size(xtrain) == (N, M)
     @assert size(ytrain) == (M,)
     @assert all(x -> x == -1 || x == 1, ytrain)
@@ -107,23 +107,23 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 ρ = 1.0,                        # coefficient for external field
                 freezetop=true,                # freeze top-layer's weights to 1
                 teacher = nothing,
-                altsolv::Bool = true, 
+                altsolv::Bool = true,
                 altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
-                β=Inf, βms = 1., 
+                β=Inf, βms = 1.,
                 density = 1.,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs::Int = 1000,
                 verbose::Int = 1)
 
     seed > 0 && Random.seed!(seed)
-    
+
     g = FactorGraph(xtrain, ytrain, K, layers, β=β, βms=βms, density=density)
     h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
     freezetop && freezetop!(g, 1)
-    
+    # @show teacher
     reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
 
     if batchsize <= 0
@@ -133,12 +133,12 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
     else
         hext = get_allh(g)
         dtrain = DataLoader((xtrain, ytrain), batchsize=batchsize, shuffle=true)
-            
+
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             for (b, (x, y)) in enumerate(dtrain)
                 gbatch = FactorGraph(x, y, K, layers, β=β, βms=βms,
-                                density=density, verbose=0)
+                                     density=density, verbose=0)
                 set_weight_mask!(gbatch, g)
                 initrand!(gbatch)
                 freezetop && freezetop!(g, 1)
@@ -156,7 +156,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
 
                 print("b = $b / $(length(dtrain))\r")
             end
-            
+
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
             Etest = 100.0
@@ -170,7 +170,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             Etrain == 0 && break
         end
     end
-    
+
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, E, it
 end
