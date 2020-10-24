@@ -109,6 +109,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer2}}
 
     # # BACKWARD 
     Atop, Btop = get_AB(top_layer)
+    @assert size(Btop) == (K, M)
     @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
     @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
     # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
@@ -117,8 +118,8 @@ function update!(layer::L, reinfpar) where {L <: Union{BPLayer2}}
     @tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
     @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
     
-    
-    @tullio H[k,i] = gcav[k,i,a] * x̂cav[k,i,a] #+ r * H[k,i]  
+    @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
+    @tullio H[k,i] = Hin[k,i] + r * H[k,i]  
     @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
     mcav .= tanh.(Hcav)
     mnew = tanh.(H)
@@ -135,7 +136,7 @@ function initrand!(layer::L) where {L <: Union{BPLayer2}}
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
-    ϵ = 1e-0
+    ϵ = 1e-10
     H .= ϵ .* randn(K, N)
     m .= tanh.(H)
     mcav .= m
