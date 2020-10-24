@@ -57,9 +57,9 @@ end
 
 
 function updateVarW!(layer::MaxSumLayer, k::Int, r=1.)
-    @extract layer K N M allm allmy allmh B Bup allhy allh
-    @extract layer bottom_layer top_layer
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh B Bup allhy allh
+    @extract layer: bottom_layer top_layer
+    @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
 
     # println("herew")
@@ -126,9 +126,9 @@ end
 Θ1(x) = (x-1)*ifelse(x>1,0,1)
 
 function updateFact!(layer::MaxSumLayer, k::Int)
-    @extract layer K N M allm allmy allmh B Bup βms
-    @extract layer bottom_layer top_layer
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh B Bup βms
+    @extract layer: bottom_layer top_layer
+    @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
     mh = allmh[k];
     pdtop = top_layer.B[k,:]
@@ -329,8 +329,8 @@ function update!(layer::MaxSumLayer, reinfpar)
 end
 
 function initrand!(layer::MaxSumLayer)
-    @extract layer K N M allm allmy allmh B Bup 
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh B Bup 
+    @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
     for m in allm
         m .= rand([-1,1], N)
@@ -350,12 +350,20 @@ function initrand!(layer::MaxSumLayer)
     end
 end
 
-
 function fixY!(layer::MaxSumLayer, x::Matrix)
-    @extract layer K N M allm allmy allmh B Bup
+    @extract layer: K N M allm allmy allmh B Bup
+    @extract layer: allhy allmycav
 
+    @assert all(x -> x==1 || x==-1, x) # works only on binary input
+    
     for a=1:M, i=1:N
-        allmy[a][i] = x[i,a]
+        allhy[a][i] = sign(x[i, a]) * 100
+        # allmy[a][i] = x[i,a]
+        allmy[a][i] = allhy[a][i]
+        mycav = allmycav[a]
+        for k=1:K
+            mycav[k][i] = allhy[a][i]
+        end
     end
 end
 
