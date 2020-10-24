@@ -16,14 +16,10 @@ mutable struct BPILayer <: AbstractLayer
     allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
-    allpu::VecVec # p(σ=up) from fact ↑ to y
-    allpd::VecVec # p(σ=up) from y  ↓ to fact
-
+    Bup  # field from fact  ↑ to y
+    B # field from y ↓ to fact
     Mtot::VecVec
     MYtot::VecVec
-
-    top_allpd::VecVec
-    bottom_allpu::VecVec
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
@@ -44,27 +40,26 @@ function BPILayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     allhy = [zeros(N) for a=1:M]
     MYtot = [zeros(N) for a=1:M]
 
-
-    allpu = [zeros(M) for k=1:K]
-    allpd = [zeros(M) for k=1:N]
+    Bup = zeros(K, M)
+    B = zeros(N, M)
 
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
     return BPILayer(-1, K, N, M
         , allm, allmy
-        , allh, allhext, allhy, allpu,allpd
-        , Mtot, MYtot, VecVec(), VecVec()
+        , allh, allhext, allhy, Bup, B
+        , Mtot, MYtot
         , DummyLayer(), DummyLayer()
         , weight_mask, isfrozen)
 end
 
 function updateFact!(layer::BPILayer, k::Int, reinfpar)
-    @extract layer: K N M allm allmy allpu allpd
-    @extract layer: MYtot Mtot bottom_allpu top_allpd
+    @extract layer: K N M allm allmy B Bup
+    @extract layer: MYtot Mtot bottom_layer top_layer
 
     m = allm[k]
     Mt = Mtot[k]
-    pd = top_allpd[k]
+    pd = top_layer.B[k,:]
     mask = layer.weight_mask[k]
     for a=1:M
         my = allmy[a]
@@ -93,13 +88,13 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
         end
 
         # Message to top
-        allpu[k][a] = atanh2Hm1(-Mhtot / √Chtot)
+        B[k,a] = atanh2Hm1(-Mhtot / √Chtot)
     end
 end
 
 function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy  allpu allpd l
-    @extract layer: MYtot Mtot  bottom_allpu allh allhext
+    @extract layer: K N M allm allmy  B Bup l
+    @extract layer: MYtot Mtot  allh allhext
     Δ = 0.
     m = allm[k]
     Mt = Mtot[k]
@@ -119,8 +114,9 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{BPILayer
 end
 
 function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy allpu allpd
-    @extract layer allhy MYtot Mtot  bottom_allpu
+    @extract layer: K N M allm allmy B Bup
+    @extract layer: allhy MYtot Mtot
+    @extract layer: bottom_layer
 
     @assert !isbottomlayer(layer)
 
@@ -130,28 +126,15 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILaye
 
     for i=1:N
         hy[i] = MYt[i] + ry* hy[i]
-        allpd[i][a] = hy[i]
-        pu = bottom_allpu[i][a];
+        B[i,a] = hy[i]
+        pu = bottom_layer.Bup[i,a]
         hy[i] += pu
         my[i] = tanh(hy[i])
     end
 end
 
-function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy allpu allpd
-    @extract layer: allhy MYtot Mtot bottom_allpu
-
-    @assert isbottomlayer(layer)
-
-    x = layer.bottom_layer.x
-    my = allmy[a]
-    for i=1:N
-        my[i] = x[i, a]
-    end
-end
-
 function update!(layer::L, reinfpar) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy allpu allpd  MYtot Mtot
+    @extract layer: K N M allm allmy B Bup  MYtot Mtot
 
 
     #### Reset Total Fields
@@ -174,7 +157,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPILayer}}
         end
     end
 
-    # bypass Y if toplayer
+    # bypass Y if top_layer
     if !isbottomlayer(layer)
         for a=1:M
             updateVarY!(layer, a, reinfpar.ry)
@@ -184,7 +167,7 @@ function update!(layer::L, reinfpar) where {L <: Union{BPILayer}}
 end
 
 function initrand!(layer::L) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy allpu allpd  top_allpd
+    @extract layer K N M allm allmy B Bup
     ϵ = 1e-1
     mask = layer.weight_mask
 
@@ -195,18 +178,10 @@ function initrand!(layer::L) where {L <: Union{BPILayer}}
     for my in allmy
         my .= (2*rand(N) .- 1) .* ϵ
     end
-
-    for pu in allpu
-        pu .= rand(M)
-    end
-
-    for pd in allpd
-        pd .= rand(M)
-    end
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy allpu allpd  top_allpd
+    @extract layer: K N M allm allmy B Bup
 
     for k=1:K, i=1:N
         allm[k][i] = w
@@ -214,7 +189,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPILayer}}
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy allpu allpd  top_allpd
+    @extract layer K N M allm allmy B Bup
 
     for a=1:M, i=1:N
         allmy[a][i] = x[i,a]

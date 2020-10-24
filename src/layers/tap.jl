@@ -16,16 +16,12 @@ mutable struct TapExactLayer <: AbstractLayer
     allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
-    allpu::VecVec # p(σ=up) from fact ↑ to y
-    allpd::VecVec # p(σ=up) from y  ↓ to fact
-
+    Bup  # field from fact  ↑ to y
+    B # field from y ↓ to fact
     Mtot::VecVec
     Ctot::Vec
     MYtot::VecVec
     CYtot::Vec
-
-    top_allpd::VecVec
-    bottom_allpu::VecVec
 
     expf::CVec
     expinv0::CVec
@@ -58,8 +54,8 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for Facts
     allmh = [zeros(M) for k=1:K]
 
-    allpu = [zeros(M) for k=1:K]
-    allpd = [zeros(M) for k=1:N]
+    Bup = zeros(K, M)
+    B = zeros(N, M)
 
 
     expf =fexpf(N)
@@ -72,8 +68,8 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
     return TapExactLayer(-1, K, N, M, allm, allmy, allmh 
-        , allh, allhext, allhy, allpu,allpd
-        , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
+        , allh, allhext, allhy, Bup, B
+        , Mtot, Ctot, MYtot, CYtot
         , fexpf(N), fexpinv0(N), fexpinv2p(N), fexpinv2m(N), fexpinv2P(N), fexpinv2M(N)
         , DummyLayer(), DummyLayer(),
         weight_mask, isfrozen)
@@ -107,13 +103,13 @@ fexpinv2M(N) = Complex{Float64}[(
 
 
 function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
-    @extract layer: K N M allm allmy allmh allpu allpd
+    @extract layer: K N M allm allmy allmh B Bup
     @extract layer: CYtot MYtot Mtot Ctot
-    @extract layer: bottom_allpu top_allpd
+    @extract layer: bottom_layer top_layer
     @extract layer: expf expinv0 expinv2M expinv2P expinv2m expinv2p
-    m = allm[k]; mh = allmh[k];
-    Mt = Mtot[k]; Ct = Ctot;
-    pdtop = top_allpd[k];
+    m = allm[k]; mh = allmh[k]
+    Mt = Mtot[k]; Ct = Ctot
+    pdtop = top_layer.B[k,:]
     CYt = CYtot
     for a=1:M
         my = allmy[a]
@@ -139,7 +135,7 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
         end
         s2PP = abs(real(s2P)) / (abs(real(s2P)) + abs(real(s2M)))
         s2MM = abs(real(s2M)) / (abs(real(s2P)) + abs(real(s2M)))
-        allpu[k][a] = myatanh(s2PP, s2MM)
+        Bup[k,a] = myatanh(s2PP, s2MM)
         mh[a] = real((1+vH)*s2P - (1-vH)*s2M) / real((1+vH)*s2P + (1-vH)*s2M)
 
         for i = 1:N
@@ -164,13 +160,13 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
             sr > 1 && (sr=1. - 1e-12) #print("!")
             sr < -1 && (sr=-1. + 1e-12) #print("!")
             # if isfrozen(layer)
-            #     allpd[i][a] = atanh(m[i]*sr)
+            #     B[i,a] = atanh(m[i]*sr)
             # else
             MYt[i] +=  myatanh(m[i] * sr)
             Mt[i] +=  myatanh(my[i] * sr)
             # end
             # @assert isfinite(my[i])
-            # @assert isfinite(allpd[i][a])
+            # @assert isfinite(B[i,a])
             @assert isfinite(MYt[i])
         end
     end
@@ -194,16 +190,12 @@ mutable struct TapLayer <: AbstractLayer
     allhext::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
-    allpu::VecVec # p(σ=up) from fact ↑ to y
-    allpd::VecVec # p(σ=up) from y  ↓ to fact
-
+    Bup  # field from fact  ↑ to y
+    B # field from y ↓ to fact
     Mtot::VecVec
     Ctot::Vec
     MYtot::VecVec
     CYtot::Vec
-
-    top_allpd::VecVec
-    bottom_allpu::VecVec
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
@@ -229,24 +221,24 @@ function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for Facts
     allmh = [zeros(M) for k=1:K]
 
-    allpu = [zeros(M) for k=1:K]
-    allpd = [zeros(M) for k=1:N]
+    Bup = zeros(K, M)
+    B = zeros(N, M)
 
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
     return TapLayer(-1, K, N, M, allm, allmy, allmh
-        , allh, allhext, allhy, allpu,allpd
-        , Mtot, Ctot, MYtot, CYtot, VecVec(), VecVec()
+        , allh, allhext, allhy, Bup, B
+        , Mtot, Ctot, MYtot, CYtot
         , DummyLayer(), DummyLayer()
         , weight_mask, isfrozen)
 end
 
 function updateFact!(layer::TapLayer, k::Int, reinfpar)
-    @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup CYtot MYtot Mtot Ctot bottom_layer top_layer
 
     m = allm[k]; mh = allmh[k];
     Mt = Mtot[k]; Ct = Ctot;
-    pd = top_allpd[k];
+    pd = top_layer.B[k,:]
     CYt = CYtot
     mask = layer.weight_mask[k]
     for a=1:M
@@ -296,13 +288,13 @@ function updateFact!(layer::TapLayer, k::Int, reinfpar)
         end
 
         # Message to top
-        allpu[k][a] = atanh2Hm1(-Mhtot / √Chtot)
+        Bup[k,a] = atanh2Hm1(-Mhtot / √Chtot)
     end
 end
 
 function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer: K N M allm allmy allmh allpu allpd l
-    @extract layer: CYtot MYtot Mtot Ctot bottom_allpu allh allhext
+    @extract layer: K N M allm allmy allmh B Bup l
+    @extract layer: CYtot MYtot Mtot Ctot allh allhext
     Δ = 0.
     m=allm[k];
     Mt=Mtot[k]; Ct = Ctot;
@@ -321,30 +313,29 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer
 end
 
 function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd
-    @extract layer allhy CYtot MYtot Mtot Ctot bottom_allpu
+    @extract layer K N M allm allmy allmh B Bup
+    @extract layer allhy CYtot MYtot Mtot Ctot
 
     @assert !isbottomlayer(layer)
 
     MYt=MYtot[a]; CYt = CYtot[a]; my=allmy[a]; hy=allhy[a]
     @assert isfinite(CYt) "CYt=$CYt"
     for i=1:N
-        # @assert pu >= 0 && pu <= 1 "$pu $i $a $(bottom_allpu[i])"
         @assert isfinite(MYt[i]) "MYt[i]=$(MYt[i]) "
         @assert isfinite(my[i]) "my[i]=$(my[i]) "
         #TODO inutile calcolarli per il primo layer
         @assert isfinite(hy[i])
         hy[i] = MYt[i] + my[i] * CYt + ry* hy[i]
         @assert isfinite(hy[i]) "MYt[i]=$(MYt[i]) my[i]=$(my[i]) CYt=$CYt hy[i]=$(hy[i])"
-        allpd[i][a] = hy[i]
-        # @assert isfinite(allpd[i][a]) "isfinite(allpd[i][a]) $(MYt[i]) $(my[i] * CYt) $(hy[i])"
+        B[i,a] = hy[i]
+        # @assert isfinite(B[i,a]) "isfinite(B[i,a]) $(MYt[i]) $(my[i] * CYt) $(hy[i])"
         # pinned from below (e.g. from input layer)
         # if pu > 1-1e-10 || pu < 1e-10 # NOTE:1-e15 dà risultati peggiori
         #     hy[i] = pu > 0.5 ? 100 : -100
         #     my[i] = 2pu-1
         #
         # else
-        pu = bottom_allpu[i][a];
+        pu = bottom_layer.Bup[i,a]
         hy[i] += pu
         @assert isfinite(hy[i]) "pu=$pu layer.l=$(layer.l)"
         my[i] = tanh(hy[i])
@@ -353,23 +344,9 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLaye
     end
 end
 
-
-function initYBottom!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd
-    @extract layer allhy CYtot MYtot Mtot Ctot bottom_allpu
-
-    @assert isbottomlayer(layer)
-
-    x = layer.bottom_layer.x
-    my=allmy[a]
-    for i=1:N
-        my[i] = x[i, a]
-    end
-end
-
 #function update!(layer::L, reinfpar::ReinfParams) where {L <: Union{TapLayer,TapExactLayer}}
 function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd CYtot MYtot Mtot Ctot
+    @extract layer K N M allm allmy allmh B Bup CYtot MYtot Mtot Ctot
 
 
     #### Reset Total Fields
@@ -394,7 +371,7 @@ function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
         end
     end
 
-    # bypass Y if toplayer
+    # bypass Y if top_layer
     if !isbottomlayer(layer)
         for a=1:M
             updateVarY!(layer, a, reinfpar.ry)
@@ -404,7 +381,7 @@ function update!(layer::L, reinfpar) where {L <: Union{TapLayer,TapExactLayer}}
 end
 
 function initrand!(layer::L) where {L <: Union{TapExactLayer,TapLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer K N M allm allmy allmh B Bup
     ϵ = 1e-1
     mask = layer.weight_mask
 
@@ -417,16 +394,10 @@ function initrand!(layer::L) where {L <: Union{TapExactLayer,TapLayer}}
     for mh in allmh
         mh .= (2*rand(M) .- 1) .* ϵ
     end
-    for pu in allpu
-        pu .= rand(M)
-    end
-    for pd in allpd
-        pd .= rand(M)
-    end
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{TapLayer, TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer K N M allm allmy allmh B Bup
 
     for k=1:K, i=1:N
         allm[k][i] = w
@@ -434,7 +405,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapLayer, TapExactLayer}}
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{TapLayer, TapExactLayer}}
-    @extract layer K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer K N M allm allmy allmh B Bup
 
     for a=1:M, i=1:N
         allmy[a][i] = x[i,a]

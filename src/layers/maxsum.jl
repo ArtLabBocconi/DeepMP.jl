@@ -17,11 +17,8 @@ mutable struct MaxSumLayer <: AbstractLayer
     allh::VecVec # for W reinforcement
     allhy::VecVec # for Y reinforcement
 
-    allpu::VecVec
-    allpd::VecVec
-
-    top_allpd::VecVec
-    bottom_allpu::VecVec
+    Bup # field from fact ↑ to y
+    B # field from y ↓ to fact
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
@@ -48,21 +45,20 @@ function MaxSumLayer(K::Int, N::Int, M::Int; βms=1., isfrozen=false)
     # for Facts
     allmh = [zeros(M) for k=1:K]
 
-    allpu = [zeros(M) for k=1:K]
-    allpd = [zeros(M) for k=1:N]
+    Bup = zeros(K, M)
+    B = zeros(N, M)
 
     return MaxSumLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allmycav, allmhcavtoy,allmhcavtow
-        , allh, allhy, allpu,allpd
-        , VecVec(), VecVec()
+        , allh, allhy, Bup, B
         , DummyLayer(), DummyLayer()
         , βms, isfrozen)
 end
 
 
 function updateVarW!(layer::MaxSumLayer, k::Int, r=1.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy allh
-    @extract layer bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup allhy allh
+    @extract layer bottom_layer top_layer
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
 
@@ -95,8 +91,8 @@ function updateVarW!(layer::MaxSumLayer, k::Int, r=1.)
 end
 
 function updateVarY!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy βms
-    @extract layer bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup allhy βms
+    @extract layer bottom_layer top_layer
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     @assert !isbottomlayer(layer)
@@ -110,9 +106,9 @@ function updateVarY!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
 
         hy[i] = sum(mhy) + ry* hy[i]
         # isfinite(hy[i])
-        allpd[i][a] = βms*hy[i]
+        B[i,a] = βms*hy[i]
         # pinned from below (e.g. from input layer)
-        pu = bottom_allpu[i][a];
+        pu = bottom_layer.Bup[i,a];
         hy[i] += pu/βms
         # !isfinite(hy[i]) && (hy[i] = sign(hy[i]) * ∞ )
         hy[i] = round(Int, hy[i])
@@ -127,38 +123,15 @@ function updateVarY!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
 end
 
 
-function initYBottom!(layer::MaxSumLayer, a::Int, ry::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy βms
-    @extract layer bottom_allpu top_allpd
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    @assert isbottomlayer(layer)
-    #TODO check βms
-    my = allmy[a]
-    hy = allhy[a]
-    x = layer.bottom_layer.x
-    @assert all(x -> x==1 || x==-1, x) # works only on binary input
-    for i=1:N
-        hy[i] = sign(x[i, a]) * 100
-        my[i] = hy[i]
-        mycav = allmycav[a]
-        for k=1:K
-            mycav[k][i] = hy[i]
-        end
-    end
-end
-
-
 Θ1(x) = (x-1)*ifelse(x>1,0,1)
 
 function updateFact!(layer::MaxSumLayer, k::Int)
-    @extract layer K N M allm allmy allmh allpu allpd βms
-    @extract layer bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup βms
+    @extract layer bottom_layer top_layer
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     mh = allmh[k];
-    pdtop = top_allpd[k];
-    pubot = bottom_allpu;
+    pdtop = top_layer.B[k,:]
     ϕ = zeros(N)
     iinfo=1; ainfo = -3
     for a=1:M
@@ -204,7 +177,7 @@ function updateFact!(layer::MaxSumLayer, k::Int)
         Ep = Θ1(Mp - np + 2*xp)  + 2*S2p
         Em = Θ1(Mm - nm + 2*xm)  - 2*S2m
         ϕup = 0.5*(Ep-Em)
-        allpu[k][a] = βms*ϕup
+        Bup[k,a] = βms*ϕup
 
         ϕtot = 0.5*(Ep-Em + 2ϕy)
 
@@ -333,7 +306,7 @@ end
 
 
 function update!(layer::MaxSumLayer, reinfpar)
-    @extract layer K N M allm allmy allmh allpu allpd
+    @extract layer K N M allm allmy allmh B Bup
     # println(layer)
     for k=1:K
         updateFact!(layer, k)
@@ -356,7 +329,7 @@ function update!(layer::MaxSumLayer, reinfpar)
 end
 
 function initrand!(layer::MaxSumLayer)
-    @extract layer K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer K N M allm allmy allmh B Bup 
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     for m in allm
@@ -368,9 +341,6 @@ function initrand!(layer::MaxSumLayer)
     for mh in allmh
         mh .= rand([-1,1], M)
     end
-    for pu in allpu
-        pu .= rand([-1,1], M)
-    end
 
     for k=1:K,a=1:M,i=1:N
         allmcav[k][a][i] = allm[k][i]
@@ -378,12 +348,11 @@ function initrand!(layer::MaxSumLayer)
         allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i]
         allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i]
     end
-
 end
 
 
 function fixY!(layer::MaxSumLayer, x::Matrix)
-    @extract layer K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer K N M allm allmy allmh B Bup
 
     for a=1:M, i=1:N
         allmy[a][i] = x[i,a]
