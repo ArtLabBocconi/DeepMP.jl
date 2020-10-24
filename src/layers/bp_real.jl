@@ -27,11 +27,8 @@ mutable struct BPRealLayer <: AbstractLayer
 
     allhy::VecVec # for Y reinforcement
 
-    allpu::VecVec # p(σ=up) from fact ↑ to y
-    allpd::VecVec # p(σ=up) from y  ↓ to fact
-
-    top_allpd::VecVec
-    bottom_allpu::VecVec
+    Bup # field from fact ↑ to y
+    B # field from y ↓ to fact
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
@@ -63,26 +60,24 @@ function BPRealLayer(K::Int, N::Int, M::Int)
     # for Facts
     allmh = [zeros(M) for k=1:K]
 
-    allpu = [zeros(M) for k=1:K]
-    allpd = [zeros(M) for k=1:N]
-
+    Bup = zeros(K, M)
+    B = zeros(N, M)
 
     return BPRealLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allρcav, allmycav, allmhcavtoy
         , allmhcavtow, allρhcavtow
-        , allh1, allh2, allhy, allpu,allpd
-        , VecVec(), VecVec()
+        , allh1, allh2, allhy, Bup, B
         , DummyLayer(), DummyLayer(), false)
 end
 
 
 function updateFact!(layer::BPRealLayer, k::Int)
-    @extract layer: K N M allm allρcav allmy allmh allpu allpd
-    @extract layer: bottom_allpu top_allpd
+    @extract layer: K N M allm allρcav allmy allmh B Bup
     @extract layer: allmcav allmycav allmhcavtow allρhcavtow allmhcavtoy
+    @extract layer: top_layer bottom_layer
 
-    mh = allmh[k];
-    pd = top_allpd[k];
+    mh = allmh[k]
+    pd = top_layer.B[k,:]
     for a=1:M
         my = allmycav[a][k]
         m = allmcav[k][a]
@@ -149,14 +144,13 @@ function updateFact!(layer::BPRealLayer, k::Int)
             # end
         end
 
-        allpu[k][a] = atanh2Hm1(-Mhtot / √Chtot)
+        Bup[k,a] = atanh2Hm1(-Mhtot / √Chtot)
     end
 end
 
 function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allh1 allh2
-    @extract layer bottom_allpu top_allpd
-    @extract layer allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
+    @extract layer: K N M allm allmy allmh B Bup allh1 allh2
+    @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
 
     m = allm[k]
     h1 = allh1[k]
@@ -191,26 +185,8 @@ function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
     return Δ
 end
 
-function initYBottom!(layer::BPRealLayer, a::Int)
-    @extract layer K N M allm allmy allmh allpu allpd allhy
-    @extract layer bottom_allpu top_allpd
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    @assert isbottomlayer(layer)
-    my = allmy[a]
-    x = layer.bottom_layer.x
-    for i=1:N
-        my[i] = x[i, a]
-        mycav = allmycav[a]
-        for k=1:K
-            mycav[k][i] = x[i, a]
-        end
-    end
-end
-
 function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
-    @extract layer K N M allm allmy allmh allpu allpd allhy
-    @extract layer bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup allhy
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     @assert !isbottomlayer(layer)
@@ -224,9 +200,9 @@ function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
 
         hy[i] = sum(mhy) + ry* hy[i]
         @assert isfinite(hy[i]) "isfinite(hy[i]) mhy=$mhy"
-        allpd[i][a] = hy[i]
+        B[i,a] = hy[i]
 
-        pu = bottom_allpu[i][a];
+        pu = bottom_layer.Bup[i,a];
         hy[i] += pu
         my[i] = tanh(hy[i])
         @assert isfinite(my[i]) "isfinite(my[i]) pu=$pu"
@@ -237,8 +213,7 @@ function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
 end
 
 function update!(layer::BPRealLayer, r::Float64, ry::Float64)
-    @extract layer K N M allm allmy allmh allpu allpd allhy
-    @extract layer bottom_allpu top_allpd
+    @extract layer K N M allm allmy allmh B Bup allhy
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     # println("m=$(allm[1])")
@@ -265,7 +240,7 @@ end
 
 
 function initrand!(layer::BPRealLayer)
-    @extract layer: K N M allm allmy allmh allpu allpd  top_allpd
+    @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
 
     for m in allm
@@ -277,13 +252,7 @@ function initrand!(layer::BPRealLayer)
     for mh in allmh
         mh .= 2*rand(M) .- 1
     end
-    for pu in allpu
-        pu .= rand(M)
-    end
-    for pd in allpd
-        pd .= rand(M)
-    end
-
+    
     # if!isbottomlayer
     for k=1:K,a=1:M,i=1:N
         allmcav[k][a][i] = allm[k][i]
@@ -298,7 +267,7 @@ function initrand!(layer::BPRealLayer)
 end
 
 function fixW!(layer::BPRealLayer, w=1.)
-    @extract layer K N M allm allmy allmh allpu allpd top_allpd
+    @extract layer K N M allm allmy allmh B Bup
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     for k=1:K,i=1:N
@@ -310,7 +279,7 @@ function fixW!(layer::BPRealLayer, w=1.)
 end
 
 function fixY!(layer::BPRealLayer, x::Matrix)
-    @extract layer K N M allm allmy allmh allpu allpd top_allpd
+    @extract layer K N M allm allmy allmh B Bup
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
     for a=1:M,i=1:N

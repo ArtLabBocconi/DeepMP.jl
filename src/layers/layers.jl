@@ -1,7 +1,3 @@
-"""
-Input from bottom.allpu and top.allpd
-and modifies its allpu and allpd
-"""
 ∞ = 10000
 
 # include("utils/Magnetizations.jl")
@@ -13,12 +9,12 @@ mutable struct DummyLayer <: AbstractLayer end
 include("input.jl")
 include("output.jl")
 include("maxsum.jl")
+include("bp_exact.jl")
 include("bp.jl")
 include("tap.jl")
 include("bpi.jl")
-include("parity.jl")
 include("bp_real.jl")
-include("bp2.jl")
+
 
 isfrozen(layer::AbstractLayer) = layer.isfrozen
 freeze!(layer::AbstractLayer) = layer.isfrozen = true
@@ -48,34 +44,17 @@ end
 chain!(lay1::InputLayer, lay2::OutputLayer) = error("Cannot chain InputLayer and OutputLayer")
 
 function chain!(lay1::AbstractLayer, lay2::OutputLayer)
-    lay1.top_allpd = lay2.allpd
     lay2.l = lay1.l+1
     lay1.top_layer = lay2
 end
 
 function chain!(lay1::InputLayer, lay2::AbstractLayer)
     lay2.l = lay1.l+1
-    lay2.bottom_allpu = lay1.allpu
-    lay2.bottom_layer = lay1
-    for a=1:lay2.M
-        initYBottom!(lay2, a)
-    end
-end
-
-function chain!(lay1::BPLayer2, lay2::OutputLayer)
-    lay2.l = lay1.l+1
-    lay1.top_layer = lay2
-end
-
-function chain!(lay1::InputLayer, lay2::BPLayer2)
-    lay2.l = lay1.l+1
     lay2.bottom_layer = lay1
 end
 
 function chain!(lay1::AbstractLayer, lay2::AbstractLayer)
     lay2.l = lay1.l+1
-    lay1.top_allpd = lay2.allpd
-    lay2.bottom_allpu = lay1.allpu
     lay1.top_layer = lay2
     lay2.bottom_layer = lay1
 end
@@ -102,7 +81,11 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
             push!(q0, dot(layer.m[k,:], layer.m[k,:]) / Nk)
         end
         if teacher !== nothing
-            push!(R, dot(layer.allm[k], teacher[k]) / Nk)
+            if hasproperty(layer, :allm)
+                push!(R, dot(layer.allm[k], teacher[k]) / Nk)
+            elseif hasproperty(layer, :m)
+                push!(R, dot(layer.m[k,:], teacher[k]) / Nk)
+            end
         end
         for p=k+1:K
             if hasproperty(layer, :weight_mask)

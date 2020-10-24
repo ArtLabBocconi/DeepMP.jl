@@ -39,9 +39,9 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
-            elseif  layertype[l] == :bp2
-                push!(layers, BPLayer2(K[l+1], K[l], M, density=density[l]))
-                verbose > 0 && println("Created BPLayer2\t $(K[l])")
+            # elseif  layertype[l] == :bp2
+            #     push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
+            #     verbose > 0 && println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 #push!(layers, BPLayer(K[l+1], K[l], M))
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
@@ -55,10 +55,6 @@ mutable struct FactorGraph
             elseif  layertype[l] == :ms
                 push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms))
                 verbose > 0 && println("Created MaxSumLayer\t $(K[l])")
-            elseif  layertype[l] == :parity
-                @assert l == L
-                push!(layers, ParityLayer(K[l+1], K[l], M))
-                verbose > 0 && println("Created ParityLayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
                 @assert l == 1
                 push!(layers, BPRealLayer(K[l+1], K[l], M))
@@ -108,34 +104,67 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
-function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
-    for l = 2:g.L+1
-        for k = 1:g.layers[l].K
-            g.layers[l].allhext[k] .= ρ .* h0[l-1][k] .* g.layers[l].weight_mask[k]
+function set_external_fields!(layer::AbstractLayer, h0; ρ=1.)
+    if hasproperty(layer, :allhext)
+        for k = 1:layer.K
+            layer.allhext[k] .= ρ .* h0[k]
         end
+    else
+        layer.Hext .= ρ .* h0
+    end
+end
+
+function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
+    @assert length(h0) == g.L
+    for l = 2:g.L+1
+        set_external_fields!(g.layers[l], h0[l-1]; ρ)
+    end
+end
+
+function copy_mags!(lay1::AbstractLayer, lay2::AbstractLayer)
+    if hasproperty(lay1, :allm)
+        for k in 1:lay1.K
+            lay1.allm[k] .= lay2.allm[k]
+        end
+    else
+        lay1.m .= lay2.m
     end
 end
 
 function copy_mags!(g1::FactorGraph, g2::FactorGraph)
+    @assert g1.L == g2.L
     for l = 2:g1.L+1
-        for k in 1:g1.layers[l].K
-            g1.layers[l].allm[k] .= g2.layers[l].allm[k]
-        end
+        copy_mags!(g1.layers[l], g2.layers[l])
     end
 end
 
+function copy_allh!(hext, lay::AbstractLayer; ρ=1.0)
+    if hasproperty(lay, :allh)
+        for k in 1:lay.K
+            @assert all(isfinite, lay.allh[k])
+            hext[k] .= ρ .* lay.allh[k]
+        end
+    else
+        hext .= ρ .* lay.H
+    end
+end
 
 function copy_allh!(hext, g::FactorGraph; ρ=1.0)
     for l = 2:g.L+1
-        for k in 1:g.layers[l].K
-            @assert all(isfinite, g.layers[l].allh[k])
-            hext[l-1][k] .= ρ .* g.layers[l].allh[k] .* g.layers[l].weight_mask[k]
-        end
+        copy_allh!(hext[l-1], g.layers[l]; ρ)
+    end
+end
+
+function get_allh(layer::AbstractLayer)
+    if hasproperty(layer, :allh)
+        return layer.allh
+    else
+        return layer.H
     end
 end
 
 function get_allh(g::FactorGraph)
-    [layer.allh for layer in g.layers[2:g.L+1]]
+    [get_allh(layer) for layer in g.layers[2:g.L+1]]
 end
 
 function init_hext(K::Vector{Int}; ϵ=0.0)
@@ -227,35 +256,37 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
         subplot(L,width,width*(L-l)+3)
         title("Fact Satisfaction Layer $l")
         xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pu = layers[l].allpu[k]
-            pd = layers[l].top_allpd[k]
-            #sat = (2pu-1) .* (2pd-1)
-            sat = @. (2pu-1) * (2pd-1)
-            #plt[:hist](sat)
-            #@show size(sat)
-            #plt.hist(sat)
-        end
+        # TODO (fix this, check if pu and pd are fields and not mags)
+        # for k=1:K[l+1]
+        #     pu = layers[l].allpu[k]
+        #     pd = layers[l].top_allpd[k]
+        #     #sat = (2pu-1) .* (2pd-1)
+        #     sat = @. (2pu-1) * (2pd-1)
+        #     #plt[:hist](sat)
+        #     #@show size(sat)
+        #     #plt.hist(sat)
+        # end
         info == 3 && continue
 
         subplot(L,width,width*(L-l)+4)
         title("Mag UP From Layer $l")
         xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pu = layers[l].allpu[k]
-            #plt[:hist](2pu-1)
-            plt.hist(2 .* pu .- 1)
-        end
+        # for k=1:K[l+1]
+        #     pu = layers[l].allpu[k]
+        #     #plt[:hist](2pu-1)
+        #     plt.hist(2 .* pu .- 1)
+        # end
         info == 4 && continue
 
 
         subplot(L,width,width*(L-l)+5)
         title("Mag DOWN To Layer $l")
         xlim(-1.01,1.01)
-        for k=1:K[l+1]
-            pd = layers[l].top_allpd[k]
-            #plt.hist(2 .* pd .- 1)
-        end
+        # TODO fix
+        # for k=1:K[l+1]
+        #     pd = layers[l].top_allpd[k]
+        #     #plt.hist(2 .* pd .- 1)
+        # end
         info == 5 && continue
 
         tight_layout()
