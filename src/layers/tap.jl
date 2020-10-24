@@ -313,9 +313,10 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer
 end
 
 function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapLayer,TapExactLayer}}
-    @extract layer K N M allm allmy allmh B Bup
-    @extract layer allhy CYtot MYtot Mtot Ctot
-
+    @extract layer: K N M allm allmy allmh B Bup
+    @extract layer: allhy CYtot MYtot Mtot Ctot
+    @extract layer: bottom_layer
+    
     @assert !isbottomlayer(layer)
 
     MYt=MYtot[a]; CYt = CYtot[a]; my=allmy[a]; hy=allhy[a]

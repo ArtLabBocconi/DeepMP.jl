@@ -88,7 +88,7 @@ function updateFact!(layer::BPILayer, k::Int, reinfpar)
         end
 
         # Message to top
-        B[k,a] = atanh2Hm1(-Mhtot / √Chtot)
+        Bup[k,a] = atanh2Hm1(-Mhtot / √Chtot)
     end
 end
 

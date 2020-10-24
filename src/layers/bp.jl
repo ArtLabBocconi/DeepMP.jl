@@ -87,7 +87,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     #TODO add reinforcement/dumping
 
     mh = allmh[k]
-    vH = top_layer.B[k,a]
+    vH = tanh(top_layer.B[k,a])
     mycav = allmycav[a][k]
     mcav = allmcav[k][a]
     mhw = allmhcavtow[k]

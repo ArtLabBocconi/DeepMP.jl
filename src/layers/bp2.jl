@@ -13,6 +13,7 @@ mutable struct BPLayer <: AbstractLayer
     mcav 
     σ 
 
+    Bup
     B 
     Bcav 
     A 
@@ -43,6 +44,7 @@ function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     mcav = zeros(K, N, M)
     σ = zeros(K, N)
     
+    Bup = zeros(K, M)
     B = zeros(N, M)
     Bcav = zeros(K, N, M)
     A = zeros(N, M)
@@ -59,7 +61,7 @@ function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
 
     return BPLayer(-1, K, N, M,
             x̂, x̂cav, Δ, m, mcav, σ,
-            B, Bcav, A, 
+            Bup, B, Bcav, A, 
             H, Hext, Hcav,
             ω, ωcav, V,
             DummyLayer(), DummyLayer(),
@@ -75,32 +77,29 @@ function compute_g(B, ω, V)
     1/√V * GH(B, -ω / √V)
 end
 
-function  compute_x(lay::AbstractLayer, B, i, a)
-    tanh(lay.Bup[i,a] + B)
-end
+# function  compute_x(lay::BPLayer, B, i, a)
+#     tanh(Bup + B)
+# end
 
-function  compute_x(lay::BPLayer, B, i, a)
-    Bup = atanh2Hm1(-lay.ω[i,a] / √lay.V[i,a])
-    tanh(Bup + B)
-end
-
-function update!(layer::L, reinfpar) where {L <: Union{BPLayer}}
+function update!(layer::BPLayer, reinfpar)
     @extract layer: K N M
     @extract layer: x̂ x̂cav Δ m mcav σ 
-    @extract layer: B Bcav A H Hext Hcav ω ωcav V
+    @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r
     
     ## FORWARD
     if !isbottomlayer(layer)
-        @tullio x̂cav[k,i,a] = compute_x(bottom_layer, Bcav[k,i,a], i, a)
-        @tullio x̂[i,a] = compute_x(bottom_layer, B[i,a], i, a)
+        @tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
+        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
         Δ .= 1 .- x̂.^2
     end
     
     @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
     @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
     V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ
+    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+    
 
     ## BACKWARD 
     Atop, Btop = get_AB(top_layer)
