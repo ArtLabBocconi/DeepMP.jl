@@ -68,18 +68,9 @@ function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
             weight_mask, isfrozen)
 end
 
-
-function get_AB(layer::AbstractLayer)
-    return 0, layer.B 
-end
-
 function compute_g(B, ω, V)
     1/√V * GH(B, -ω / √V)
 end
-
-# function  compute_x(lay::BPLayer, B, i, a)
-#     tanh(Bup + B)
-# end
 
 function update!(layer::BPLayer, reinfpar)
     @extract layer: K N M
@@ -87,7 +78,8 @@ function update!(layer::BPLayer, reinfpar)
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r
-    
+    Δm = 0.
+
     ## FORWARD
     if !isbottomlayer(layer)
         @tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
@@ -102,7 +94,7 @@ function update!(layer::BPLayer, reinfpar)
     
 
     ## BACKWARD 
-    Atop, Btop = get_AB(top_layer)
+    Btop = top_layer.B 
     @assert size(Btop) == (K, M)
     @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
     @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
@@ -114,14 +106,16 @@ function update!(layer::BPLayer, reinfpar)
         @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
     end
 
-    @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
-    @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-    @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-    mcav .= tanh.(Hcav)
-    mnew = tanh.(H)
-    Δm = maximum(abs, m .- mnew) 
-    m .= mnew
-    σ .= 1 .- m.^2    
+    if !isfrozen(layer)
+        @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
+        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+        @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+        mcav .= tanh.(Hcav)
+        mnew = tanh.(H)
+        Δm = maximum(abs, m .- mnew) 
+        m .= mnew
+        σ .= 1 .- m.^2    
+    end
     
     return Δm
 end
@@ -158,3 +152,9 @@ function forward(layer::L, x) where L <: Union{BPLayer}
     return sign.(W*x .+ 1e-10)
 end
 
+function fixW!(layer::L, w=1.) where {L <: Union{BPLayer}}
+    @extract layer: K N M m σ mcav
+    m .= w
+    mcav .= m
+    σ .= 0
+end

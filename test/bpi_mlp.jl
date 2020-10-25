@@ -6,6 +6,16 @@
                 , r=.8, rstep=0.01, ry=0., seedx=2, maxiters=500);
 @test E == 0
 
+for freezetop in [true, false]
+    @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[51,11,1],
+                        maxiters=1000, seedx=2,
+                        r = 0.9, rstep=0.01,
+                        altsolv =true, altconv=true, freezetop,
+                        layers=[:bpi,:bpi]);
+    @test E == 0
+end
+
+
 ## 2 LAYERS
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,11,3,1]

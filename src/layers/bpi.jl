@@ -1,210 +1,146 @@
-
-###########################
-#       BPI LAYER
-#######################################
 mutable struct BPILayer <: AbstractLayer
     l::Int
-
     K::Int
     N::Int
     M::Int
 
-    allm::VecVec
-    allmy::VecVec
+    x̂ 
+    Δ
 
-    allh::VecVec # for W reinforcement
-    allhext::VecVec # for W reinforcement
-    allhy::VecVec # for Y reinforcement
+    m 
+    σ 
 
-    Bup  # field from fact  ↑ to y
-    B # field from y ↓ to fact
-    Mtot::VecVec
-    MYtot::VecVec
+    Bup
+    B 
+    A 
+    
+    H
+    Hext
+    
+    ω 
+    V
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    weight_mask::Vector{Vector{Int}}
+    weight_mask
     isfrozen::Bool
 end
 
-function BPILayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
+
+function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     # for variables W
-    allm = [zeros(N) for i=1:K]
-    allh = [zeros(N) for i=1:K]
-    allhext = [zeros(N) for i=1:K]
-    Mtot = [zeros(N) for i=1:K]
-
-    # for variables Y
-    allmy = [zeros(N) for a=1:M]
-    allhy = [zeros(N) for a=1:M]
-    MYtot = [zeros(N) for a=1:M]
-
+    x̂ = zeros(N, M)
+    Δ = zeros(N, M)
+    
+    m = zeros(K, N)
+    σ = zeros(K, N)
+    
     Bup = zeros(K, M)
     B = zeros(N, M)
-
+    A = zeros(N, M)
+    
+    H = zeros(K, N)
+    Hext = zeros(K, N)
+    
+    ω = zeros(K, M)
+    V = zeros(K, M)
+    
     weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
 
-    return BPILayer(-1, K, N, M
-        , allm, allmy
-        , allh, allhext, allhy, Bup, B
-        , Mtot, MYtot
-        , DummyLayer(), DummyLayer()
-        , weight_mask, isfrozen)
+    return BPILayer(-1, K, N, M,
+            x̂, Δ, m, σ,
+            Bup, B, A, 
+            H, Hext,
+            ω, V,
+            DummyLayer(), DummyLayer(),
+            weight_mask, isfrozen)
 end
 
-function updateFact!(layer::BPILayer, k::Int, reinfpar)
-    @extract layer: K N M allm allmy B Bup
-    @extract layer: MYtot Mtot bottom_layer top_layer
+# function compute_g(B, ω, V)
+#     1/√V * GH(B, -ω / √V)
+# end
 
-    m = allm[k]
-    Mt = Mtot[k]
-    pd = top_layer.B[k,:]
-    mask = layer.weight_mask[k]
-    for a=1:M
-        my = allmy[a]
-        MYt = MYtot[a]
-        Mhtot = 0.
-        Chtot = 1e-10
-        if !isbottomlayer(layer)
-            for i=1:N
-                Mhtot += my[i]*m[i] * mask[i]
-                Chtot += (1 - my[i]^2*m[i]^2) * mask[i]
-            end
-        else
-            for i=1:N
-                Mhtot += my[i]*m[i] * mask[i]
-                Chtot += (my[i]^2 *(1 - m[i]^2)) * mask[i]
-            end
-        end
+function update!(layer::BPILayer, reinfpar)
+    @extract layer: K N M
+    @extract layer: x̂ Δ m  σ 
+    @extract layer: Bup B A H Hext ω  V
+    @extract layer: bottom_layer top_layer
+    @extract reinfpar: r
+    Δm = 0.
 
-        for i=1:N
-            mask[i] == 1 || continue
-            mh = 1/√Chtot * GH(pd[a], -(Mhtot - my[i] * m[i]) / √Chtot)
-            Mt[i] += my[i] * mh
-            if !isbottomlayer(layer)
-                MYt[i] += m[i] * mh
-            end
-        end
-
-        # Message to top
-        Bup[k,a] = atanh2Hm1(-Mhtot / √Chtot)
-    end
-end
-
-function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy  B Bup l
-    @extract layer: MYtot Mtot  allh allhext
-    Δ = 0.
-    m = allm[k]
-    Mt = Mtot[k]
-    h = allh[k]
-    hext = allhext[k]
-
-    for i=1:N
-        if layer.weight_mask[k][i] == 0
-            @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
-        end
-        h[i] = Mt[i] + r*h[i] + hext[i]
-        oldm = m[i]
-        m[i] = tanh(h[i])
-        Δ = max(Δ, abs(m[i] - oldm))
-    end
-    return Δ
-end
-
-function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy B Bup
-    @extract layer: allhy MYtot Mtot
-    @extract layer: bottom_layer
-
-    @assert !isbottomlayer(layer)
-
-    MYt = MYtot[a]
-    my = allmy[a]
-    hy = allhy[a]
-
-    for i=1:N
-        hy[i] = MYt[i] + ry* hy[i]
-        B[i,a] = hy[i]
-        pu = bottom_layer.Bup[i,a]
-        hy[i] += pu
-        my[i] = tanh(hy[i])
-    end
-end
-
-function update!(layer::L, reinfpar) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy B Bup  MYtot Mtot
-
-
-    #### Reset Total Fields
-    for a=1:M
-        MYtot[a] .= 0
-    end
-    for k=1:K
-        Mtot[k] .= 0
-    end
-    ############
-
-    for k=1:K
-        updateFact!(layer, k, reinfpar)
-    end
-    Δ = 0.
-    if !isfrozen(layer)
-        for k=1:K
-            δ = updateVarW!(layer, k, reinfpar.r)
-            Δ = max(δ, Δ)
-        end
-    end
-
-    # bypass Y if top_layer
+    ## FORWARD
     if !isbottomlayer(layer)
-        for a=1:M
-            updateVarY!(layer, a, reinfpar.ry)
-        end
+        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+        Δ .= 1 .- x̂.^2
     end
-    return Δ
+    
+    @tullio ω[k,a] = m[k,i] * x̂[i,a]
+    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ
+    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+
+    @assert all(isfinite, Bup)
+
+    ## BACKWARD 
+    Btop = top_layer.B 
+    @assert size(Btop) == (K, M)
+    @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i]*x̂[i,a], V[k,a])  avx=false
+    @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+    # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+    
+    if !isbottomlayer(layer)
+        # A .= (m.^2 + σ)' * Γ - σ' * g.^2
+        @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+        # @tullio B[i,a] = m[k,i] * g[k,a]
+    end
+
+    if !isfrozen(layer)
+        @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+        # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+        mnew = tanh.(H)
+        Δm = maximum(abs, m .- mnew)
+        m .= mnew
+        σ .= 1 .- m.^2
+        @assert all(isfinite, m)
+    end
+    
+    return Δm
 end
 
 function initrand!(layer::L) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy B Bup
+    @extract layer: K N M
+    @extract layer: x̂ Δ m σ 
+    @extract layer: B A ω H V
+    # TODO reset all variables
     ϵ = 1e-1
-    mask = layer.weight_mask
-
-    for (k, m) in enumerate(allm)
-        m .= (2*rand(N) .- 1) .* ϵ .* mask[k]
-    end
-
-    for my in allmy
-        my .= (2*rand(N) .- 1) .* ϵ
-    end
-end
-
-function fixW!(layer::L, w=1.) where {L <: Union{BPILayer}}
-    @extract layer: K N M allm allmy B Bup
-
-    for k=1:K, i=1:N
-        allm[k][i] = w
-    end
+    H .= ϵ .* randn(K, N)
+    m .= tanh.(H)
+    σ .= 1 .- m.^2
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
-    @extract layer K N M allm allmy B Bup
-
-    for a=1:M, i=1:N
-        allmy[a][i] = x[i,a]
-    end
+    @extract layer: K N M 
+    @extract layer: x̂ Δ m σ 
+    @assert size(x) == size(x̂)
+    x̂ .= x
+    Δ .= 0
 end
 
-function getW(layer::L) where L <: Union{BPILayer}
-    @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k])' for k in 1:K]...)
+function getW(layer::BPILayer)
+    return sign.(layer.m)
 end
 
-function forward(layer::L, x) where L <: Union{BPILayer}
+function forward(layer::BPILayer, x)
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    @assert size(W) == (K, N)
     return sign.(W*x .+ 1e-10)
 end
+
+function fixW!(layer::BPILayer, w=1.)
+    @extract layer: K N M m σ
+    m .= w
+    σ .= 0
+end
+
