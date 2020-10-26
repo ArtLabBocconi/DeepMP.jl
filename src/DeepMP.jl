@@ -45,7 +45,7 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
         verbose > 0 && @printf("it=%d \t (r=%f ry=%f) E=%d \t Δ=%f \n",
                                 it, reinfpar.r, reinfpar.ry, E, Δ)
 
-        plotinfo >=0  && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
+        plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")

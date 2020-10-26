@@ -1,5 +1,9 @@
-mutable struct BPILayer <: AbstractLayer
+###########################
+#       TAP LAYER
+#######################################
+mutable struct TapLayer <: AbstractLayer
     l::Int
+
     K::Int
     N::Int
     M::Int
@@ -17,9 +21,10 @@ mutable struct BPILayer <: AbstractLayer
     H
     Hext
     
+    g 
     ω 
     V
-
+    
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
@@ -27,9 +32,7 @@ mutable struct BPILayer <: AbstractLayer
     isfrozen::Bool
 end
 
-
-function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
-    # for variables W
+function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     x̂ = zeros(N, M)
     Δ = zeros(N, M)
     
@@ -43,24 +46,26 @@ function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     H = zeros(K, N)
     Hext = zeros(K, N)
     
+    g = zeros(K, M)
     ω = zeros(K, M)
     V = zeros(K, M)
     
     weight_mask = rand(K, N) .< density
-
-    return BPILayer(-1, K, N, M,
+    
+    return TapLayer(-1, K, N, M,
             x̂, Δ, m, σ,
             Bup, B, A, 
             H, Hext,
-            ω, V,
+            g, ω, V,
             DummyLayer(), DummyLayer(),
             weight_mask, isfrozen)
 end
 
-function update!(layer::BPILayer, reinfpar)
+
+function update!(layer::BPLayer, reinfpar)
     @extract layer: K N M weight_mask
-    @extract layer: x̂ Δ m  σ 
-    @extract layer: Bup B A H Hext ω  V
+    @extract layer: x̂ Δ m σ 
+    @extract layer: Bup B  A H Hext ω  V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r
     Δm = 0.
@@ -71,72 +76,70 @@ function update!(layer::BPILayer, reinfpar)
         Δ .= 1 .- x̂.^2
     end
     
-    @tullio ω[k,a] = m[k,i] * x̂[i,a]
     V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+    @tullio ω[k,a] = m[k,i] * x̂[i,a]
+    @tullio ω[k,a] += - g[k,a] * V[k,a]  
     @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
-
-    @assert all(isfinite, Bup)
+    
 
     ## BACKWARD 
     Btop = top_layer.B 
     @assert size(Btop) == (K, M)
-    @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i]*x̂[i,a], V[k,a])  avx=false
-    @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-    # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
-    
+    @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+    @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
+
     if !isbottomlayer(layer)
-        # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-        @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-        # @tullio B[i,a] = m[k,i] * g[k,a]
+        A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
+        @tullio B[i,a] = m[k,i] * g[k,a]
+        @tullio B[i,a] += x̂[i,a] * A[i,a]
     end
 
     if !isfrozen(layer)
-        @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
-        # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+        G = (x̂.^2 .+ Δ) * Γ' .- Δ * g'.^2
+        @tullio H[k,i] = g[k,a] * x̂[i,a]
+        @tullio H[k,i] += m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
         mnew = tanh.(H) .* weight_mask
-        Δm = maximum(abs, m .- mnew)
+        Δm = maximum(abs, m .- mnew) 
         m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask
-        @assert all(isfinite, m)
+        σ .= (1 .- m.^2) .* weight_mask    
     end
     
     return Δm
 end
 
-function initrand!(layer::L) where {L <: Union{BPILayer}}
+
+function initrand!(layer::TapLayer)
     @extract layer: K N M weight_mask
-    @extract layer: x̂ Δ m σ 
-    @extract layer: B A ω H V
-    # TODO reset all variables
+    @extract layer: x̂  Δ m σ 
+    @extract layer: B A ω H  V
+    
     ϵ = 1e-1
     H .= ϵ .* randn(K, N)
     m .= tanh.(H) .* weight_mask
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
+function fixY!(layer::L, x::Matrix) where {L <: Union{TapLayer}}
     @extract layer: K N M 
-    @extract layer: x̂ Δ m σ 
+    @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)
     x̂ .= x
     Δ .= 0
 end
 
-function getW(layer::BPILayer)
+function getW(layer::L) where L <: Union{TapLayer}
     return sign.(layer.m) .* layer.weight_mask
 end
 
-function forward(layer::BPILayer, x)
+function forward(layer::L, x) where L <: Union{TapLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
     return sign.(W*x .+ 1e-10)
 end
 
-function fixW!(layer::BPILayer, w=1.)
-    @extract layer: K N M m σ weight_mask
+function fixW!(layer::L, w=1.) where {L <: Union{TapLayer}}
+    @extract layer: K N M m σ  weight_mask
     m .= w .* weight_mask
     σ .= 0
 end
-

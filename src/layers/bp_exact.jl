@@ -34,7 +34,7 @@ mutable struct BPExactLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext::VecVec
-    weight_mask::Vector{Vector{Int}}
+    weight_mask
     isfrozen::Bool
 end
 
@@ -68,7 +68,7 @@ function BPExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K,N) .< density
 
     return BPExactLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allmycav, allmhcavtoy,allmhcavtow
@@ -92,7 +92,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     mcav = allmcav[k][a]
     mhw = allmhcavtow[k]
     mhy = allmhcavtoy[a]
-    mask = layer.weight_mask[k]
+    mask = layer.weight_mask[k,:]
 
     X = ones(Complex{Float64}, N+1)
     for p=1:N+1
@@ -178,7 +178,7 @@ mutable struct BPAccurateLayer <: AbstractLayer
     bottom_layer::AbstractLayer
 
     allhext::VecVec
-    weight_mask::Vector{Vector{Int}}
+    weight_mask
     isfrozen::Bool
 end
 
@@ -203,7 +203,7 @@ function BPAccurateLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     Bup = zeros(K, M)
     B = zeros(N, M)
 
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K, N) .< density
 
     return BPAccurateLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allmycav, allmhcavtoy, allmhcavtow
@@ -226,7 +226,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
     mhy = allmhcavtoy[a]
     Mhtot = 0.
     Chtot = 0.
-    mask = layer.weight_mask[k]
+    mask = layer.weight_mask[k,:]
     if !isbottomlayer(layer)
         for i=1:N
             Mhtot += my[i]*m[i] * mask[i]
@@ -307,7 +307,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPAcc
     end
     oldm = m[i]
     m[i] = tanh(h[i])
-    if layer.weight_mask[k][i] == 0
+    if layer.weight_mask[k,i] == 0
         @assert m[i] == 0 "m[i]=$(m[i]) should be 0"
     end
     for a=1:M
@@ -410,7 +410,7 @@ function initrand!(layer::L) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
-        m .= ϵ*(2*rand(N) .- 1) .* mask[k]
+        m .= ϵ*(2*rand(N) .- 1) .* mask[k,:]
     end
     for my in allmy
         my .= ϵ*(2*rand(N) .- 1)
@@ -421,10 +421,10 @@ function initrand!(layer::L) where {L <: Union{BPAccurateLayer, BPExactLayer}}
 
     # if!isbottomlayer
     for k=1:K,a=1:M,i=1:N
-        allmcav[k][a][i] = allm[k][i] * mask[k][i]
+        allmcav[k][a][i] = allm[k][i] * mask[k,i]
         allmycav[a][k][i] = allmy[a][i]
-        allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i] * mask[k][i]
-        allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i] * mask[k][i]
+        allmhcavtow[k][i][a] = allmh[k][a] * allmy[a][i] * mask[k,i]
+        allmhcavtoy[a][i][k] = allmh[k][a] * allm[k][i] * mask[k,i]
     end
 
 end
@@ -455,7 +455,7 @@ end
 
 function getW(layer::L) where L <: Union{BPAccurateLayer, BPExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{BPAccurateLayer, BPExactLayer}

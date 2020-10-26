@@ -59,46 +59,43 @@ function chain!(lay1::AbstractLayer, lay2::AbstractLayer)
     lay2.bottom_layer = lay1
 end
 
-function set_weight_mask!(lay::AbstractLayer, m)
-    @assert length(lay.weight_mask) == length(m)
-    for k=1:length(m)
-        lay.weight_mask[k] .= m[k]
-    end
+function set_weight_mask!(lay::AbstractLayer, m::AbstractMatrix)
+    lay.weight_mask .= m
 end
 
 function compute_overlaps(layer::AbstractLayer; teacher=nothing)
-    @extract layer: K
+    @extract layer: K N
     q0 = Float64[]
     qWαβ = Float64[]
     R = Float64[]
 
     for k=1:K
-        Nk = hasproperty(layer, :weight_mask) ?
-                sum(layer.weight_mask[k]) : K
+        # Nk = hasproperty(layer, :weight_mask) ?
+        #         sum(layer.weight_mask[k,:]) : N
         if hasproperty(layer, :allm)
-            push!(q0, dot(layer.allm[k], layer.allm[k]) / Nk)
+            push!(q0, dot(layer.allm[k], layer.allm[k]) / N)
         elseif hasproperty(layer, :m)
-            push!(q0, dot(layer.m[k,:], layer.m[k,:]) / Nk)
+            push!(q0, dot(layer.m[k,:], layer.m[k,:]) / N)
         end
         if teacher !== nothing
             if hasproperty(layer, :allm)
-                push!(R, dot(layer.allm[k], teacher[k]) / Nk)
+                push!(R, dot(layer.allm[k], teacher[k]) / N)
             elseif hasproperty(layer, :m)
-                push!(R, dot(layer.m[k,:], teacher[k]) / Nk)
+                push!(R, dot(layer.m[k,:], teacher[k])/ N)
             end
         end
         for p=k+1:K
-            if hasproperty(layer, :weight_mask)
-                Np = sum(layer.weight_mask[p])
-            else
-                Np = K
-            end
+            # if hasproperty(layer, :weight_mask)
+            #     Np = sum(layer.weight_mask[p,:])
+            # else
+            #     Np = N
+            # end
             if hasproperty(layer, :allm)
                 push!(qWαβ, dot(layer.allm[k], layer.allm[p])
-                        / sqrt(Nk*Np))
+                        / N)
             elseif hasproperty(layer, :m)
-                push!(qWαβ, dot(layer.m[k], layer.m[p])
-                        / sqrt(Nk*Np))
+                push!(qWαβ, dot(layer.m[k,:], layer.m[p,:])
+                        / N)
             end
             # push!(q, dot(W[l][k],W[l][p])/K[l])
             # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])

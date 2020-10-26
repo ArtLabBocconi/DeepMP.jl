@@ -3,7 +3,7 @@
         @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[1001,7,1]
                     , layers=[:tap,lay]
                     , verbose=0
-                    ,r=.8,rstep=0.01, ry=0.3, seedx=2, maxiters=500);
+                    , r=.9, rstep=0.01, ry=0., seedx=2, maxiters=500);
         @test E == 0
     end
 
@@ -22,6 +22,7 @@ end
                     , layers=[:tap,lay,lay]
                     , verbose=0
                     ,r=.92,rstep=0.001, ry=0.0, seedx=1,maxiters=300);
+        
         @test E <= 1
     end
 
@@ -36,8 +37,7 @@ end
                             , layers=[:tap,:bp,:bpex]
                             , verbose=0
                             , r=.9,rstep=0.002, seedx=1,maxiters=800);
-    @test_broken E == 0
-    @test E < 10
+    @test E == 0
 
     #### too slow
     ####  @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
