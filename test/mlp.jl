@@ -3,7 +3,7 @@
         @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[1001,7,1]
                     , layers=[:tap,lay]
                     , verbose=0
-                    ,r=.8,rstep=0.01, ry=0.3, seedx=2, maxiters=500);
+                    , r=.9, rstep=0.01, ry=0., seedx=2, maxiters=500);
         @test E == 0
     end
 
