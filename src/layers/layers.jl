@@ -71,9 +71,9 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
 
     for k=1:K
         # Nk = hasproperty(layer, :weight_mask) ?
-        #         sum(layer.weight_mask[k]) : K
+        #         sum(layer.weight_mask[k,:]) : N
         if hasproperty(layer, :allm)
-            push!(q0, dot(layer.allm[k], layer.allm[k])/  N)
+            push!(q0, dot(layer.allm[k], layer.allm[k]) / N)
         elseif hasproperty(layer, :m)
             push!(q0, dot(layer.m[k,:], layer.m[k,:]) / N)
         end
@@ -86,9 +86,9 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
         end
         for p=k+1:K
             # if hasproperty(layer, :weight_mask)
-            #     Np = sum(layer.weight_mask[p])
+            #     Np = sum(layer.weight_mask[p,:])
             # else
-            #     Np = K
+            #     Np = N
             # end
             if hasproperty(layer, :allm)
                 push!(qWαβ, dot(layer.allm[k], layer.allm[p])

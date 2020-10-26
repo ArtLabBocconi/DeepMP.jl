@@ -94,7 +94,7 @@ function set_weight_mask!(g::FactorGraph, W::VecVecVec)
         K = length(W[l])
         N = length(W[l][1])
         w = W[l]
-        mask = [w[i,j]==0 ? 0 : 1 for i=1:K,j=1:N]
+        mask = [w[i][j]==0 ? 0 : 1 for i=1:K,j=1:N]
         set_weight_mask!(g.layers[l+1], mask)
     end
 end

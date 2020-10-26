@@ -421,10 +421,10 @@ function initrand!(layer::L) where {L <: Union{BPAccurateLayer, BPExactLayer}}
 
     # if!isbottomlayer
     for k=1:K,a=1:M,i=1:N
-        allmcav[k][a][i] = allm[k][i] * mask[k][i]
+        allmcav[k][a][i] = allm[k][i] * mask[k,i]
         allmycav[a][k][i] = allmy[a][i]
-        allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i] * mask[k][i]
-        allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i] * mask[k][i]
+        allmhcavtow[k][i][a] = allmh[k][a] * allmy[a][i] * mask[k,i]
+        allmhcavtoy[a][i][k] = allmh[k][a] * allm[k][i] * mask[k,i]
     end
 
 end
