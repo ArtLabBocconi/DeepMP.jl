@@ -46,7 +46,7 @@ function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     ω = zeros(K, M)
     V = zeros(K, M)
     
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K, N) .< density
 
     return BPILayer(-1, K, N, M,
             x̂, Δ, m, σ,
@@ -57,12 +57,8 @@ function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
             weight_mask, isfrozen)
 end
 
-# function compute_g(B, ω, V)
-#     1/√V * GH(B, -ω / √V)
-# end
-
 function update!(layer::BPILayer, reinfpar)
-    @extract layer: K N M
+    @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
     @extract layer: bottom_layer top_layer
@@ -76,7 +72,7 @@ function update!(layer::BPILayer, reinfpar)
     end
     
     @tullio ω[k,a] = m[k,i] * x̂[i,a]
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ
+    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
     @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
 
     @assert all(isfinite, Bup)
@@ -98,10 +94,10 @@ function update!(layer::BPILayer, reinfpar)
         @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
         # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
         @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-        mnew = tanh.(H)
+        mnew = tanh.(H) .* weight_mask
         Δm = maximum(abs, m .- mnew)
         m .= mnew
-        σ .= 1 .- m.^2
+        σ .= (1 .- m.^2) .* weight_mask
         @assert all(isfinite, m)
     end
     
@@ -109,14 +105,14 @@ function update!(layer::BPILayer, reinfpar)
 end
 
 function initrand!(layer::L) where {L <: Union{BPILayer}}
-    @extract layer: K N M
+    @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m σ 
     @extract layer: B A ω H V
     # TODO reset all variables
     ϵ = 1e-1
     H .= ϵ .* randn(K, N)
-    m .= tanh.(H)
-    σ .= 1 .- m.^2
+    m .= tanh.(H) .* weight_mask
+    σ .= (1 .- m.^2) .* weight_mask
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
@@ -128,7 +124,7 @@ function fixY!(layer::L, x::Matrix) where {L <: Union{BPILayer}}
 end
 
 function getW(layer::BPILayer)
-    return sign.(layer.m)
+    return sign.(layer.m) .* layer.weight_mask
 end
 
 function forward(layer::BPILayer, x)
@@ -139,8 +135,8 @@ function forward(layer::BPILayer, x)
 end
 
 function fixW!(layer::BPILayer, w=1.)
-    @extract layer: K N M m σ
-    m .= w
+    @extract layer: K N M m σ weight_mask
+    m .= w .* weight_mask
     σ .= 0
 end
 

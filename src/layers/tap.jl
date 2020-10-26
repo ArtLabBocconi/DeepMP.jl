@@ -33,7 +33,7 @@ mutable struct TapExactLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    weight_mask::Vector{Vector{Int}}
+    weight_mask
     isfrozen::Bool
 end
 
@@ -65,7 +65,7 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K, N) .< density
 
     return TapExactLayer(-1, K, N, M, allm, allmy, allmh 
         , allh, allhext, allhy, Bup, B
@@ -200,7 +200,7 @@ mutable struct TapLayer <: AbstractLayer
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    weight_mask::Vector{Vector{Int}}
+    weight_mask
     isfrozen::Bool
 end
 
@@ -224,7 +224,7 @@ function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     Bup = zeros(K, M)
     B = zeros(N, M)
 
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K, N) .< density
 
     return TapLayer(-1, K, N, M, allm, allmy, allmh
         , allh, allhext, allhy, Bup, B
@@ -234,13 +234,15 @@ function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
 end
 
 function updateFact!(layer::TapLayer, k::Int, reinfpar)
-    @extract layer K N M allm allmy allmh B Bup CYtot MYtot Mtot Ctot bottom_layer top_layer
+    @extract layer: K N M weight_mask
+    @extract layer: allm allmy allmh B Bup CYtot MYtot Mtot Ctot 
+    @extract layer: bottom_layer top_layer
 
     m = allm[k]; mh = allmh[k];
     Mt = Mtot[k]; Ct = Ctot;
     pd = top_layer.B[k,:]
     CYt = CYtot
-    mask = layer.weight_mask[k]
+    mask = weight_mask[k,:]
     for a=1:M
         my = allmy[a]
         MYt = MYtot[a]
@@ -301,7 +303,7 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapLayer
     h=allh[k]
     hext = allhext[k]
     for i=1:N
-        if layer.weight_mask[k][i] == 0
+        if layer.weight_mask[k,i] == 0
             @assert m[i] == 0 "m[i]=$(m[i]) shiuld be 0"
         end
         h[i] = Mt[i] + m[i] * Ct[k] + r*h[i] + hext[i]
@@ -387,7 +389,7 @@ function initrand!(layer::L) where {L <: Union{TapExactLayer,TapLayer}}
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
-        m .= (2*rand(N) .- 1) .* ϵ .* mask[k]
+        m .= (2*rand(N) .- 1) .* ϵ .* mask[k,:]
     end
     for my in allmy
         my .= (2*rand(N) .- 1) .* ϵ
@@ -415,7 +417,7 @@ end
 
 function getW(layer::L) where L <: Union{TapLayer, TapExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{TapLayer, TapExactLayer}

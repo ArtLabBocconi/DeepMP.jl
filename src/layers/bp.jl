@@ -57,7 +57,7 @@ function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
     ωcav = zeros(K, N, M)
     V = zeros(K, M)
     
-    weight_mask = [[rand() < density ? 1 : 0 for i=1:N] for i=1:K]
+    weight_mask = rand(K, N) .< density
 
     return BPLayer(-1, K, N, M,
             x̂, x̂cav, Δ, m, mcav, σ,
@@ -73,7 +73,7 @@ function compute_g(B, ω, V)
 end
 
 function update!(layer::BPLayer, reinfpar)
-    @extract layer: K N M
+    @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
@@ -89,7 +89,7 @@ function update!(layer::BPLayer, reinfpar)
     
     @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
     @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ
+    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
     @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     
 
@@ -110,26 +110,26 @@ function update!(layer::BPLayer, reinfpar)
         @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
         @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
         @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-        mcav .= tanh.(Hcav)
-        mnew = tanh.(H)
+        @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+        mnew = tanh.(H) .* weight_mask
         Δm = maximum(abs, m .- mnew) 
         m .= mnew
-        σ .= 1 .- m.^2    
+        σ .= (1 .- m.^2) .* weight_mask    
     end
     
     return Δm
 end
 
 function initrand!(layer::L) where {L <: Union{BPLayer}}
-    @extract layer: K N M
+    @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
-    ϵ = 1e-10
+    ϵ = 1e-1
     H .= ϵ .* randn(K, N)
-    m .= tanh.(H)
-    mcav .= m
-    σ .= 1 .- m.^2
+    m .= tanh.(H) .* weight_mask
+    mcav .= m .* weight_mask 
+    σ .= (1 .- m.^2) .* weight_mask
 end
 
 function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer}}
@@ -142,7 +142,7 @@ function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer}}
 end
 
 function getW(layer::L) where L <: Union{BPLayer}
-    return sign.(layer.m)
+    return sign.(layer.m) .* layer.weight_mask
 end
 
 function forward(layer::L, x) where L <: Union{BPLayer}
@@ -153,8 +153,8 @@ function forward(layer::L, x) where L <: Union{BPLayer}
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{BPLayer}}
-    @extract layer: K N M m σ mcav
-    m .= w
-    mcav .= m
+    @extract layer: K N M m σ mcav weight_mask
+    m .= w .* weight_mask
+    mcav .= m .* weight_mask
     σ .= 0
 end

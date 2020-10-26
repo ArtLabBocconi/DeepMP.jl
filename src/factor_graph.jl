@@ -88,11 +88,13 @@ function process_density(density, L)
     return density
 end
 
-function set_weight_mask!(g::FactorGraph, W)
+function set_weight_mask!(g::FactorGraph, W::VecVecVec)
     @assert length(W) == g.L
     for l=1:g.L
         K = length(W[l])
-        mask = [map(x-> x==0 ? 0 : 1, W[l][k]) for k=1:K]
+        N = length(W[l][1])
+        w = W[l]
+        mask = [w[i,j]==0 ? 0 : 1 for i=1:K,j=1:N]
         set_weight_mask!(g.layers[l+1], mask)
     end
 end
