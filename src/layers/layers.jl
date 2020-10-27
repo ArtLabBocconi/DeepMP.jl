@@ -9,12 +9,12 @@ mutable struct DummyLayer <: AbstractLayer end
 include("input.jl")
 include("output.jl")
 include("maxsum.jl")
-include("bp_exact.jl")
 include("bp.jl")
+include("bp_exact.jl")
 include("tap.jl")
+include("tap_exact.jl")
 include("bpi.jl")
 include("bp_real.jl")
-
 
 isfrozen(layer::AbstractLayer) = layer.isfrozen
 freeze!(layer::AbstractLayer) = layer.isfrozen = true

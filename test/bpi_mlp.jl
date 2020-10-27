@@ -24,8 +24,7 @@ end
            , verbose=0
            , r=0.9, rstep=0.01, ry=0.0, seedx=1, maxiters=500);
 
-           @test_broken E == 0
-@test E < 40
+@test E == 0
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,11,3,1]
            , layers=[:bpi, :bpi, :bpex]
