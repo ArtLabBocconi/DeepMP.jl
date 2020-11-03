@@ -40,13 +40,28 @@ function run_experiment(i)
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 1]
 
+        layers=[:bp]
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
                             xtest, ytest,
                             seed=1,
-                            K = K,
-                            maxiters=1000,
+                            K = K, ψ = 0.,
+                            maxiters=100,
                             r = 0.8, rstep=0.01,
-                            layers=[:bp])
+                            layers)
+        @test E == 0 
+        
+        M = 300
+        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        K = [28*28, 1]
+
+        layers=[:bpacc]
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
+                            xtest, ytest,
+                            seed=1,
+                            K = K, ψ = 0.9,
+                            maxiters=500,
+                            r = 0.2, rstep=0.01,
+                            layers)
         @test E == 0 
         end#testset
     elseif i == 2
@@ -67,6 +82,30 @@ function run_experiment(i)
                             ρ = 1, 
                             layers)
         @test E == 0
+
+        batchsize = 10
+        layers= [:bp]
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+                            xtest=xtest, ytest=ytest,
+                            K = K,
+                            maxiters=100,
+                            r = 0., rstep=0.,
+                            batchsize=10, epochs = 50,
+                            altsolv =false, altconv=true, 
+                            ρ = 1., layers)
+        @test_broken E == 0
+
+        batchsize = 1
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+            xtest, ytest,
+            K, maxiters=100,
+            r = 0., rstep=0.,
+            batchsize=1, epochs = 50,
+            altsolv =false, altconv=true, 
+            ρ = 1, 
+            layers=[:bpacc])
+
+        @test E == 0
         
         batchsize = 10
         layers= [:bpacc]
@@ -79,24 +118,11 @@ function run_experiment(i)
                             altsolv =false, altconv=true, 
                             ρ = 1, layers)
         @test E == 0
-
-          
-        batchsize = 10
-        layers= [:bp]
-        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
-                            xtest=xtest, ytest=ytest,
-                            K = K,
-                            maxiters=100,
-                            r = 0., rstep=0.,
-                            batchsize=10, epochs = 50,
-                            altsolv =false, altconv=true, 
-                            ρ = 1.001, layers)
-        @test_broken E == 0
+        
         end#testset
     elseif i == 3
         @testset "STAP on PERCEPTRON" begin
-        # nessuno va ad errore 0
-        M = 200
+        M = 300
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 1]
         
@@ -104,10 +130,10 @@ function run_experiment(i)
         layers= [:tap]
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
                     xtest, ytest,
-                    K = K,
+                    K, seed=1,
                     maxiters=100,
                     r = 0., rstep=0.,
-                    batchsize, epochs = 50,
+                    batchsize, epochs = 100,
                     altsolv =false, altconv=true, 
                     ρ = 1, layers)
 
@@ -129,44 +155,68 @@ function run_experiment(i)
         end#testset
 
     elseif i == 4
-        @testset "SBP accurate on PERCEPTRON" begin
-        M = 300 # 
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
-        K = [28*28, 1]
+        @testset "BOH" begin
         
-        batchsize = 1
-        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain, 
-            xtest=xtest, ytest=ytest,
-            K = K,
-            maxiters=100,
-            r = 0., rstep=0.,
-            batchsize=1, epochs = 50,
-            altsolv =false, altconv=true, 
-            ρ = 1, 
-            layers=[:bpacc])
-
-        @test E == 0
+       
         end#testset
     elseif i == 5
         @testset "SBP on COMMETTEE" begin
-        # NOT WORKING!!!
+        M = 1000
+        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        K = [28*28, 7, 1]
+        
+        # batchsize = 1
+        # layers=[:bpacc, :bpacc]
+        # g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+        #     xtest, ytest,
+        #     K, maxiters=100,
+        #     r=0, rstep=0.,
+        #     batchsize, epochs = 50,
+        #     altsolv =false, altconv=true,
+        #     ρ=1, freezetop=true,
+        #     layers, density = [0.5, 1.] 
+        #     )
+        
+        # @test E < 5 
+        
+        # M = 1000
+        # xtrain, ytrain, xtest, ytest = get_mnist(M)
+        # K = [28*28, 7, 1]
+        
+        # batchsize = 1
+        # layers=[:tap, :bp]
+        # g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+        #     xtest, ytest,
+        #     K, maxiters=100,
+        #     r=0.1, rstep=0.,
+        #     batchsize, epochs = 50,
+        #     altsolv =false, altconv=true,
+        #     ρ=0.9, freezetop=true,
+        #     layers, density = [0.5, 1.] 
+        #     )
+        
+        # @test E < 5
+        
         M = 1000
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 7, 1]
         
         batchsize = 1
+        layers=[:tap, :bp]
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
-            K = K,
-            maxiters=100,
-            r = 0., rstep=0.,
-            batchsize=batchsize, epochs = 50,
+            K, maxiters=100,
+            r=0.9, rstep=0.,
+            batchsize, epochs = 50,
             altsolv =false, altconv=true,
-            ρ = 1., 
-            layers=[:bpacc, :bpacc],
-            density = [0.5, 1.] 
+            ρ=0.1, freezetop=true,
+            layers, density = [0.5, 1.] 
             )
-        end
+        
+        @test E < 5
+        
+        end#testset
+    
     elseif i == 6
         @testset "SBP on MLP" begin
         # M = 10000
@@ -193,7 +243,7 @@ function run_experiment(i)
         K = [28*28, 15, 15, 1]
         
         batchsize = 10
-        layers=[:bpacc, :bpacc, :bpacc],
+        layers=[:bpacc, :bpacc, :bpacc]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
@@ -201,7 +251,7 @@ function run_experiment(i)
             seed=1,
             maxiters=10,
             r = 0., rstep=0.,
-            batchsize=batchsize, epochs = 50,
+            batchsize, epochs = 50,
             altsolv =false, altconv=true,
             ρ = 1.0, layers,
             density = [0.5, 0.5, 1])
