@@ -193,14 +193,14 @@ function update!(g::FactorGraph, reinfpar)
     Δ = 0. # Updating layer $(lay.l)")
     # for l=2:g.L+1
     # for l in shuffle([2:g.L+1]...)
+    for l = 2:g.L+1
+        δ = update!(g.layers[l], reinfpar)
+        Δ = max(δ, Δ)
+    end
     for l = (g.L+1):-1:2
         δ = update!(g.layers[l], reinfpar)
         Δ = max(δ, Δ)
     end
-    # for l = 2:g.L+1
-    #     δ = update!(g.layers[l], reinfpar)
-    #     Δ = max(δ, Δ)
-    # end
     return Δ
 end
 

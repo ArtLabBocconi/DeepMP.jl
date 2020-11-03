@@ -121,11 +121,11 @@ end
 
 function initrand!(layer::L) where {L <: Union{BPLayer}}
     @extract layer: K N M weight_mask
-    @extract layer: x̂ x̂cav Δ m mcav σ 
+    @extract layer: x̂ x̂cav Δ m mcav σ Hext
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
     ϵ = 1e-1
-    H .= ϵ .* randn(K, N)
+    H .= ϵ .* randn(K, N) + Hext
     m .= tanh.(H) .* weight_mask
     mcav .= m .* weight_mask 
     σ .= (1 .- m.^2) .* weight_mask

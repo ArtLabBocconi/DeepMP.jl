@@ -76,9 +76,11 @@ function update!(layer::TapLayer, reinfpar)
         Δ .= 1 .- x̂.^2
     end
     
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+    # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+    V .= σ * x̂.^2 + m.^2 * Δ 
     @tullio ω[k,a] = m[k,i] * x̂[i,a]
-    @tullio ω[k,a] += - g[k,a] * V[k,a]  
+    @tullio ω[k,a] += - g[k,a] * V[k,a] 
+    V .+= σ * Δ .+ 1e-8 
     @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     
 
@@ -89,18 +91,20 @@ function update!(layer::TapLayer, reinfpar)
     @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
 
     if !isbottomlayer(layer)
-        A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
-        # A .= (m.^2 .+ σ)' * Γ
+        # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
+        @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
         @tullio B[i,a] = m[k,i] * g[k,a]
         @tullio B[i,a] += x̂[i,a] * A[i,a]
+        @tullio B[i,a] += -σ[k,i] * Γ[k,a] #
     end
 
     if !isfrozen(layer) 
-        G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
-        # G = Γ * (x̂.^2 .+ Δ)'
-        @assert size(G) == size(m) == size(H) 
+        # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
+        @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
         @tullio Hin[k,i] := g[k,a] * x̂[i,a]
         @tullio H[k,i] = Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
+        @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
+
         mnew = tanh.(H) .* weight_mask
         Δm = maximum(abs, m .- mnew) 
         m .= mnew
@@ -114,10 +118,10 @@ end
 function initrand!(layer::TapLayer)
     @extract layer: K N M weight_mask
     @extract layer: x̂  Δ m σ 
-    @extract layer: B A ω H  V
+    @extract layer: B A ω H  V Hext
     
     ϵ = 1e-1
-    H .= ϵ .* randn(K, N)
+    H .= ϵ .* randn(K, N) + Hext
     m .= tanh.(H) .* weight_mask
     σ .= (1 .- m.^2) .* weight_mask
 end
