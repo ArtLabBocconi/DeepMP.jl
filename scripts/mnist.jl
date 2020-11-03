@@ -105,7 +105,7 @@ function run_experiment(i)
             layers=[:tap])
         end
     elseif i == 4
-        @testset "SBP accurate on PERCEPTRON" begin
+        @testset "BP accurate on PERCEPTRON" begin
         M = 300 # 
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 1]
@@ -170,6 +170,7 @@ function run_experiment(i)
         DeepMP.solve(xtrain, ytrain, 
             xtest=xtest, ytest=ytest,
             K = K,
+            seed=1,
             maxiters=10,
             r = 0., rstep=0.,
             batchsize=batchsize, epochs = 50,

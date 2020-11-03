@@ -114,7 +114,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 density = 1.,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs::Int = 1000,
-                verbose::Int = 1
+                verbose::Int = 1,
                 infotime=10,
                 resfile="res.txt")
 
