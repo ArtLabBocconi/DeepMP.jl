@@ -114,39 +114,40 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 density = 1.,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs::Int = 1000,
-                verbose::Int = 1)
+                verbose::Int = 1
+                infotime=10,
+                resfile="res.txt")
 
     seed > 0 && Random.seed!(seed)
 
-    g = FactorGraph(xtrain, ytrain, K, layers, β=β, βms=βms, density=density)
-    h0 !== nothing && set_external_fields!(g, h0; ρ=ρ);
+    g = FactorGraph(xtrain, ytrain, K, layers; β, βms, density)
+    h0 !== nothing && set_external_fields!(g, h0; ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
     freezetop && freezetop!(g, 1)
     reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
 
     if batchsize <= 0
-        it, e, δ = converge!(g, maxiters=maxiters, ϵ=ϵ, reinfpar=reinfpar,
-                            altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                            teacher=teacher, verbose=verbose)
+        it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
+                            altsolv, altconv, plotinfo,
+                            teacher, verbose)
     else
         hext = get_allh(g)
-        dtrain = DataLoader((xtrain, ytrain), batchsize=batchsize, shuffle=true)
+        dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true)
 
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             for (b, (x, y)) in enumerate(dtrain)
-                gbatch = FactorGraph(x, y, K, layers, β=β, βms=βms,
-                                     density=density, verbose=0)
+                gbatch = FactorGraph(x, y, K, layers; β, βms,
+                                     density, verbose=0)
                 set_weight_mask!(gbatch, g)
+                set_external_fields!(gbatch, hext; ρ)
                 initrand!(gbatch)
                 freezetop && freezetop!(gbatch, 1)
-                set_external_fields!(gbatch, hext; ρ=ρ)
-
-                it, e, δ = converge!(gbatch, maxiters=maxiters, ϵ=ϵ, #reinfpar=ReinfParams(),
-                                        reinfpar=reinfpar,
-                                        altsolv=altsolv, altconv=altconv, plotinfo=plotinfo,
-                                        teacher=teacher, verbose=verbose-1)
+                
+                it, e, δ = converge!(gbatch; maxiters, ϵ, #reinfpar=ReinfParams(),
+                                        reinfpar, altsolv, altconv, plotinfo,
+                                        teacher, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)
                 meaniters += it
