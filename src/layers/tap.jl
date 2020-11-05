@@ -62,7 +62,7 @@ function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
 end
 
 
-function update!(layer::TapLayer, reinfpar)
+function update!(layer::TapLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m σ 
     @extract layer: Bup B  A H Hext ω  V g
@@ -70,45 +70,48 @@ function update!(layer::TapLayer, reinfpar)
     @extract reinfpar: r
     Δm = 0.
 
-    ## FORWARD
-    if !isbottomlayer(layer)
-        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
-        Δ .= 1 .- x̂.^2
-    end
-    
-    # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
-    V .= σ * x̂.^2 + m.^2 * Δ 
-    @tullio ω[k,a] = m[k,i] * x̂[i,a]
-    @tullio ω[k,a] += - g[k,a] * V[k,a] 
-    V .+= σ * Δ .+ 1e-8 
-    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
-    
-
-    ## BACKWARD 
-    Btop = top_layer.B 
-    @assert size(Btop) == (K, M)
-    @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-    @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
-
-    if !isbottomlayer(layer)
-        # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
-        @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
-        @tullio B[i,a] = m[k,i] * g[k,a]
-        @tullio B[i,a] += x̂[i,a] * A[i,a]
-        @tullio B[i,a] += -σ[k,i] * Γ[k,a] #
+    if mode == :forw || mode == :both
+        ## FORWARD
+        if !isbottomlayer(layer)
+            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            Δ .= 1 .- x̂.^2
+        end
+        
+        # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        V .= σ * x̂.^2 + m.^2 * Δ 
+        @tullio ω[k,a] = m[k,i] * x̂[i,a]
+        @tullio ω[k,a] += - g[k,a] * V[k,a] 
+        V .+= σ * Δ .+ 1e-8 
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
-    if !isfrozen(layer) 
-        # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
-        @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
-        @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-        @tullio H[k,i] = Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
-        @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
+    if mode == :back || mode == :both
+        ## BACKWARD 
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
 
-        mnew = tanh.(H) .* weight_mask
-        Δm = maximum(abs, m .- mnew) 
-        m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask    
+        if !isbottomlayer(layer)
+            # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
+            @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
+            @tullio B[i,a] = m[k,i] * g[k,a]
+            @tullio B[i,a] += x̂[i,a] * A[i,a]
+            @tullio B[i,a] += -σ[k,i] * Γ[k,a] #
+        end
+
+        if !isfrozen(layer) 
+            # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
+            @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
+            @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+            @tullio H[k,i] = Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
+            @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
+
+            mnew = tanh.(H) .* weight_mask
+            Δm = maximum(abs, m .- mnew) 
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask    
+        end
     end
     
     return Δm

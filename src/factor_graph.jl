@@ -190,17 +190,20 @@ function freezetop!(g::FactorGraph, w)
 end
 
 function update!(g::FactorGraph, reinfpar)
-    Δ = 0. # Updating layer $(lay.l)")
-    # for l=2:g.L+1
-    # for l in shuffle([2:g.L+1]...)
+    Δ = 0. 
+    
+    
     for l = 2:g.L+1
-        δ = update!(g.layers[l], reinfpar)
+        δ = update!(g.layers[l], reinfpar; mode=:both)
         Δ = max(δ, Δ)
     end
+    
     for l = (g.L+1):-1:2
-        δ = update!(g.layers[l], reinfpar)
+        δ = update!(g.layers[l], reinfpar; mode=:both)
         Δ = max(δ, Δ)
     end
+    
+    
     return Δ
 end
 

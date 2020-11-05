@@ -305,7 +305,7 @@ function updateFact!(layer::MaxSumLayer, k::Int)
 end
 
 
-function update!(layer::MaxSumLayer, reinfpar)
+function update!(layer::MaxSumLayer, reinfpar; mode=:both)
     @extract layer K N M allm allmy allmh B Bup
     # println(layer)
     for k=1:K

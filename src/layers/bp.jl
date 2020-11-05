@@ -71,7 +71,7 @@ function compute_g(B, ω, V)
     1/√V * GH(B, -ω / √V)
 end
 
-function update!(layer::BPLayer, reinfpar)
+function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
@@ -79,41 +79,45 @@ function update!(layer::BPLayer, reinfpar)
     @extract reinfpar: r
     Δm = 0.
 
-    ## FORWARD
-    if !isbottomlayer(layer)
-        @tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
-        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
-        Δ .= 1 .- x̂.^2
-    end
-    
-    @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
-    @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
-    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
-    
-
-    ## BACKWARD 
-    Btop = top_layer.B 
-    @assert size(Btop) == (K, M)
-    @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
-    @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-    # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
-    
-    if !isbottomlayer(layer)
-        # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-        @tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
-        @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
+    if mode == :forw || mode == :both
+        if !isbottomlayer(layer)
+            @tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
+            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            Δ .= 1 .- x̂.^2
+        end
+        
+        @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
+        @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
-    if !isfrozen(layer)
-        @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
-        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-        @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-        @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
-        mnew = tanh.(H) .* weight_mask
-        Δm = maximum(abs, m .- mnew) 
-        m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask    
+    if mode == :back || mode == :both
+        ## BACKWARD 
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        
+        if !isbottomlayer(layer)
+            # A .= (m.^2 + σ)' * Γ - σ' * g.^2
+            @tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
+            @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
+        end
+
+        if !isfrozen(layer)
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
+            @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+            @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            mnew = tanh.(H) .* weight_mask
+            Δm = maximum(abs, m .- mnew) 
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask    
+            @assert all(isfinite, m)
+        end
+        
     end
     
     return Δm

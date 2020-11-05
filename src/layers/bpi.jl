@@ -57,7 +57,7 @@ function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
             weight_mask, isfrozen)
 end
 
-function update!(layer::BPILayer, reinfpar)
+function update!(layer::BPILayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
@@ -65,40 +65,41 @@ function update!(layer::BPILayer, reinfpar)
     @extract reinfpar: r
     Δm = 0.
 
-    ## FORWARD
-    if !isbottomlayer(layer)
-        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
-        Δ .= 1 .- x̂.^2
+    if mode == :forw || mode == :both
+        if !isbottomlayer(layer)
+            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            Δ .= 1 .- x̂.^2
+        end
+        
+        @tullio ω[k,a] = m[k,i] * x̂[i,a]
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+
+        @assert all(isfinite, Bup)
     end
-    
-    @tullio ω[k,a] = m[k,i] * x̂[i,a]
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
-    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+    if mode == :back || mode == :both
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i]*x̂[i,a], V[k,a])  avx=false
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        
+        if !isbottomlayer(layer)
+            # A .= (m.^2 + σ)' * Γ - σ' * g.^2
+            @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            # @tullio B[i,a] = m[k,i] * g[k,a]
+        end
 
-    @assert all(isfinite, Bup)
-
-    ## BACKWARD 
-    Btop = top_layer.B 
-    @assert size(Btop) == (K, M)
-    @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i]*x̂[i,a], V[k,a])  avx=false
-    @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-    # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
-    
-    if !isbottomlayer(layer)
-        # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-        @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-        # @tullio B[i,a] = m[k,i] * g[k,a]
-    end
-
-    if !isfrozen(layer)
-        @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
-        # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-        mnew = tanh.(H) .* weight_mask
-        Δm = maximum(abs, m .- mnew)
-        m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask
-        @assert all(isfinite, m)
+        if !isfrozen(layer)
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+            # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+            @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            mnew = tanh.(H) .* weight_mask
+            Δm = maximum(abs, m .- mnew)
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask
+            @assert all(isfinite, m)
+        end
     end
     
     return Δm
