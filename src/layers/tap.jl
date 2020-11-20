@@ -78,6 +78,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         end
         
         # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        # V[k,a] = σ[k,i] * (x̂.^2)[i,a]
         V .= σ * x̂.^2 + m.^2 * Δ 
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
         @tullio ω[k,a] += - g[k,a] * V[k,a] 

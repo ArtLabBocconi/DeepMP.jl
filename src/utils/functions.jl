@@ -29,6 +29,14 @@ function _myatanh(p,m)
     return y
 end
 
+"""
+Numerically stable log(1 + exp(x))
+"""
+function log1pexp(x)
+    m = max(0, x) 
+    m + log1p(exp(-abs(x)))
+end
+
 logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
 logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
 

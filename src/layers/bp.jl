@@ -107,7 +107,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         end
 
         if !isfrozen(layer)
-            @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
             @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
