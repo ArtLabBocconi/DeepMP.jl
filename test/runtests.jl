@@ -20,3 +20,11 @@ end
 @testset "sparsity" begin
     include("sparsity.jl")
 end
+
+@testset "MNIST" begin
+    include("mnist.jl")
+end
+
+@testset "BPI2" begin
+    include("bpi2.jl")
+end

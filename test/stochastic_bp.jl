@@ -20,14 +20,6 @@ y = Int.(readdlm(@__DIR__() * "/../fmnist/seed7/Y.txt")) |> vec
 X = readdlm(@__DIR__() * "/../fmnist/seed7/X.txt")
 
 @time g, W, teacher, E = DeepMP.solve(X,y, K=[784,5, 1]
-                          , layers=[:tap, :bpex] , verbose=0
-                          , r=0,rstep=0.0, seed=2, 
-                          maxiters=10, epochs=100, density=0.5,
-                          batchsize=1, altsolv=false, altconv=true);
-@test_broken E == 0
-@test E <= 15
-
-@time g, W, teacher, E = DeepMP.solve(X,y, K=[784,5, 1]
                         , layers=[:tap, :bp] , verbose=0
                         , r=0,rstep=0.0, seed=2, 
                         maxiters=10, epochs=500, density=0.5,

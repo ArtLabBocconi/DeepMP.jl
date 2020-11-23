@@ -6,29 +6,25 @@ mutable struct BPILayer <: AbstractLayer
 
     x̂ 
     Δ
-
     m 
     σ 
-
     Bup
     B 
     A 
-    
     H
     Hext
-    
     ω 
     V
 
+    type::Symbol
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
-
     weight_mask
     isfrozen::Bool
 end
 
-
-function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
+function BPILayer(K::Int, N::Int, M::Int; 
+            density=1., isfrozen=false, type=:bpi)
     # for variables W
     x̂ = zeros(N, M)
     Δ = zeros(N, M)
@@ -53,52 +49,73 @@ function BPILayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
             Bup, B, A, 
             H, Hext,
             ω, V,
+            type,
             DummyLayer(), DummyLayer(),
             weight_mask, isfrozen)
 end
 
-function update!(layer::BPILayer, reinfpar)
+function update!(layer::BPILayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r
+    @extract reinfpar: r y
     Δm = 0.
 
-    ## FORWARD
-    if !isbottomlayer(layer)
-        @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
-        Δ .= 1 .- x̂.^2
+    if mode == :forw || mode == :both
+        if !isbottomlayer(layer)
+            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            Δ .= 1 .- x̂.^2
+        end
+        
+        @tullio ω[k,a] = m[k,i] * x̂[i,a]
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+
+        @assert all(isfinite, Bup)
     end
-    
-    @tullio ω[k,a] = m[k,i] * x̂[i,a]
-    V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
-    @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+    if mode == :back || mode == :both
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        if layer.type == :bpi
+            @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
+        end
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        
+        if !isbottomlayer(layer)
+            if layer.type == :bpi
+                @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            # if layer.type == :bpi2
+            #     @tullio B[i,a] = m[k,i] * (g[k,i,a]
+            else
+                # A .= (m.^2 + σ)' * Γ - σ' * g.^2
+                @tullio B[i,a] = m[k,i] * g[k,a]
+            end
+        end
 
-    @assert all(isfinite, Bup)
-
-    ## BACKWARD 
-    Btop = top_layer.B 
-    @assert size(Btop) == (K, M)
-    @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i]*x̂[i,a], V[k,a])  avx=false
-    @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-    # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
-    
-    if !isbottomlayer(layer)
-        # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-        @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-        # @tullio B[i,a] = m[k,i] * g[k,a]
-    end
-
-    if !isfrozen(layer)
-        @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
-        # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-        @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-        mnew = tanh.(H) .* weight_mask
-        Δm = maximum(abs, m .- mnew)
-        m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask
-        @assert all(isfinite, m)
+        if !isfrozen(layer)
+            if layer.type == :bpi 
+                @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+            else
+                @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+            end
+            if y > 0 # focusing
+                tγ = tanh(r)
+                @tullio mjs[k,i] := tanh(Hin[k,i])
+                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
+            else
+                # reinforcement 
+                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            end
+            mnew = tanh.(H) .* weight_mask
+            Δm = maximum(abs, m .- mnew)
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask
+            @assert all(isfinite, m)
+        end
     end
     
     return Δm

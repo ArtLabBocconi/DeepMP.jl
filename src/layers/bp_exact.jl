@@ -346,7 +346,7 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPAccur
     end
 end
 
-function update!(layer::L, reinfpar) where {L <: Union{BPAccurateLayer, BPExactLayer}}
+function update!(layer::L, reinfpar; mode=:both) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup allhy
     @extract layer: bottom_layer top_layer
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
