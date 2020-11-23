@@ -22,7 +22,6 @@ end
                 ,r=1.,rstep=0.0, seedx=1,maxiters=1000);
 @test E == 0
 
-
 @time g, W, teacher, E = DeepMP.solve(α=0.45, K=[201,1]
                 , layers=[:ms], verbose=0
                 , altsolv=true, altconv=false

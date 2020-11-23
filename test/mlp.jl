@@ -22,8 +22,7 @@ end
                 , verbose=0
                 ,r=.92,rstep=0.001, ry=0.0, seedx=1,maxiters=300);
     
-    @test_broken E <= 1
-    @test E < 500
+    @test E == 0
     
     @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
                 , layers=[:tap,:bpex,:tapex]
@@ -31,6 +30,7 @@ end
                 ,r=.95,rstep=0.001, seedx=1,maxiters=200);
 
     @test_broken E == 0
+    @test E < 50
 
     @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
                             , layers=[:tap,:bp,:bpex]
@@ -45,22 +45,19 @@ end
     ####
 end
 
+## VERY SLOW
 # @time g, W, teacher, E = DeepMP.solve(α=0.25, K=[301,21,11,3,1]
 #                 , layers=[:tap,:tap,:tapex,:tapex]
 #                 ,r=.9, rstep=0.001, ry=0.01, seedx=1, maxiters=2000);
-#
-# @test E == 0
 
-# IMPARATO TERZO LIVELLO!!!! (NON FUNZIONA PIU :(
-# @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[301,21,11,3,1]
-#                 , layers=[:tap,:tap,:tapex,:bpex]
-#                 ,r=.9, rstep=0.001, ry=0.01, seedx=1, maxiters=500);
+# @test_broken E == 0
+# @test_broken E < 100
+# @test E < 500
 
-# @test E == 0
+@time g, W, teacher, E = DeepMP.solve(α=0.2, K=[301,21,11,3,1]
+                , layers=[:tap,:tap,:tapex,:bpex]
+                ,r=.9, rstep=0.001, ry=0.01, seedx=1, maxiters=500);
 
-
-# @time g, W, teacher, E = DeepMP.solve(α=0.15, K=[301,21,11,3,1]
-#                    , layers=[:tap,:tap,:tapex,:bpex]
-#                    ,r=.9,rstep=0.0005,ry=0.01, seedx=1,maxiters=2000);
-
-##########################
+@test_broken E == 0
+@test_broken E < 10
+@test E < 100 

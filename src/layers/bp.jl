@@ -34,7 +34,8 @@ mutable struct BPLayer <: AbstractLayer
 end
 
 
-function BPLayer(K::Int, N::Int, M::Int; density=1., isfrozen=false)
+function BPLayer(K::Int, N::Int, M::Int; 
+        density=1., isfrozen=false)
     x̂ = zeros(N, M)
     x̂cav = zeros(K, N, M)
     Δ = zeros(N, M)
