@@ -51,12 +51,6 @@ git-tree-sha1 = "9e62e66db34540a0c919d72172cc2f642ac71260"
 uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 version = "0.5.0"
 
-[[BinaryProvider]]
-deps = ["Libdl", "Logging", "SHA"]
-git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
-uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.10"
-
 [[Blosc]]
 deps = ["Blosc_jll"]
 git-tree-sha1 = "84cf7d0f8fd46ca6f1b3e0305b4b4a37afe50fd6"
@@ -327,12 +321,6 @@ deps = ["Artifacts", "Cairo_jll", "Fontconfig_jll", "FreeType2_jll", "Gettext_jl
 git-tree-sha1 = "90bed5fc61d12d10832ebf988988104888eebaca"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.6.1+10"
-
-[[Hwloc]]
-deps = ["BinaryProvider", "Libdl"]
-git-tree-sha1 = "bb23d264d76b82d1da80733cbb01bad8a11ae489"
-uuid = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
-version = "1.0.3"
 
 [[ICU_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]

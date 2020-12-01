@@ -1,10 +1,9 @@
 G(x) = exp(-(x^2)/2) / √(2f0*π)
 H(x) = erfc(x / √2f0) / 2
-# CUDA.@cufunc H(x) = CUDA.erfc(x / √2f0) / 2
+CUDA.@cufunc H(x) = CUDA.erfc(x / √2f0) / 2
 
-lg2 = log(2)
+lg2 = log(2f0)
 
-# logcosh(x) = abs(x) > 30 ? abs(x) : log(cosh(x))
 ∞atanh = 25.
 
 function myatanh(x)
@@ -40,9 +39,8 @@ end
 
 logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
 logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
-# CUDA.@cufunc logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
-# CUDA.@cufunc logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
-
+CUDA.@cufunc logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
+CUDA.@cufunc logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
 
 atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*0.25*(log(2π) + x^2 + 2log(abs(x))) :
                 atanh(2H(x)-1)
@@ -53,15 +51,15 @@ function GHapp(x)
     x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
 end
 
-# CUDA.@cufunc function GHapp(x)
-#     y = 1/x
-#     y2 = y^2
-#     x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
-# end
+CUDA.@cufunc function GHapp(x)
+    y = 1/x
+    y2 = y^2
+    x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
+end
 
 GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
 _GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
-# CUDA.@cufunc _GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
+CUDA.@cufunc _GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
 
 function GHnaive(uσ, x)
     Hp = H(x)
@@ -71,13 +69,13 @@ function GHnaive(uσ, x)
     Gp*(2p-1) / (p*Hp + (1-p)*Hm)
 end
 
-# CUDA.@cufunc function GHnaive(uσ, x)
-#     Hp = H(x)
-#     Hm = 1-Hp
-#     Gp = G(x)
-#     p = (tanh(uσ)+1)/2
-#     Gp*(2p-1) / (p*Hp + (1-p)*Hm)
-# end
+CUDA.@cufunc function GHnaive(uσ, x)
+    Hp = H(x)
+    Hm = 1-Hp
+    Gp = G(x)
+    p = (tanh(uσ)+1)/2
+    Gp*(2p-1) / (p*Hp + (1-p)*Hm)
+end
 
 function GH(uσ, x)
     uσ == 0 && return zero(x)
@@ -97,26 +95,26 @@ function GH(uσ, x)
     return res
 end
 
-# CUDA.@cufunc function GH(uσ, x)
-#     uσ == 0 && return zero(x)
-#     uσ == Inf && return _GH(x)
-#     uσ == -Inf && return -_GH(-x)
-#     return GHnaive(uσ, x)
-#     # abs(x) < 5 && return GHnaive(uσ, x)
-#     # uh = atanh2Hm1(x)
-#     # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
-#     # # @show x mσ
-#     # # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
-#     # if abs(ex) > 600
-#     #     ex = sign(ex) * 600
-#     # end
-#     # res = sign(uσ)* exp(ex) * √(2f0/π)
-#     # # if !isfinite(res)
-#     # #     @show p up ug uh ex log(abs(mp)) logcosh(up)  logcosh(uh) logcosh(up+uh)
-#     # # end
-#     # # @assert isfinite(res)
-#     # return res
-# end
+CUDA.@cufunc function GH(uσ, x)
+    uσ == 0 && return zero(x)
+    uσ == Inf && return _GH(x)
+    uσ == -Inf && return -_GH(-x)
+    return GHnaive(uσ, x)
+    # abs(x) < 5 && return GHnaive(uσ, x)
+    # uh = atanh2Hm1(x)
+    # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
+    # # @show x mσ
+    # # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
+    # if abs(ex) > 600
+    #     ex = sign(ex) * 600
+    # end
+    # res = sign(uσ)* exp(ex) * √(2f0/π)
+    # # if !isfinite(res)
+    # #     @show p up ug uh ex log(abs(mp)) logcosh(up)  logcosh(uh) logcosh(up+uh)
+    # # end
+    # # @assert isfinite(res)
+    # return res
+end
 
 # TODO approx
 function DH(σu, x, y, C)
