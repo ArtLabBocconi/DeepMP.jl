@@ -77,7 +77,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r
+    @extract reinfpar: r y
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -109,7 +109,16 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
-            @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            if y > 0 # focusing
+                tγ = tanh(r)
+                @tullio mjs[k,i] := tanh(Hin[k,i])
+                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i]
+            else
+                # reinforcement
+                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
             mnew = tanh.(H) .* weight_mask
