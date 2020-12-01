@@ -101,12 +101,12 @@ function updateFact!(layer::BPRealLayer, k::Int)
             end
         end
 
-        Chtot <= 0. && (print("*"); Chtot =1e-5)
+        Chtot <= 0. && (print("*"); Chtot =1f-5)
 
         # println("Mhtot $a= $Mhtot pd=$(pd[a])")
         @assert isfinite(pd[a]) "$(pd)"
         # if pd[a]*Hp + (1-pd[a])*Hm <= 0.
-        #     pd[a] -= 1e-8
+        #     pd[a] -= 1f-8
         # end
         mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
         # @assert isfinite(mh[a]) "isfinite(mh[a]) pd[a]= $(pd[a]) Mhtot=$Mhtot √Chtot=$(√Chtot)"
@@ -122,7 +122,7 @@ function updateFact!(layer::BPRealLayer, k::Int)
             for i=1:N
                 Mcav = Mhtot - my[i]*m[i]
                 Ccav = Chtot - my[i]^2*ρ[i]^2
-                Ccav <= 0. && (Ccav=1e-5)       #print("*"); )
+                Ccav <= 0. && (Ccav=1f-5)       #print("*"); )
                 x = Mcav / Ccav
                 gh = GH(pd[a], -x)
                 @assert isfinite(gh)
@@ -132,7 +132,7 @@ function updateFact!(layer::BPRealLayer, k::Int)
                 # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
                 # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
                 # t = DH(pd[a], Mcav, my[i], Ccav)
-                # @assert abs(t-mhw[i][a]) < 1e-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
+                # @assert abs(t-mhw[i][a]) < 1f-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
             end
         end
 
@@ -168,14 +168,14 @@ function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
         h2[i] = 1. + sum(ρhw) + r*h2[i]
         # @assert h2[i] > 0.
         h2[i]<0 && (print("![]!"); continue)
-        # h2[i]<0 && (print("![]!"); h2[i] = 1e-8)
+        # h2[i]<0 && (print("![]!"); h2[i] = 1f-8)
         oldm = m[i]
         m[i] = h1[i] / h2[i]
         for a=1:M
             h1cav =  h1[i] - mhw[a]
             h2cav =  h2[i] - ρhw[a]
-            # h2cav<0 && (print("!"); h2cav = 1e-5)
-            h2cav<0 && (h2cav = 1e-8)
+            # h2cav<0 && (print("!"); h2cav = 1f-5)
+            h2cav<0 && (h2cav = 1f-8)
 
             mcav[a][i] = h1cav / h2cav
             ρcav[a][i] = 1 / h2cav
@@ -256,11 +256,11 @@ function initrand!(layer::BPRealLayer)
     # if!isbottomlayer
     for k=1:K,a=1:M,i=1:N
         allmcav[k][a][i] = allm[k][i]
-        allρcav[k][a][i] = 1e-1
+        allρcav[k][a][i] = 1f-1
 
         allmycav[a][k][i] = allmy[a][i]
         allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i]
-        allρhcavtow[k][i][a] = 1e-1
+        allρhcavtow[k][i][a] = 1f-1
         allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i]
     end
 

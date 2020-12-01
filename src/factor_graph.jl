@@ -2,17 +2,19 @@ mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
     M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
-    x::Matrix{Float64}
-    y::Vector{Int}
+    x
+    y
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
                                    # Weight with layers are those in 2:L+1
-    density # weight density (ONLY FOR bp family as of yet)
+    density # weight density (fraction of non-zeros)
+    device
 
-    function FactorGraph(x::Matrix{Float64}, y::Vector{Int},
+    function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int},
                 layertype::Vector{Symbol};
                 β=Inf, βms = 1.,
-                density=1., verbose=1)
+                density=1., verbose=1,
+                device=cpu)
         N, M = size(x)
         @assert length(y) == M
 
@@ -24,10 +26,11 @@ mutable struct FactorGraph
         @assert K[1]==N
         verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
 
+        x, y = x |> device, y |> device
+
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(x))
         verbose > 0 &&  println("Created InputLayer")
-
 
         for l=1:L
             if  layertype[l] == :tap
@@ -68,6 +71,7 @@ mutable struct FactorGraph
         push!(layers, OutputLayer(y, β=β))
         verbose > 0 && println("Created OutputLayer")
 
+        layers = device.(layers)
         for l=1:L+1
             chain!(layers[l], layers[l+1])
         end

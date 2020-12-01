@@ -350,7 +350,7 @@ function initrand!(layer::MaxSumLayer)
     end
 end
 
-function fixY!(layer::MaxSumLayer, x::Matrix)
+function fixY!(layer::MaxSumLayer, x::AbstractMatrix)
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allhy allmycav
 
@@ -370,7 +370,7 @@ end
 function getW(layer::L) where L <: Union{MaxSumLayer}
     @extract layer: allm K
     # TODO add weight_mask
-    return vcat([(sign.(allm[k] .+ 1e-10))' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1f-10))' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{MaxSumLayer}
@@ -378,6 +378,6 @@ function forward(layer::L, x) where L <: Union{MaxSumLayer}
     @assert size(x, 1) == N
     W = getW(layer)
     @assert size(W) == (K, N)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
 

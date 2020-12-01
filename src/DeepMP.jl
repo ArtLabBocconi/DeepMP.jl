@@ -8,8 +8,11 @@ using Random
 using LinearAlgebra
 using Statistics
 using Base: @propagate_inbounds # for DataLoader
-using LoopVectorization
 using Tullio
+using LoopVectorization
+using CUDA, KernelAbstractions
+using Functors
+CUDA.allowscalar(false)
 
 # using PyPlot
 
@@ -21,6 +24,17 @@ const IVecVec = Vector{IVec}
 const VecVecVec = Vector{VecVec}
 const IVecVecVec = Vector{IVecVec}
 
+gpu(x::Array) = CUDA.cu(x)
+gpu(x::CUDA.CuArray) = x
+
+# go one level deep
+function gpu(x::T) where T
+    cufields = [CUDA.cu(getfield(x, f)) for f in fieldnames(T)]
+    T(cufields...)
+end
+
+cpu(x) = x
+
 include("utils/utils.jl")
 include("utils/functions.jl")
 include("utils/dataloader.jl")
@@ -31,14 +45,15 @@ include("layers/layers.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
 
-function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
-                                , altsolv::Bool=false, altconv = false, plotinfo=0
-                                , teacher = nothing
-                                , reinfpar::ReinfParams=ReinfParams()
-                                , verbose::Int=1)
+function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
+                                 altsolv=false, 
+                                 altconv = false, 
+                                 plotinfo=0,
+                                 teacher=nothing,
+                                 reinfpar::ReinfParams=ReinfParams(),
+                                 verbose=1)
 
     for it = 1:maxiters
-
         Δ = update!(g, reinfpar)
         E = energy(g)
 
@@ -59,11 +74,11 @@ function converge!(g::FactorGraph; maxiters::Int = 10000, ϵ::Float64=1e-5
     return maxiters, 1, 1.0
 end
 
-function solve(; K::Vector{Int} = [101,3], α=0.6,
+function solve(; K::Vector{Int}=[101,3], α=0.6,
                  seedx::Int=-1,
                  density=1,
-                 TS = false,
-                 density_teacher = density,
+                 TS=false,
+                 density_teacher=density,
                  kw...)
 
     seedx > 0 && Random.seed!(seedx)
@@ -93,10 +108,10 @@ function solve(; K::Vector{Int} = [101,3], α=0.6,
 end
 
 
-function solve(xtrain::Matrix, ytrain::Vector{Int};
+function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
-                maxiters::Int = 10000,
-                ϵ::Float64 = 1e-4,              # convergence criteirum
+                maxiters = 10000,
+                ϵ = 1f-4,              # convergence criteirum
                 K::Vector{Int} = [101, 3, 1],
                 layers=[:tap,:tapex,:tapex],
                 r = 0., rstep = 0.001,          # reinforcement parameters for W vars
@@ -113,14 +128,18 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
                 β=Inf, βms = 1.,
                 density = 1.,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
-                epochs::Int = 1000,
-                verbose::Int = 1,
+                epochs = 1000,
+                verbose = 1,
                 infotime=10,
-                resfile="res.txt")
+                resfile="res.txt",
+                usecuda = true)
 
     seed > 0 && Random.seed!(seed)
-
-    g = FactorGraph(xtrain, ytrain, K, layers; β, βms, density)
+    device = CUDA.has_cuda() && usecuda ? gpu : cpu
+    xtrain, ytrain = device(xtrain), device(ytrain)
+    xtest, ytest = device(xtest), device(ytest)
+    println("DEVICE: $device")
+    g = FactorGraph(xtrain, ytrain, K, layers; β, βms, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
     teacher !== nothing && set_weight_mask!(g, teacher)
     initrand!(g)
@@ -139,7 +158,7 @@ function solve(xtrain::Matrix, ytrain::Vector{Int};
             converged = solved = meaniters = 0
             for (b, (x, y)) in enumerate(dtrain)
                 gbatch = FactorGraph(x, y, K, layers; β, βms,
-                                     density, verbose=0)
+                                     density, verbose=0, device)
                 set_weight_mask!(gbatch, g)
                 set_external_fields!(gbatch, hext; ρ)
                 initrand!(gbatch)

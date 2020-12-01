@@ -77,12 +77,12 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             Δ .= 1 .- x̂.^2
         end
         
-        # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
         # V[k,a] = σ[k,i] * (x̂.^2)[i,a]
         V .= σ * x̂.^2 + m.^2 * Δ 
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
         @tullio ω[k,a] += - g[k,a] * V[k,a] 
-        V .+= σ * Δ .+ 1e-8 
+        V .+= σ * Δ .+ 1f-8 
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
@@ -124,13 +124,13 @@ function initrand!(layer::TapLayer)
     @extract layer: x̂  Δ m σ 
     @extract layer: B A ω H  V Hext
     
-    ϵ = 1e-1
-    H .= ϵ .* randn(K, N) + Hext
+    ϵ = 1f-1
+    H .= ϵ .* randn!(similar(m)) + Hext
     m .= tanh.(H) .* weight_mask
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{TapLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
     @extract layer: K N M 
     @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)
@@ -146,7 +146,7 @@ function forward(layer::L, x) where L <: Union{TapLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{TapLayer}}

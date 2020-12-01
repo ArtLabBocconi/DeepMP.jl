@@ -129,8 +129,8 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
         end
         pp = (1+vH)/2; pm = 1-pp
         sr = vH * real(s0 / (pp*(s0 + 2s2p) + pm*(s0 + 2s2m)))
-        sr > 1 && (sr=1 - 1e-10) #print("!")
-        sr < -1 && (sr=-1 + 1e-10) #print("!")
+        sr > 1 && (sr=1 - 1f-10) #print("!")
+        sr < -1 && (sr=-1 + 1f-10) #print("!")
         if !isfrozen(layer)
             mhw[i][a] =  myatanh(mycav[i] * sr)
             !isfinite(mhw[i][a]) && (mhw[i][a] = sign(mhw[i][a])*20) #print("!")
@@ -242,7 +242,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
         #println("isbot, Chtot = $Chtot")
     end
 
-    Chtot == 0 &&  (Chtot = 1e-8); # print("!")
+    Chtot == 0 &&  (Chtot = 1f-8); # print("!")
 
     mh[a] = 1/√Chtot * GH(pd, -Mhtot / √Chtot)
     @assert isfinite(mh[a])
@@ -251,7 +251,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             mask[i] == 1 || continue
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
-            Ccav == 0 &&  (Ccav = 1e-8); # print("!")
+            Ccav == 0 &&  (Ccav = 1f-8); # print("!")
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
             m₋ = (Mcav - my[i]) / sdσ̄²
@@ -267,7 +267,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             mask[i] == 1 || continue
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
-            Ccav == 0 &&  (Ccav = 1e-8)
+            Ccav == 0 &&  (Ccav = 1f-8)
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
             m₋ = (Mcav - my[i]) / sdσ̄²
@@ -406,7 +406,7 @@ end
 function initrand!(layer::L) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer K N M allm allmy allmh B Bup 
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-    ϵ = 1e-1
+    ϵ = 1f-1
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
@@ -441,7 +441,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -455,12 +455,12 @@ end
 
 function getW(layer::L) where L <: Union{BPAccurateLayer, BPExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1f-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{BPAccurateLayer, BPExactLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end

@@ -85,7 +85,7 @@ function runexp(;
                                            ψ=0.0,
                                            density=density,
                                            batchsize=1,
-                                           ϵ=1e-4,
+                                           ϵ=1f-4,
                                            r=0.0, rstep=0.0, ρ=0.0, yy=0.0,
                                            altsolv=true, altconv=true,
                                            verbose_in=0,

@@ -69,6 +69,9 @@ function BPLayer(K::Int, N::Int, M::Int;
 end
 
 function compute_g(B, ω, V)
+    1/√V * G(-ω / √V) 
+end
+CUDA.@cufunc function compute_g(B, ω, V)
     1/√V * GH(B, -ω / √V)
 end
 
@@ -89,7 +92,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         
         @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
         @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
-        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
@@ -138,14 +141,14 @@ function initrand!(layer::L) where {L <: Union{BPLayer}}
     @extract layer: x̂ x̂cav Δ m mcav σ Hext
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
-    ϵ = 1e-1
-    H .= ϵ .* randn(K, N) + Hext
+    ϵ = 1f-1
+    H .= ϵ .* randn!(similar(Hext)) + Hext
     m .= tanh.(H) .* weight_mask
     mcav .= m .* weight_mask 
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPLayer}}
     @extract layer: K N M 
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @assert size(x) == size(x̂)
@@ -162,7 +165,7 @@ function forward(layer::L, x) where L <: Union{BPLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{BPLayer}}

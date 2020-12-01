@@ -22,14 +22,14 @@ unfreeze!(layer::AbstractLayer) = layer.isfrozen = false
 
 isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
 
-signB(x::T) where {T} = sign(x + 1e-10)
+signB(x::T) where {T} = sign(x + 1f-10)
 
 function forward(W::Vector{Vector{T}}, x) where T <: Number
     Wmat =  vcat([w' for w in W]...)
     forward(Wmat, x)
 end
 
-function forward(W::Matrix{T}, x) where T <: Number
+function forward(W::AbstractMatrix{T}, x) where T <: Number
     return signB.(W*x)
 end
 

@@ -157,8 +157,8 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
             pp = (1+vH)/2; pm = 1-pp
             sr = vH * real(s0 / (pp*(s0 + 2s2p) + pm*(s0 + 2s2m)))
             @assert isfinite(sr)
-            sr > 1 && (sr=1. - 1e-12) #print("!")
-            sr < -1 && (sr=-1. + 1e-12) #print("!")
+            sr > 1 && (sr=1. - 1f-12) #print("!")
+            sr < -1 && (sr=-1. + 1f-12) #print("!")
             # if isfrozen(layer)
             #     B[i,a] = atanh(m[i]*sr)
             # else
@@ -211,7 +211,7 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapExac
         B[i,a] = hy[i]
         # @assert isfinite(B[i,a]) "isfinite(B[i,a]) $(MYt[i]) $(my[i] * CYt) $(hy[i])"
         # pinned from below (e.g. from input layer)
-        # if pu > 1-1e-10 || pu < 1e-10 # NOTE:1-e15 dà risultati peggiori
+        # if pu > 1-1f-10 || pu < 1f-10 # NOTE:1-e15 dà risultati peggiori
         #     hy[i] = pu > 0.5 ? 100 : -100
         #     my[i] = 2pu-1
         #
@@ -262,7 +262,7 @@ end
 
 function initrand!(layer::L) where {L <: Union{TapExactLayer}}
     @extract layer K N M allm allmy allmh B Bup
-    ϵ = 1e-1
+    ϵ = 1f-1
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
@@ -284,7 +284,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{TapExactLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapExactLayer}}
     @extract layer K N M allm allmy allmh B Bup
 
     for a=1:M, i=1:N
@@ -294,7 +294,7 @@ end
 
 function getW(layer::L) where L <: Union{TapExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1f-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{TapExactLayer}
@@ -302,5 +302,5 @@ function forward(layer::L, x) where L <: Union{TapExactLayer}
     @assert size(x, 1) == N
     W = getW(layer)
     @assert size(W) == (K, N)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
