@@ -24,23 +24,11 @@ const IVecVec = Vector{IVec}
 const VecVecVec = Vector{VecVec}
 const IVecVecVec = Vector{IVecVec}
 
-gpu(x::Array) = CUDA.cu(x)
-gpu(x::CUDA.CuArray) = x
-
-# go one level deep
-function gpu(x::T) where T
-    cufields = [CUDA.cu(getfield(x, f)) for f in fieldnames(T)]
-    T(cufields...)
-end
-
-cpu(x) = x
-
+include("cuda.jl")
 include("utils/utils.jl")
 include("utils/functions.jl")
 include("utils/dataloader.jl")
-include("utils/Magnetizations.jl")
-using .Magnetizations
-
+include("utils/Magnetizations.jl"); using .Magnetizations
 include("layers/layers.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
@@ -132,7 +120,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 verbose = 1,
                 infotime=10,
                 resfile="res.txt",
-                usecuda = true)
+                usecuda = false)
 
     seed > 0 && Random.seed!(seed)
     device = CUDA.has_cuda() && usecuda ? gpu : cpu

@@ -4,7 +4,7 @@ CUDA.@cufunc H(x) = CUDA.erfc(x / √2f0) / 2
 
 lg2 = log(2f0)
 
-∞atanh = 25.
+∞atanh = 25f0
 
 function myatanh(x)
     y = atanh(x)
@@ -29,39 +29,37 @@ function _myatanh(p,m)
     return y
 end
 
-"""
-Numerically stable log(1 + exp(x))
-"""
-function log1pexp(x)
-    m = max(0, x) 
+## Numerically stable log(1 + exp(x))
+@gpu function log1pexp(x)
+    m = max(zero(x), x) 
     m + log1p(exp(-abs(x)))
 end
 
-logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
-logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
-CUDA.@cufunc logcosh(x) = abs(x) > 600 ? abs(x) - lg2 : log(cosh(x))
-CUDA.@cufunc logsinhabs(x) = abs(x) > 600 ? abs(x) - lg2 : log(sinh(abs(x)))
+function logcosh(x)
+    ax = abs(x)
+    ax  > 600 ? ax - lg2 : log(cosh(x))
+end
+function logsinhabs(x)
+    ax = abs(x)
+    ax  > 600 ? ax - lg2 : log(sinh(ax))
+end
 
-atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*0.25*(log(2π) + x^2 + 2log(abs(x))) :
-                atanh(2H(x)-1)
+atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*0.25*(log(2π) + x^2 + 2log(abs(x))) : atanh(2H(x)-1)
 
-function GHapp(x)
+# cuda version, any change crashes julia
+CUDA.@cufunc atanh2Hm1(x) = atanh(2H(x)-1)
+CUDA.@cufunc logcosh(x) = log(cosh(x))
+CUDA.@cufunc logsinhabs(x) = log(sinh(abs(x)))
+
+@gpu function GHapp(x)
     y = 1/x
     y2 = y^2
     x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
 end
 
-CUDA.@cufunc function GHapp(x)
-    y = 1/x
-    y2 = y^2
-    x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
-end
+@gpu GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
 
-GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
-_GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
-CUDA.@cufunc _GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
-
-function GHnaive(uσ, x)
+@gpu function GHnaive(uσ, x)
     Hp = H(x)
     Hm = 1-Hp
     Gp = G(x)
@@ -69,18 +67,11 @@ function GHnaive(uσ, x)
     Gp*(2p-1) / (p*Hp + (1-p)*Hm)
 end
 
-CUDA.@cufunc function GHnaive(uσ, x)
-    Hp = H(x)
-    Hm = 1-Hp
-    Gp = G(x)
-    p = (tanh(uσ)+1)/2
-    Gp*(2p-1) / (p*Hp + (1-p)*Hm)
-end
-
-function GH(uσ, x)
+@gpu function GH2(uσ, x)
     uσ == 0 && return zero(x)
     uσ == Inf && return GH(x)
     uσ == -Inf && return -GH(-x)
+    # return GHnaive(uσ, x)
     abs(x) < 5 && return GHnaive(uσ, x)
     uh = atanh2Hm1(x)
     ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
@@ -93,27 +84,6 @@ function GH(uσ, x)
     # end
     # @assert isfinite(res)
     return res
-end
-
-CUDA.@cufunc function GH(uσ, x)
-    uσ == 0 && return zero(x)
-    uσ == Inf && return _GH(x)
-    uσ == -Inf && return -_GH(-x)
-    return GHnaive(uσ, x)
-    # abs(x) < 5 && return GHnaive(uσ, x)
-    # uh = atanh2Hm1(x)
-    # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
-    # # @show x mσ
-    # # ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
-    # if abs(ex) > 600
-    #     ex = sign(ex) * 600
-    # end
-    # res = sign(uσ)* exp(ex) * √(2f0/π)
-    # # if !isfinite(res)
-    # #     @show p up ug uh ex log(abs(mp)) logcosh(up)  logcosh(uh) logcosh(up+uh)
-    # # end
-    # # @assert isfinite(res)
-    # return res
 end
 
 # TODO approx

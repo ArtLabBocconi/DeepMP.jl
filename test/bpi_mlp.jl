@@ -24,7 +24,8 @@ end
            , verbose=0
            , r=0.9, rstep=0.01, ry=0.0, seedx=1, maxiters=500);
 
-@test E == 0
+@test_broken E == 0
+@test  E < 5
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[201,11,3,1]
            , layers=[:bpi, :bpi, :bpex]
@@ -32,7 +33,7 @@ end
            , r=0.9, rstep=0.01, ry=0.0, seedx=1, maxiters=500);
            
 @test_broken E == 0
-@test_broken E <= 10
+@test E <= 10
 @test E <= 70
 
 # for lay in [:tapex] #TODO  :bpex non ce la fa

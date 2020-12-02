@@ -68,11 +68,8 @@ function BPLayer(K::Int, N::Int, M::Int;
             weight_mask, isfrozen)
 end
 
-function compute_g(B, ω, V)
-    1/√V * GH(B, -ω / √V) 
-end
-CUDA.@cufunc function compute_g(B, ω, V)
-    1/√V * GH(B, -ω / √V)
+@gpu function compute_g(B, ω, V)
+    1/√V * GH2(B, -ω / √V) 
 end
 
 function update!(layer::BPLayer, reinfpar; mode=:both)

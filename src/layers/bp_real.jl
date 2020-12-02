@@ -108,15 +108,15 @@ function updateFact!(layer::BPRealLayer, k::Int)
         # if pd[a]*Hp + (1-pd[a])*Hm <= 0.
         #     pd[a] -= 1f-8
         # end
-        mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
+        mh[a] = 1/√Chtot * GH2(pd[a], -Mhtot / √Chtot)
         # @assert isfinite(mh[a]) "isfinite(mh[a]) pd[a]= $(pd[a]) Mhtot=$Mhtot √Chtot=$(√Chtot)"
         if !isbottomlayer(layer)
             @assert false
             # for i=1:N
             #     Mcav = Mhtot - my[i]*m[i]
             #     Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
-            #     # mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
-            #     mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+            #     # mhw[i][a] = my[i]/Ccav * GH2(pd[a],-Mcav / Ccav)
+            #     mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
             # end
         else
             for i=1:N
@@ -124,12 +124,12 @@ function updateFact!(layer::BPRealLayer, k::Int)
                 Ccav = Chtot - my[i]^2*ρ[i]^2
                 Ccav <= 0. && (Ccav=1f-5)       #print("*"); )
                 x = Mcav / Ccav
-                gh = GH(pd[a], -x)
+                gh = GH2(pd[a], -x)
                 @assert isfinite(gh)
                 mhw[i][a] = my[i]/√Ccav * gh
                 ρhw[i][a] = my[i]^2/Ccav *(x*gh + gh^2) # -∂^2 log ν(W)
 
-                # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+                # mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
                 # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
                 # t = DH(pd[a], Mcav, my[i], Ccav)
                 # @assert abs(t-mhw[i][a]) < 1f-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
@@ -140,7 +140,7 @@ function updateFact!(layer::BPRealLayer, k::Int)
             @assert false
             # for i=1:N
             #     # mhy[i][k] = mhw[i][k]* m[i] / my[i]
-            #     mhy[i][k] = myatanh(m[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+            #     mhy[i][k] = myatanh(m[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
             # end
         end
 

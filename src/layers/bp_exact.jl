@@ -244,7 +244,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
 
     Chtot == 0 &&  (Chtot = 1f-8); # print("!")
 
-    mh[a] = 1/√Chtot * GH(pd, -Mhtot / √Chtot)
+    mh[a] = 1/√Chtot * GH2(pd, -Mhtot / √Chtot)
     @assert isfinite(mh[a])
     if !isbottomlayer(layer)
         for i=1:N
