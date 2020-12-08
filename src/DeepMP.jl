@@ -69,8 +69,10 @@ function solve(; K::Vector{Int}=[101,3], α=0.6,
                  density_teacher=density,
                  kw...)
 
-    seedx > 0 && Random.seed!(seedx)
-
+    if seedx > 0
+        Random.seed!(seedx)
+        CUDA.seed!(seedx)
+    end
     L = length(K) - 1
     density = process_density(density, L)
     numW = length(K)==2 ? K[1]*K[2]*density[1]  :
@@ -117,12 +119,15 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 density = 1.,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs = 1000,
-                verbose = 1,
+                verbose = 2,
                 infotime=10,
                 resfile="res.txt",
                 usecuda = false)
 
-    seed > 0 && Random.seed!(seed)
+    if seed > 0
+        Random.seed!(seed)
+        CUDA.seed!(seed)
+    end
     device = CUDA.has_cuda() && usecuda ? gpu : cpu
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
@@ -161,7 +166,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 copy_allh!(hext, gbatch)
                 copy_mags!(g, gbatch)
 
-                print("b = $b / $(length(dtrain))\r")
+                verbose > 1 && print("b = $b / $(length(dtrain))\r")
             end
 
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
@@ -170,9 +175,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             if ytest != nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% r=%g rstep=%g ρ=%g\n",
-                     epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                     Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
+            verbose > 0 &&  @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% r=%g rstep=%g ρ=%g\n",
+                                epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
+                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
             plot_info(g, 0, verbose=verbose, teacher=teacher)
             Etrain == 0 && break
         end

@@ -33,5 +33,5 @@ include("mnist_utils.jl")
 # end
 
 @testset "CUDA" begin
-    include("bpi2.jl")
+    include("cuda.jl")
 end

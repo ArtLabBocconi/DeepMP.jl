@@ -76,7 +76,7 @@ mutable struct FactorGraph
             chain!(layers[l], layers[l+1])
         end
 
-        new(K, M, L, x, y, layers)
+        new(K, M, L, x, y, layers, density, device)
     end
 end
 
@@ -100,7 +100,7 @@ function set_weight_mask!(g::FactorGraph, W::VecVecVec)
         N = length(W[l][1])
         w = W[l]
         mask = [w[i][j]==0 ? 0 : 1 for i=1:K,j=1:N]
-        set_weight_mask!(g.layers[l+1], mask)
+        set_weight_mask!(g.layers[l+1], g.device(mask))
     end
 end
 
