@@ -93,13 +93,10 @@ function process_density(density, L)
     return density
 end
 
-function set_weight_mask!(g::FactorGraph, W::VecVecVec)
+function set_weight_mask!(g::FactorGraph, W::Vector{<:AbstractMatrix})
     @assert length(W) == g.L
     for l=1:g.L
-        K = length(W[l])
-        N = length(W[l][1])
-        w = W[l]
-        mask = [w[i][j]==0 ? 0 : 1 for i=1:K,j=1:N]
+        mask = W[l] .!= 0
         set_weight_mask!(g.layers[l+1], g.device(mask))
     end
 end
@@ -172,11 +169,6 @@ end
 
 function get_allh(g::FactorGraph)
     [get_allh(layer) for layer in g.layers[2:g.L+1]]
-end
-
-function init_hext(K::Vector{Int}; ϵ=0.0)
-    hext = [[ϵ .* rand(K[l]) for k = 1:K[l+1]] for l = 1:length(K)-1]
-    return hext
 end
 
 function initrand!(g::FactorGraph)

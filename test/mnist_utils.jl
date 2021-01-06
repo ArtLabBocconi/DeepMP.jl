@@ -7,8 +7,8 @@ using Random, Statistics
 function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     datadir = joinpath(homedir(), "Datasets", "MNIST")
     Dataset = fashion ? FashionMNIST : MNIST
-    xtrain, ytrain = Dataset.traindata(Float64, dir=datadir)
-    xtest, ytest = Dataset.testdata(Float64, dir=datadir)
+    xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
+    xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
     if !isempty(classes)

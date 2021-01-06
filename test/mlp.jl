@@ -3,24 +3,16 @@
         @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[1001,7,1]
                     , layers=[:tap,lay]
                     , verbose=0
-                    , r=.9, rstep=0.01, ry=0., seedx=2, maxiters=500);
+                    , r=.9, rstep=0.01, seedx=2, maxiters=500);
         @test E == 0
     end
-
-    ## ### COMMITTEE CONTINUOUS FIRST LAYER
-    ##### COME MAI è così lento????
-    ## @time g, W, teacher, E = DeepMP.solve(K=[301,5,1] ,layers=[:bpreal,:bpex]
-    ##                    ,r=0.2,rstep=0.002, ry=0.2, altconv=true, altsolv=true, seedx=1,
-    ##                    maxiters=1000, plotinfo=0,β=Inf, α=2.);
-    ## @test E == 0
-    ##
 end
 
 @testset "3 LAYERS" begin
     @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
                 , layers=[:tap,:tapex,:tapex]
                 , verbose=0
-                ,r=.92,rstep=0.001, ry=0.0, seedx=1,maxiters=300);
+                ,r=.92,rstep=0.001, seedx=1,maxiters=300);
     
     @test E == 0
     
@@ -48,7 +40,7 @@ end
 ## VERY SLOW
 # @time g, W, teacher, E = DeepMP.solve(α=0.25, K=[301,21,11,3,1]
 #                 , layers=[:tap,:tap,:tapex,:tapex]
-#                 ,r=.9, rstep=0.001, ry=0.01, seedx=1, maxiters=2000);
+#                 ,r=.9, rstep=0.001, seedx=1, maxiters=2000);
 
 # @test_broken E == 0
 # @test_broken E < 100
@@ -56,7 +48,7 @@ end
 
 @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[301,21,11,3,1]
                 , layers=[:tap,:tap,:tapex,:bpex]
-                ,r=.9, rstep=0.001, ry=0.01, seedx=1, maxiters=500);
+                ,r=.9, rstep=0.001, seedx=1, maxiters=500);
 
 @test_broken E == 0
 @test_broken E < 10

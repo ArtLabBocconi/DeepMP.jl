@@ -36,26 +36,26 @@ end
 
 function BPLayer(K::Int, N::Int, M::Int; 
         density=1., isfrozen=false)
-    x̂ = zeros(N, M)
-    x̂cav = zeros(K, N, M)
-    Δ = zeros(N, M)
+    x̂ = zeros(F, N, M)
+    x̂cav = zeros(F, K, N, M)
+    Δ = zeros(F, N, M)
     
-    m = zeros(K, N)
-    mcav = zeros(K, N, M)
-    σ = zeros(K, N)
+    m = zeros(F, K, N)
+    mcav = zeros(F, K, N, M)
+    σ = zeros(F, K, N)
     
-    Bup = zeros(K, M)
-    B = zeros(N, M)
-    Bcav = zeros(K, N, M)
-    A = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
+    Bcav = zeros(F, K, N, M)
+    A = zeros(F, N, M)
     
-    H = zeros(K, N)
-    Hext = zeros(K, N)
-    Hcav = zeros(K, N, M)
+    H = zeros(F, K, N)
+    Hext = zeros(F, K, N)
+    Hcav = zeros(F, K, N, M)
     
-    ω = zeros(K, M)
-    ωcav = zeros(K, N, M)
-    V = zeros(K, M)
+    ω = zeros(F, K, M)
+    ωcav = zeros(F, K, N, M)
+    V = zeros(F, K, M)
     
     weight_mask = rand(K, N) .< density
 

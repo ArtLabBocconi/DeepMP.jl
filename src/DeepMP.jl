@@ -16,9 +16,10 @@ CUDA.allowscalar(false)
 
 # using PyPlot
 
-const CVec = Vector{Complex{Float64}}
+const F = Float32
+const CVec = Vector{Complex{F}}
 const IVec = Vector{Int}
-const Vec = Vector{Float64}
+const Vec = Vector{F}
 const VecVec = Vector{Vec}
 const IVecVec = Vector{IVec}
 const VecVecVec = Vector{VecVec}
@@ -35,7 +36,7 @@ include("reinforcement.jl")
 
 function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
                                  altsolv=false, 
-                                 altconv = false, 
+                                 altconv=false, 
                                  plotinfo=0,
                                  teacher=nothing,
                                  reinfpar::ReinfParams=ReinfParams(),
@@ -45,8 +46,8 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
         Δ = update!(g, reinfpar)
         E = energy(g)
 
-        verbose > 0 && @printf("it=%d \t (r=%f ry=%f) E=%d \t Δ=%f \n",
-                                it, reinfpar.r, reinfpar.ry, E, Δ)
+        verbose > 0 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
+                                it, reinfpar.r, E, Δ)
 
         plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
         update_reinforcement!(reinfpar)
@@ -81,7 +82,7 @@ function solve(; K::Vector{Int}=[101,3], α=0.6,
 
     N = K[1]
     M = round(Int, α * numW)
-    xtrain = rand([-1.,1.], N, M)
+    xtrain = rand(F[-1, 1], N, M)
     if TS
         teacher = rand_teacher(K; density=density_teacher)
         ytrain = Int.(forward(teacher, xtrain) |> vec)
@@ -104,25 +105,25 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 ϵ = 1f-4,              # convergence criteirum
                 K::Vector{Int} = [101, 3, 1],
                 layers=[:tap,:tapex,:tapex],
-                r = 0., rstep = 0.001,          # reinforcement parameters for W vars
-                ry = 0., rystep = 0.0,          # reinforcement parameters for Y vars
-                ψ = 0.,                         # dumping coefficient
+                r = 0f0, rstep = 0.001f0,          # reinforcement parameters for W vars
+                ψ = 0f0,                         # dumping coefficient
                 yy = -1,                         # focusing BP parameter
                 h0 = nothing,                   # external field
-                ρ = 1.0,                        # coefficient for external field
+                ρ = 1f0,                        # coefficient for external field
                 freezetop=true,                # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
                 altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
                 β=Inf, βms = 1.,
-                density = 1.,                   # density of fully connected layer
+                density = 1f0,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs = 1000,
                 verbose = 2,
                 infotime=10,
                 resfile="res.txt",
-                usecuda = false)
+                usecuda = false,
+                )
 
     if seed > 0
         Random.seed!(seed)
@@ -134,10 +135,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     println("DEVICE: $device")
     g = FactorGraph(xtrain, ytrain, K, layers; β, βms, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
-    teacher !== nothing && set_weight_mask!(g, teacher)
+    if teacher !== nothing
+        teacher = device.(teacher)
+        set_weight_mask!(g, teacher)
+    end
     initrand!(g)
     freezetop && freezetop!(g, 1)
-    reinfpar = ReinfParams(r, rstep, ry, rystep, yy, ψ)
+    reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if batchsize <= 0
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,

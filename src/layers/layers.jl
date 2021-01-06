@@ -79,9 +79,9 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
         end
         if teacher !== nothing
             if hasproperty(layer, :allm)
-                push!(R, dot(layer.allm[k], teacher[k]) / N)
+                push!(R, dot(layer.allm[k], teacher[k,:]) / N)
             elseif hasproperty(layer, :m)
-                push!(R, dot(layer.m[k,:], teacher[k])/ N)
+                push!(R, dot(layer.m[k,:], teacher[k,:])/ N)
             end
         end
         for p=k+1:K

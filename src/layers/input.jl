@@ -5,7 +5,7 @@ mutable struct InputLayer <: AbstractLayer
 end
 
 function InputLayer(x::AbstractMatrix)
-    return InputLayer(1, zeros(0,0), x)
+    return InputLayer(1, zeros(F, 0,0), x)
 end
 
 initrand!(layer::InputLayer) = nothing

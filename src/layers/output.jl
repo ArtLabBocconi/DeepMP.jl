@@ -2,7 +2,7 @@ mutable struct OutputLayer <: AbstractLayer
     l::Int
     labels::AbstractVector
     B 
-    β::Float64
+    β::F
 end
 
 function OutputLayer(y::AbstractVector; β=Inf)

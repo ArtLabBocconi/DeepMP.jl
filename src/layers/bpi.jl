@@ -26,23 +26,23 @@ end
 function BPILayer(K::Int, N::Int, M::Int; 
             density=1., isfrozen=false, type=:bpi)
     # for variables W
-    x̂ = zeros(N, M)
-    Δ = zeros(N, M)
+    x̂ = zeros(F, N, M)
+    Δ = zeros(F, N, M)
     
-    m = zeros(K, N)
-    σ = zeros(K, N)
+    m = zeros(F, K, N)
+    σ = zeros(F, K, N)
     
-    Bup = zeros(K, M)
-    B = zeros(N, M)
-    A = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
+    A = zeros(F, N, M)
     
-    H = zeros(K, N)
-    Hext = zeros(K, N)
+    H = zeros(F, K, N)
+    Hext = zeros(F, K, N)
     
-    ω = zeros(K, M)
-    V = zeros(K, M)
+    ω = zeros(F, K, M)
+    V = zeros(F, K, M)
     
-    weight_mask = rand(K, N) .< density
+    weight_mask = rand(F, K, N) .< density
 
     return BPILayer(-1, K, N, M,
             x̂, Δ, m, σ,

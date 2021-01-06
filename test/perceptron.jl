@@ -16,11 +16,13 @@ for lay in [:tap,:bp]
     @test E == 0
 end
 
-@time g, W, teacher, E = DeepMP.solve(α=0.5, K=[201,1]
-                , layers=[:bpi], verbose=0
-                , altsolv=true, altconv=false
-                ,r=1.,rstep=0.0, seedx=1,maxiters=1000);
-@test E == 0
+if DeepMP.F == Float64
+    @time g, W, teacher, E = DeepMP.solve(α=0.5, K=[201,1]
+                    , layers=[:bpi], verbose=0
+                    , altsolv=true, altconv=false
+                    ,r=1.,rstep=0.0, seedx=1,maxiters=1000);
+    @test E == 0
+end
 
 @time g, W, teacher, E = DeepMP.solve(α=0.45, K=[201,1]
                 , layers=[:ms], verbose=0
