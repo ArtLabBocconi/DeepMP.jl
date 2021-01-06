@@ -119,7 +119,7 @@ end
     X = readdlm(@__DIR__() * "/../fmnist/seed7/X.txt")
 
     batchsize = 1
-    ρ, r = 0.8, 0.2
+    ρ, r = 1, 0
     layers=[type, type, type]
 
     @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],
@@ -132,7 +132,7 @@ end
     @test_broken E == 0
     
     batchsize = 10
-    ρ, r = 0.8, 0.2
+    ρ, r = 1, 0
     layers=[type, type, type]
 
     @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],

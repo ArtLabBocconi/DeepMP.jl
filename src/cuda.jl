@@ -1,6 +1,6 @@
 
-gpu(x::Array) = CUDA.cu(x)
-gpu(x::CUDA.CuArray) = x
+# CUDA.cu casts to Float32
+gpu(x::AbstractArray) = CUDA.cu(x)
 
 # go one level deep
 function gpu(x::T) where T
@@ -13,7 +13,7 @@ cpu(x) = x
 """
     @gpu f(x) = ...
 
-Define a function to be broadcstable over `CuArray`s,
+Define a function to be broadcastable over `CuArray`s,
 e.g. `f.(CUDA.zeros(2))`.
 """
 macro gpu(ex)

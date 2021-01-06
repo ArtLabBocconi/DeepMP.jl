@@ -2,8 +2,6 @@ mutable struct FactorGraph
     K::Vector{Int} # dimension of hidden layers
     M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
-    x
-    y
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
@@ -12,7 +10,7 @@ mutable struct FactorGraph
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int},
                 layertype::Vector{Symbol};
-                β=Inf, βms = 1.,
+                β=Inf,
                 density=1., verbose=1,
                 device=cpu)
         N, M = size(x)
@@ -21,16 +19,16 @@ mutable struct FactorGraph
         L = length(K)-1
         density = process_density(density, L)
         numW = length(K)==2 ? K[1]*K[2]*density[1]  :
-            sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
+                        sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
         numW = round(Int, numW)
         @assert K[1]==N
-        verbose > 0 && println("# N=$N M=$M α=$(M/numW)")
+        verbose > 0 && println("# N=$N M=$M α=$(M/numW) device=$device")
 
         x, y = x |> device, y |> device
 
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(x))
-        verbose > 0 &&  println("Created InputLayer")
+        # verbose > 0 &&  println("Created InputLayer")
 
         for l=1:L
             if  layertype[l] == :tap
@@ -42,11 +40,7 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
-            # elseif  layertype[l] == :bp2
-            #     push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
-            #     verbose > 0 && println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
-                #push!(layers, BPLayer(K[l+1], K[l], M))
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPAccurateLayer\t $(K[l])")
             elseif  layertype[l] == :bpex
@@ -56,9 +50,6 @@ mutable struct FactorGraph
                 push!(layers, BPILayer(K[l+1], K[l], M, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
-            elseif  layertype[l] == :ms
-                push!(layers, MaxSumLayer(K[l+1], K[l], M, βms=βms))
-                verbose > 0 && println("Created MaxSumLayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
                 @assert l == 1
                 push!(layers, BPRealLayer(K[l+1], K[l], M))
@@ -69,14 +60,14 @@ mutable struct FactorGraph
         end
 
         push!(layers, OutputLayer(y, β=β))
-        verbose > 0 && println("Created OutputLayer")
+        # verbose > 0 && println("Created OutputLayer")
 
         layers = device.(layers)
         for l=1:L+1
             chain!(layers[l], layers[l+1])
         end
 
-        new(K, M, L, x, y, layers, density, device)
+        new(K, M, L, layers, density, device)
     end
 end
 
@@ -125,6 +116,24 @@ function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
     end
 end
 
+# set eternal field ffrom posterior
+function set_Hext_from_H!(g::FactorGraph, ρ)
+    for l = 2:g.L+1
+        set_Hext_from_H!(g.layers[l], ρ)
+    end
+end
+
+function set_Hext_from_H!(lay::AbstractLayer, ρ)
+    if hasproperty(lay, :allh) # TODO deprecate
+        @assert hasproperty(lay, :allhext)
+        for k in 1:lay.K
+            lay.allhext[k] .= ρ .* lay.allh[k]
+        end
+    else
+        lay.Hext .= ρ .* lay.H
+    end
+end
+
 function copy_mags!(lay1::AbstractLayer, lay2::AbstractLayer)
     if hasproperty(lay1, :allm)
         for k in 1:lay1.K
@@ -142,41 +151,47 @@ function copy_mags!(g1::FactorGraph, g2::FactorGraph)
     end
 end
 
-function copy_allh!(hext, lay::AbstractLayer; ρ=1.0)
-    if hasproperty(lay, :allh)
-        for k in 1:lay.K
-            @assert all(isfinite, lay.allh[k])
-            hext[k] .= ρ .* lay.allh[k]
-        end
-    else
-        hext .= ρ .* lay.H
-    end
-end
+# function copy_allh!(hext, lay::AbstractLayer; ρ=1.0)
+#     if hasproperty(lay, :allh)
+#         for k in 1:lay.K
+#             @assert all(isfinite, lay.allh[k])
+#             hext[k] .= ρ .* lay.allh[k]
+#         end
+#     else
+#         hext .= ρ .* lay.H
+#     end
+# end
 
-function copy_allh!(hext, g::FactorGraph; ρ=1.0)
-    for l = 2:g.L+1
-        copy_allh!(hext[l-1], g.layers[l]; ρ)
-    end
-end
+# function copy_allh!(hext, g::FactorGraph; ρ=1.0)
+#     for l = 2:g.L+1
+#         copy_allh!(hext[l-1], g.layers[l]; ρ)
+#     end
+# end
 
-function get_allh(layer::AbstractLayer)
-    if hasproperty(layer, :allh)
-        return layer.allh
-    else
-        return layer.H
-    end
-end
+# function get_allh(layer::AbstractLayer)
+#     if hasproperty(layer, :allh)
+#         return layer.allh
+#     else
+#         return layer.H
+#     end
+# end
 
-function get_allh(g::FactorGraph)
-    [get_allh(layer) for layer in g.layers[2:g.L+1]]
-end
+# function get_allh(g::FactorGraph)
+#     [get_allh(layer) for layer in g.layers[2:g.L+1]]
+# end
 
 function initrand!(g::FactorGraph)
-    @extract g: M layers K x
+    @extract g: M layers K
     for lay in layers[2:end-1]
         initrand!(lay)
     end
-    fixY!(g.layers[2], g.x) # fix input to first layer
+    fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
+end
+
+function set_input_output!(g, x, y)
+    set_output!(g.layers[end], y)
+    g.layers[1].x = x
+    fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
 end
 
 function freezetop!(g::FactorGraph, w)
@@ -188,7 +203,6 @@ end
 
 function update!(g::FactorGraph, reinfpar)
     Δ = 0. 
-    
     
     for l = 2:g.L+1
         δ = update!(g.layers[l], reinfpar; mode=:forw)
@@ -212,12 +226,11 @@ function forward(g::FactorGraph, x)
 end
 
 function energy(g::FactorGraph)
-    @extract g: x y
+    x = g.layers[1].x
+    y = g.layers[end].y
     ŷ = forward(g, x) |> vec
     return sum(ŷ .!= y)
 end
-
-mags(g::FactorGraph) = [(lay.allm)::VecVec for lay in g.layers[2:end-1]]
 
 getW(g::FactorGraph) = [getW(lay) for lay in g.layers[2:end-1]]
 
@@ -232,7 +245,6 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     for l=1:L
         wt = teacher != nothing ? teacher[l] : nothing
         q0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
-
 
         verbose > 0 && printvec(q0, "layer $l q0=")
         verbose > 0 && printvec(qWαβ, "layer $l qWαβ=")

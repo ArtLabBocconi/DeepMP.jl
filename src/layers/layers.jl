@@ -8,7 +8,6 @@ mutable struct DummyLayer <: AbstractLayer end
 
 include("input.jl")
 include("output.jl")
-include("maxsum.jl")
 include("bp.jl")
 include("bp_exact.jl")
 include("tap.jl")

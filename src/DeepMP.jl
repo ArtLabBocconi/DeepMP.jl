@@ -16,7 +16,7 @@ CUDA.allowscalar(false)
 
 # using PyPlot
 
-const F = Float32
+const F = Float64
 const CVec = Vector{Complex{F}}
 const IVec = Vector{Int}
 const Vec = Vector{F}
@@ -102,7 +102,7 @@ end
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
                 maxiters = 10000,
-                ϵ = 1f-4,              # convergence criteirum
+                ϵ = 1f-4,              # convergence criterium
                 K::Vector{Int} = [101, 3, 1],
                 layers=[:tap,:tapex,:tapex],
                 r = 0f0, rstep = 0.001f0,          # reinforcement parameters for W vars
@@ -115,7 +115,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 altsolv::Bool = true,
                 altconv::Bool = false,
                 seed::Int = -1, plotinfo=0,
-                β=Inf, βms = 1.,
+                β=Inf,
                 density = 1f0,                   # density of fully connected layer
                 batchsize=-1,                   # only supported by some algorithms
                 epochs = 1000,
@@ -130,10 +130,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         CUDA.seed!(seed)
     end
     device = CUDA.has_cuda() && usecuda ? gpu : cpu
+    
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
-    println("DEVICE: $device")
-    g = FactorGraph(xtrain, ytrain, K, layers; β, βms, density, device)
+    dtrain = DataLoader((xtrain, ytrain); 
+            batchsize, shuffle=true, partial=false)
+
+    g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
     if teacher !== nothing
         teacher = device.(teacher)
@@ -141,6 +144,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
     initrand!(g)
     freezetop && freezetop!(g, 1)
+    
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if batchsize <= 0
@@ -148,28 +152,22 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                             altsolv, altconv, plotinfo,
                             teacher, verbose)
     else
-        hext = get_allh(g)
-        dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true)
-
+        # TODO check reinfparams updates in mini-batch case
+        
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             for (b, (x, y)) in enumerate(dtrain)
-                gbatch = FactorGraph(x, y, K, layers; β, βms,
-                                     density, verbose=0, device)
-                set_weight_mask!(gbatch, g)
-                set_external_fields!(gbatch, hext; ρ)
-                initrand!(gbatch)
-                freezetop && freezetop!(gbatch, 1)
-                
-                it, e, δ = converge!(gbatch; maxiters, ϵ, #reinfpar=ReinfParams(),
+                ρ > 0 && set_Hext_from_H!(g, ρ)
+                set_input_output!(g, x, y)
+                # ?? init!(gbatch) ??
+
+                it, e, δ = converge!(g; maxiters, ϵ, 
                                         reinfpar, altsolv, altconv, plotinfo,
                                         teacher, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)
                 meaniters += it
-                copy_allh!(hext, gbatch)
-                copy_mags!(g, gbatch)
-
+                
                 verbose > 1 && print("b = $b / $(length(dtrain))\r")
             end
 
