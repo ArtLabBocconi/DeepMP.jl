@@ -39,23 +39,23 @@ end
 
 function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
-    allm = [zeros(N) for i=1:K]
-    allh = [zeros(N) for i=1:K]
-    Mtot = [zeros(N) for i=1:K]
-    Ctot = zeros(K)
-    allhext = [zeros(N) for i=1:K]
+    allm = [zeros(F, N) for i=1:K]
+    allh = [zeros(F, N) for i=1:K]
+    Mtot = [zeros(F, N) for i=1:K]
+    Ctot = zeros(F, K)
+    allhext = [zeros(F, N) for i=1:K]
     
     # for variables Y
-    allmy = [zeros(N) for a=1:M]
-    allhy = [zeros(N) for a=1:M]
-    MYtot = [zeros(N) for a=1:M]
-    CYtot = zeros(M)
+    allmy = [zeros(F, N) for a=1:M]
+    allhy = [zeros(F, N) for a=1:M]
+    MYtot = [zeros(F, N) for a=1:M]
+    CYtot = zeros(F, M)
 
     # for Facts
-    allmh = [zeros(M) for k=1:K]
+    allmh = [zeros(F, M) for k=1:K]
 
-    Bup = zeros(K, M)
-    B = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
 
 
     expf =fexpf(N)
@@ -65,7 +65,7 @@ function TapExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
-    weight_mask = rand(K, N) .< density
+    weight_mask = rand(F, K, N) .< density
 
     return TapExactLayer(-1, K, N, M, allm, allmy, allmh 
         , allh, allhext, allhy, Bup, B
@@ -77,24 +77,24 @@ end
 
 
 ## Utility fourier tables for the exact theta node
-fexpf(N) = Complex{Float64}[exp(2π*im*p/(N+1)) for p=0:N]
-fexpinv0(N) = Complex{Float64}[exp(-2π*im*p*(N-1)/2/(N+1)) for p=0:N]
-fexpinv2p(N) = Complex{Float64}[(
+fexpf(N) = Complex{F}[exp(2π*im*p/(N+1)) for p=0:N]
+fexpinv0(N) = Complex{F}[exp(-2π*im*p*(N-1)/2/(N+1)) for p=0:N]
+fexpinv2p(N) = Complex{F}[(
         a =exp(-2π*im*p*(N-1)/2/(N+1));
         b = exp(-2π*im*p/(N+1));
         p==0 ? (N+1)/2 : a*b/(1-b)*(1-b^((N+1)/2)))
         for p=0:N]
-fexpinv2m(N) = Complex{Float64}[(
+fexpinv2m(N) = Complex{F}[(
         a =exp(-2π*im*p*(N-1)/2/(N+1));
         b = exp(2π*im*p/(N+1));
         p==0 ? (N+1)/2 : a*b/(1-b)*(1-b^((N+1)/2)))
         for p=0:N]
-fexpinv2P(N) = Complex{Float64}[(
+fexpinv2P(N) = Complex{F}[(
         a =exp(-2π*im*p/(N+1)*(N+1)/2);
         b = exp(-2π*im*p/(N+1));
         p==0 ? (N+1)/2 : a/(1-b)*(1-b^((N+1)/2)))
         for p=0:N]
-fexpinv2M(N) = Complex{Float64}[(
+fexpinv2M(N) = Complex{F}[(
         a =exp(-2π*im*p/(N+1)*(N-1)/2);
         b = exp(2π*im*p/(N+1));
         p==0 ? (N+1)/2 : a/(1-b)*(1-b^((N+1)/2)))
@@ -114,7 +114,7 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
     for a=1:M
         my = allmy[a]
         MYt = MYtot[a];
-        X = ones(Complex{Float64}, N+1)
+        X = ones(Complex{F}, N+1)
     
         for p=1:N+1
             for i=1:N
@@ -127,8 +127,8 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
         end
         
         vH = tanh(pdtop[a])
-        s2P = Complex{Float64}(0.)
-        s2M = Complex{Float64}(0.)
+        s2P = Complex{F}(0.)
+        s2M = Complex{F}(0.)
         for p=1:N+1
             s2P += expinv2P[p] * X[p]
             s2M += expinv2M[p] * X[p]
@@ -145,9 +145,9 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
             magW = m[i]
             pup = (1+magY*magW)/2
 
-            s0 = Complex{Float64}(0.)
-            s2p = Complex{Float64}(0.)
-            s2m = Complex{Float64}(0.)
+            s0 = Complex{F}(0.)
+            s2p = Complex{F}(0.)
+            s2m = Complex{F}(0.)
             for p=1:N+1
                 xp = X[p] / (1-pup + pup*expf[p])
                 s0 += expinv0[p] * xp
@@ -157,8 +157,8 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
             pp = (1+vH)/2; pm = 1-pp
             sr = vH * real(s0 / (pp*(s0 + 2s2p) + pm*(s0 + 2s2m)))
             @assert isfinite(sr)
-            sr > 1 && (sr=1. - 1e-12) #print("!")
-            sr < -1 && (sr=-1. + 1e-12) #print("!")
+            sr > 1 && (sr=1. - 1f-12) #print("!")
+            sr < -1 && (sr=-1. + 1f-12) #print("!")
             # if isfrozen(layer)
             #     B[i,a] = atanh(m[i]*sr)
             # else
@@ -172,7 +172,7 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
     end
 end
 
-function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapExactLayer}}
+function updateVarW!(layer::L, k::Int, r::F=0) where {L <: Union{TapExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup l
     @extract layer: CYtot MYtot Mtot Ctot allh allhext
     Δ = 0.
@@ -192,7 +192,7 @@ function updateVarW!(layer::L, k::Int, r::Float64=0.) where {L <: Union{TapExact
     return Δ
 end
 
-function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapExactLayer}}
+function updateVarY!(layer::L, a::Int) where {L <: Union{TapExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allhy CYtot MYtot Mtot Ctot
     @extract layer: bottom_layer
@@ -206,12 +206,12 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{TapExac
         @assert isfinite(my[i]) "my[i]=$(my[i]) "
         #TODO inutile calcolarli per il primo layer
         @assert isfinite(hy[i])
-        hy[i] = MYt[i] + my[i] * CYt + ry* hy[i]
+        hy[i] = MYt[i] + my[i] * CYt
         @assert isfinite(hy[i]) "MYt[i]=$(MYt[i]) my[i]=$(my[i]) CYt=$CYt hy[i]=$(hy[i])"
         B[i,a] = hy[i]
         # @assert isfinite(B[i,a]) "isfinite(B[i,a]) $(MYt[i]) $(my[i] * CYt) $(hy[i])"
         # pinned from below (e.g. from input layer)
-        # if pu > 1-1e-10 || pu < 1e-10 # NOTE:1-e15 dà risultati peggiori
+        # if pu > 1-1f-10 || pu < 1f-10 # NOTE:1-e15 dà risultati peggiori
         #     hy[i] = pu > 0.5 ? 100 : -100
         #     my[i] = 2pu-1
         #
@@ -254,7 +254,7 @@ function update!(layer::L, reinfpar; mode=:both) where {L <: Union{TapExactLayer
     # bypass Y if top_layer
     if !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, reinfpar.ry)
+            updateVarY!(layer, a)
         end
     end
     return Δ
@@ -262,17 +262,17 @@ end
 
 function initrand!(layer::L) where {L <: Union{TapExactLayer}}
     @extract layer K N M allm allmy allmh B Bup
-    ϵ = 1e-1
+    ϵ = 1f-1
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
-        m .= (2*rand(N) .- 1) .* ϵ .* mask[k,:]
+        m .= (2*rand(F, N) .- 1) .* ϵ .* mask[k,:]
     end
     for my in allmy
-        my .= (2*rand(N) .- 1) .* ϵ
+        my .= (2*rand(F, N) .- 1) .* ϵ
     end
     for mh in allmh
-        mh .= (2*rand(M) .- 1) .* ϵ
+        mh .= (2*rand(F, M) .- 1) .* ϵ
     end
 end
 
@@ -284,7 +284,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{TapExactLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapExactLayer}}
     @extract layer K N M allm allmy allmh B Bup
 
     for a=1:M, i=1:N
@@ -294,7 +294,7 @@ end
 
 function getW(layer::L) where L <: Union{TapExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1f-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{TapExactLayer}
@@ -302,5 +302,5 @@ function forward(layer::L, x) where L <: Union{TapExactLayer}
     @assert size(x, 1) == N
     W = getW(layer)
     @assert size(W) == (K, N)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end

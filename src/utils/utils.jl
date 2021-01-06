@@ -11,22 +11,19 @@ function printvec(q::Vector{Float64}, head = "")
 end
 
 
-#TODO use vector of matrix teacher
 function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
     @assert K[L+1] == 1
     density = process_density(density, L)
     
-    T = Float64
-    W = Vector{Vector{Vector{T}}}()
+    W = Vector{Matrix{F}}()
     for l=1:L
-        push!(W, [rand(T[-1,1], K[l]) for k=1:K[l+1]])
-        for k in 1:K[l+1]
-            W[l][k] .*= [rand() < density[l] ? 1 : 0 for i=1:K[l]]
-        end
+        w = rand(F[-1,1], K[l+1], K[l])
+        w .*= rand!(similar(w)) .< density[l]
+        push!(W, w)
     end
     if L > 1
-        W[L][1] .= 1
+        W[L] .= 1
     end
     return W
 end

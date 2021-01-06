@@ -39,29 +39,29 @@ end
 
 function BPRealLayer(K::Int, N::Int, M::Int)
     # for variables W
-    allm = [zeros(N) for i=1:K]
-    allh1 = [zeros(N) for i=1:K]
-    allh2 = [zeros(N) for i=1:K]
+    allm = [zeros(F, N) for i=1:K]
+    allh1 = [zeros(F, N) for i=1:K]
+    allh2 = [zeros(F, N) for i=1:K]
 
 
-    allmcav = [[zeros(N) for i=1:M] for i=1:K]
-    allρcav = [[zeros(N) for i=1:M] for i=1:K]
+    allmcav = [[zeros(F, N) for i=1:M] for i=1:K]
+    allρcav = [[zeros(F, N) for i=1:M] for i=1:K]
 
-    allmycav = [[zeros(N) for i=1:K] for i=1:M]
-    allmhcavtoy = [[zeros(K) for i=1:N] for i=1:M]
+    allmycav = [[zeros(F, N) for i=1:K] for i=1:M]
+    allmhcavtoy = [[zeros(F, K) for i=1:N] for i=1:M]
 
-    allmhcavtow = [[zeros(M) for i=1:N] for i=1:K]
-    allρhcavtow = [[zeros(M) for i=1:N] for i=1:K]
+    allmhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
+    allρhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
 
     # for variables Y
-    allmy = [zeros(N) for a=1:M]
-    allhy = [zeros(N) for a=1:M]
+    allmy = [zeros(F, N) for a=1:M]
+    allhy = [zeros(F, N) for a=1:M]
 
     # for Facts
-    allmh = [zeros(M) for k=1:K]
+    allmh = [zeros(F, M) for k=1:K]
 
-    Bup = zeros(K, M)
-    B = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
 
     return BPRealLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allρcav, allmycav, allmhcavtoy
@@ -101,38 +101,38 @@ function updateFact!(layer::BPRealLayer, k::Int)
             end
         end
 
-        Chtot <= 0. && (print("*"); Chtot =1e-5)
+        Chtot <= 0. && (print("*"); Chtot =1f-5)
 
         # println("Mhtot $a= $Mhtot pd=$(pd[a])")
         @assert isfinite(pd[a]) "$(pd)"
         # if pd[a]*Hp + (1-pd[a])*Hm <= 0.
-        #     pd[a] -= 1e-8
+        #     pd[a] -= 1f-8
         # end
-        mh[a] = 1/√Chtot * GH(pd[a], -Mhtot / √Chtot)
+        mh[a] = 1/√Chtot * GH2(pd[a], -Mhtot / √Chtot)
         # @assert isfinite(mh[a]) "isfinite(mh[a]) pd[a]= $(pd[a]) Mhtot=$Mhtot √Chtot=$(√Chtot)"
         if !isbottomlayer(layer)
             @assert false
             # for i=1:N
             #     Mcav = Mhtot - my[i]*m[i]
             #     Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
-            #     # mhw[i][a] = my[i]/Ccav * GH(pd[a],-Mcav / Ccav)
-            #     mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+            #     # mhw[i][a] = my[i]/Ccav * GH2(pd[a],-Mcav / Ccav)
+            #     mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
             # end
         else
             for i=1:N
                 Mcav = Mhtot - my[i]*m[i]
                 Ccav = Chtot - my[i]^2*ρ[i]^2
-                Ccav <= 0. && (Ccav=1e-5)       #print("*"); )
+                Ccav <= 0. && (Ccav=1f-5)       #print("*"); )
                 x = Mcav / Ccav
-                gh = GH(pd[a], -x)
+                gh = GH2(pd[a], -x)
                 @assert isfinite(gh)
                 mhw[i][a] = my[i]/√Ccav * gh
                 ρhw[i][a] = my[i]^2/Ccav *(x*gh + gh^2) # -∂^2 log ν(W)
 
-                # mhw[i][a] = myatanh(my[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+                # mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
                 # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
                 # t = DH(pd[a], Mcav, my[i], Ccav)
-                # @assert abs(t-mhw[i][a]) < 1e-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
+                # @assert abs(t-mhw[i][a]) < 1f-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
             end
         end
 
@@ -140,7 +140,7 @@ function updateFact!(layer::BPRealLayer, k::Int)
             @assert false
             # for i=1:N
             #     # mhy[i][k] = mhw[i][k]* m[i] / my[i]
-            #     mhy[i][k] = myatanh(m[i]/Ccav * GH(pd[a],-Mcav / Ccav))
+            #     mhy[i][k] = myatanh(m[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
             # end
         end
 
@@ -148,7 +148,7 @@ function updateFact!(layer::BPRealLayer, k::Int)
     end
 end
 
-function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
+function updateVarW!(layer::BPRealLayer, k::Int, r=0)
     @extract layer: K N M allm allmy allmh B Bup allh1 allh2
     @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
 
@@ -168,14 +168,14 @@ function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
         h2[i] = 1. + sum(ρhw) + r*h2[i]
         # @assert h2[i] > 0.
         h2[i]<0 && (print("![]!"); continue)
-        # h2[i]<0 && (print("![]!"); h2[i] = 1e-8)
+        # h2[i]<0 && (print("![]!"); h2[i] = 1f-8)
         oldm = m[i]
         m[i] = h1[i] / h2[i]
         for a=1:M
             h1cav =  h1[i] - mhw[a]
             h2cav =  h2[i] - ρhw[a]
-            # h2cav<0 && (print("!"); h2cav = 1e-5)
-            h2cav<0 && (h2cav = 1e-8)
+            # h2cav<0 && (print("!"); h2cav = 1f-5)
+            h2cav<0 && (h2cav = 1f-8)
 
             mcav[a][i] = h1cav / h2cav
             ρcav[a][i] = 1 / h2cav
@@ -185,7 +185,7 @@ function updateVarW!(layer::BPRealLayer, k::Int, r::Float64=0.)
     return Δ
 end
 
-function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
+function updateVarY!(layer::BPRealLayer, a::Int)
     @extract layer K N M allm allmy allmh B Bup allhy
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -198,7 +198,7 @@ function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
         mhy = allmhcavtoy[a][i]
         mycav = allmycav[a]
 
-        hy[i] = sum(mhy) + ry* hy[i]
+        hy[i] = sum(mhy)
         @assert isfinite(hy[i]) "isfinite(hy[i]) mhy=$mhy"
         B[i,a] = hy[i]
 
@@ -212,7 +212,7 @@ function updateVarY!(layer::BPRealLayer, a::Int, ry::Float64=0.)
     end
 end
 
-function update!(layer::BPRealLayer, r::Float64, ry::Float64)
+function update!(layer::BPRealLayer, r)
     @extract layer K N M allm allmy allmh B Bup allhy
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -232,7 +232,7 @@ function update!(layer::BPRealLayer, r::Float64, ry::Float64)
     end
     if !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, ry)
+            updateVarY!(layer, a)
         end
     end
     return Δ
@@ -244,23 +244,23 @@ function initrand!(layer::BPRealLayer)
     @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
 
     for m in allm
-        m .= 2*rand(N) .- 1
+        m .= 2*rand(F,N) .- 1
     end
     for my in allmy
-        my .= 2*rand(N) .- 1
+        my .= 2*rand(F, N) .- 1
     end
     for mh in allmh
-        mh .= 2*rand(M) .- 1
+        mh .= 2*rand(F, M) .- 1
     end
     
     # if!isbottomlayer
     for k=1:K,a=1:M,i=1:N
         allmcav[k][a][i] = allm[k][i]
-        allρcav[k][a][i] = 1e-1
+        allρcav[k][a][i] = 1f-1
 
         allmycav[a][k][i] = allmy[a][i]
         allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i]
-        allρhcavtow[k][i][a] = 1e-1
+        allρhcavtow[k][i][a] = 1f-1
         allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i]
     end
 

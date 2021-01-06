@@ -1,6 +1,9 @@
 using DeepMP
 using Test, DelimitedFiles, Random, Statistics
 
+
+include("mnist_utils.jl")
+
 @testset "Perceptron" begin
     include("perceptron.jl")
 end
@@ -27,4 +30,8 @@ end
 
 @testset "BPI2" begin
     include("bpi2.jl")
+end
+
+@testset "CUDA" begin
+    include("cuda.jl")
 end

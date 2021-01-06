@@ -66,9 +66,10 @@ Usage example:
     end
 """
 function DataLoader(data; batchsize=1, shuffle=false, partial=true)
-    batchsize > 0 || throw(ArgumentError("Need positive batchsize"))
-    
     n = _nobs(data) 
+    if batchsize < 0
+        batchsize = n
+    end
     if n < batchsize
         @warn "Number of observations less than batchsize, decreasing the batchsize to $n"
         batchsize = n

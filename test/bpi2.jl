@@ -6,8 +6,8 @@ type = :bpi
 function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     datadir = joinpath(homedir(), "Datasets", "MNIST")
     Dataset = fashion ? FashionMNIST : MNIST
-    xtrain, ytrain = Dataset.traindata(Float64, dir=datadir)
-    xtest, ytest = Dataset.testdata(Float64, dir=datadir)
+    xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
+    xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
     if !isempty(classes)
@@ -119,7 +119,7 @@ end
     X = readdlm(@__DIR__() * "/../fmnist/seed7/X.txt")
 
     batchsize = 1
-    ρ, r = 0.8, 0.2
+    ρ, r = 1, 0
     layers=[type, type, type]
 
     @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],
@@ -132,7 +132,7 @@ end
     @test_broken E == 0
     
     batchsize = 10
-    ρ, r = 0.8, 0.2
+    ρ, r = 1, 0
     layers=[type, type, type]
 
     @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],

@@ -14,7 +14,7 @@ batanherf(x::Float64) = Float64(atanh(erf(big(x))))
 
 let
     mm = 16.0
-    st = 1e-4
+    st = 1f-4
     r = 1.0:st:mm
     rb = big.(first(r):step(r):last(r))
 

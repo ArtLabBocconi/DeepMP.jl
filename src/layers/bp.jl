@@ -36,26 +36,26 @@ end
 
 function BPLayer(K::Int, N::Int, M::Int; 
         density=1., isfrozen=false)
-    x̂ = zeros(N, M)
-    x̂cav = zeros(K, N, M)
-    Δ = zeros(N, M)
+    x̂ = zeros(F, N, M)
+    x̂cav = zeros(F, K, N, M)
+    Δ = zeros(F, N, M)
     
-    m = zeros(K, N)
-    mcav = zeros(K, N, M)
-    σ = zeros(K, N)
+    m = zeros(F, K, N)
+    mcav = zeros(F, K, N, M)
+    σ = zeros(F, K, N)
     
-    Bup = zeros(K, M)
-    B = zeros(N, M)
-    Bcav = zeros(K, N, M)
-    A = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
+    Bcav = zeros(F, K, N, M)
+    A = zeros(F, N, M)
     
-    H = zeros(K, N)
-    Hext = zeros(K, N)
-    Hcav = zeros(K, N, M)
+    H = zeros(F, K, N)
+    Hext = zeros(F, K, N)
+    Hcav = zeros(F, K, N, M)
     
-    ω = zeros(K, M)
-    ωcav = zeros(K, N, M)
-    V = zeros(K, M)
+    ω = zeros(F, K, M)
+    ωcav = zeros(F, K, N, M)
+    V = zeros(F, K, M)
     
     weight_mask = rand(K, N) .< density
 
@@ -68,8 +68,8 @@ function BPLayer(K::Int, N::Int, M::Int;
             weight_mask, isfrozen)
 end
 
-function compute_g(B, ω, V)
-    1/√V * GH(B, -ω / √V)
+@gpu function compute_g(B, ω, V)
+    1/√V * GH2(B, -ω / √V) 
 end
 
 function update!(layer::BPLayer, reinfpar; mode=:both)
@@ -77,7 +77,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r
+    @extract reinfpar: r y
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -89,7 +89,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         
         @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
         @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
-        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1e-8
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
@@ -97,8 +97,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         ## BACKWARD 
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
-        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
-        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        gcav = compute_g.(reshape(Btop,K,1,M), ωcav, reshape(V,K,1,M))
+        g = compute_g.(Btop, ω, V)
+        # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+        # @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
@@ -109,7 +111,16 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
-            @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            if y > 0 # focusing
+                tγ = tanh(r)
+                @tullio mjs[k,i] := tanh(Hin[k,i])
+                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i]
+            else
+                # reinforcement
+                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+            end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
             mnew = tanh.(H) .* weight_mask
@@ -129,14 +140,14 @@ function initrand!(layer::L) where {L <: Union{BPLayer}}
     @extract layer: x̂ x̂cav Δ m mcav σ Hext
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
-    ϵ = 1e-1
-    H .= ϵ .* randn(K, N) + Hext
+    ϵ = 1f-1
+    H .= ϵ .* randn!(similar(Hext)) + Hext
     m .= tanh.(H) .* weight_mask
     mcav .= m .* weight_mask 
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{BPLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPLayer}}
     @extract layer: K N M 
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @assert size(x) == size(x̂)
@@ -153,7 +164,7 @@ function forward(layer::L, x) where L <: Union{BPLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{BPLayer}}

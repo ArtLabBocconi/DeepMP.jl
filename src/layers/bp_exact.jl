@@ -41,25 +41,25 @@ end
 
 function BPExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
-    allm = [zeros(N) for i=1:K]
-    allh = [zeros(N) for i=1:K]
-    allhext = [zeros(N) for i=1:K]
-    allux = [zeros(N) for i=1:K]
+    allm = [zeros(F, N) for i=1:K]
+    allh = [zeros(F, N) for i=1:K]
+    allhext = [zeros(F, N) for i=1:K]
+    allux = [zeros(F, N) for i=1:K]
 
 
-    allmcav = [[zeros(N) for i=1:M] for i=1:K]
-    allmycav = [[zeros(N) for i=1:K] for i=1:M]
-    allmhcavtoy = [[zeros(K) for i=1:N] for i=1:M]
-    allmhcavtow = [[zeros(M) for i=1:N] for i=1:K]
+    allmcav = [[zeros(F, N) for i=1:M] for i=1:K]
+    allmycav = [[zeros(F, N) for i=1:K] for i=1:M]
+    allmhcavtoy = [[zeros(F, K) for i=1:N] for i=1:M]
+    allmhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
     # for variables Y
-    allmy = [zeros(N) for a=1:M]
-    allhy = [zeros(N) for a=1:M]
+    allmy = [zeros(F, N) for a=1:M]
+    allhy = [zeros(F, N) for a=1:M]
 
     # for Facts
-    allmh = [zeros(M) for k=1:K]
+    allmh = [zeros(F, M) for k=1:K]
 
-    Bup = zeros(K, M)
-    B = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
 
     expf =fexpf(N)
     expinv0 = fexpinv0(N)
@@ -68,7 +68,7 @@ function BPExactLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     expinv2P = fexpinv2P(N)
     expinv2M = fexpinv2M(N)
 
-    weight_mask = rand(K,N) .< density
+    weight_mask = rand(F, K, N) .< density
 
     return BPExactLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allmycav, allmhcavtoy,allmhcavtow
@@ -94,7 +94,7 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     mhy = allmhcavtoy[a]
     mask = layer.weight_mask[k,:]
 
-    X = ones(Complex{Float64}, N+1)
+    X = ones(Complex{F}, N+1)
     for p=1:N+1
         for i=1:N
             pup = (1+mcav[i]*mycav[i])/2 * mask[i]
@@ -103,8 +103,8 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     end
 
     if !isfrozen(layer)
-        s2P = Complex{Float64}(0.)
-        s2M = Complex{Float64}(0.)
+        s2P = Complex{F}(0.)
+        s2M = Complex{F}(0.)
         for p=1:N+1
             s2P += expinv2P[p] * X[p]
             s2M += expinv2M[p] * X[p]
@@ -118,9 +118,9 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
     for i = 1:N
         mask[i] == 1 || continue
         pup = (1+mcav[i]*mycav[i])/2
-        s0 = Complex{Float64}(0.)
-        s2p = Complex{Float64}(0.)
-        s2m = Complex{Float64}(0.)
+        s0 = Complex{F}(0.)
+        s2p = Complex{F}(0.)
+        s2m = Complex{F}(0.)
         for p=1:N+1
             xp = X[p] / (1-pup + pup*expf[p])
             s0 += expinv0[p] * xp
@@ -129,8 +129,8 @@ function updateFact!(layer::BPExactLayer, k::Int, a::Int, reinfpar)
         end
         pp = (1+vH)/2; pm = 1-pp
         sr = vH * real(s0 / (pp*(s0 + 2s2p) + pm*(s0 + 2s2m)))
-        sr > 1 && (sr=1 - 1e-10) #print("!")
-        sr < -1 && (sr=-1 + 1e-10) #print("!")
+        sr > 1 && (sr=1 - 1f-10) #print("!")
+        sr < -1 && (sr=-1 + 1f-10) #print("!")
         if !isfrozen(layer)
             mhw[i][a] =  myatanh(mycav[i] * sr)
             !isfinite(mhw[i][a]) && (mhw[i][a] = sign(mhw[i][a])*20) #print("!")
@@ -184,26 +184,26 @@ end
 
 function BPAccurateLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     # for variables W
-    allm = [zeros(N) for i=1:K]
-    allh = [zeros(N) for i=1:K]
-    allhext = [zeros(N) for i=1:K]
-    allux = [zeros(N) for i=1:K]
+    allm = [zeros(F, N) for i=1:K]
+    allh = [zeros(F, N) for i=1:K]
+    allhext = [zeros(F, N) for i=1:K]
+    allux = [zeros(F, N) for i=1:K]
 
-    allmcav = [[zeros(N) for i=1:M] for i=1:K]
-    allmycav = [[zeros(N) for i=1:K] for i=1:M]
-    allmhcavtoy = [[zeros(K) for i=1:N] for i=1:M]
-    allmhcavtow = [[zeros(M) for i=1:N] for i=1:K]
+    allmcav = [[zeros(F, N) for i=1:M] for i=1:K]
+    allmycav = [[zeros(F, N) for i=1:K] for i=1:M]
+    allmhcavtoy = [[zeros(F, K) for i=1:N] for i=1:M]
+    allmhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
     # for variables Y
-    allmy = [zeros(N) for a=1:M]
-    allhy = [zeros(N) for a=1:M]
+    allmy = [zeros(F, N) for a=1:M]
+    allhy = [zeros(F, N) for a=1:M]
 
     # for Facts
-    allmh = [zeros(M) for k=1:K]
+    allmh = [zeros(F, M) for k=1:K]
 
-    Bup = zeros(K, M)
-    B = zeros(N, M)
+    Bup = zeros(F, K, M)
+    B = zeros(F, N, M)
 
-    weight_mask = rand(K, N) .< density
+    weight_mask = rand(F, K, N) .< density
 
     return BPAccurateLayer(-1, K, N, M, allm, allmy, allmh
         , allmcav, allmycav, allmhcavtoy, allmhcavtow
@@ -242,16 +242,16 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
         #println("isbot, Chtot = $Chtot")
     end
 
-    Chtot == 0 &&  (Chtot = 1e-8); # print("!")
+    Chtot == 0 &&  (Chtot = 1f-8); # print("!")
 
-    mh[a] = 1/√Chtot * GH(pd, -Mhtot / √Chtot)
+    mh[a] = 1/√Chtot * GH2(pd, -Mhtot / √Chtot)
     @assert isfinite(mh[a])
     if !isbottomlayer(layer)
         for i=1:N
             mask[i] == 1 || continue
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
-            Ccav == 0 &&  (Ccav = 1e-8); # print("!")
+            Ccav == 0 &&  (Ccav = 1f-8); # print("!")
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
             m₋ = (Mcav - my[i]) / sdσ̄²
@@ -267,7 +267,7 @@ function updateFact!(layer::BPAccurateLayer, k::Int, a::Int, reinfpar)
             mask[i] == 1 || continue
             Mcav = Mhtot - my[i]*m[i]
             Ccav = sqrt(Chtot - my[i]^2*(1-m[i]^2))
-            Ccav == 0 &&  (Ccav = 1e-8)
+            Ccav == 0 &&  (Ccav = 1f-8)
             sdσ̄² = √2 * Ccav
             m₊ = (Mcav + my[i]) / sdσ̄²
             m₋ = (Mcav - my[i]) / sdσ̄²
@@ -320,7 +320,7 @@ function updateVarW!(layer::L, k::Int, i::Int, reinfpar) where {L <: Union{BPAcc
     return Δ
 end
 
-function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPAccurateLayer, BPExactLayer}}
+function updateVarY!(layer::L, a::Int) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup allhy
     @extract layer: bottom_layer top_layer
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
@@ -333,7 +333,7 @@ function updateVarY!(layer::L, a::Int, ry::Float64=0.) where {L <: Union{BPAccur
     for i=1:N
         mhy = allmhcavtoy[a][i]
         mycav = allmycav[a]
-        hy[i] = sum(mhy) + ry* hy[i]
+        hy[i] = sum(mhy)
         # @assert isfinite(hy[i]) "isfinite(hy[i]) mhy=$mhy"
         B[i,a] = hy[i]
         pu = bottom_layer.Bup[i,a]
@@ -376,7 +376,7 @@ function update!(layer::L, reinfpar; mode=:both) where {L <: Union{BPAccurateLay
     end
     if !isbottomlayer(layer)
         for a=1:M
-            updateVarY!(layer, a, reinfpar.ry)
+            updateVarY!(layer, a)
         end
     end
 
@@ -394,7 +394,7 @@ function update!(layer::L, reinfpar; mode=:both) where {L <: Union{BPAccurateLay
     # end
     # if !isbottomlayer(layer)
     #     for a=1:M
-    #         updateVarY!(layer, a, reinfpar.ry)
+    #         updateVarY!(layer, a)
     #     end
     # end
 
@@ -406,17 +406,17 @@ end
 function initrand!(layer::L) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer K N M allm allmy allmh B Bup 
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-    ϵ = 1e-1
+    ϵ = 1f-1
     mask = layer.weight_mask
 
     for (k, m) in enumerate(allm)
-        m .= ϵ*(2*rand(N) .- 1) .* mask[k,:]
+        m .= ϵ*(2*rand(F, N) .- 1) .* mask[k,:]
     end
     for my in allmy
-        my .= ϵ*(2*rand(N) .- 1)
+        my .= ϵ*(2*rand(F, N) .- 1)
     end
     for mh in allmh
-        mh .= ϵ*(2*rand(M) .- 1)
+        mh .= ϵ*(2*rand(F, M) .- 1)
     end
 
     # if!isbottomlayer
@@ -441,7 +441,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::Matrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 
@@ -455,12 +455,12 @@ end
 
 function getW(layer::L) where L <: Union{BPAccurateLayer, BPExactLayer}
     @extract layer: weight_mask allm K
-    return vcat([(sign.(allm[k] .+ 1e-10) .* weight_mask[k,:])' for k in 1:K]...)
+    return vcat([(sign.(allm[k] .+ 1f-10) .* weight_mask[k,:])' for k in 1:K]...)
 end
 
 function forward(layer::L, x) where L <: Union{BPAccurateLayer, BPExactLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1e-10)
+    return sign.(W*x .+ 1f-10)
 end
