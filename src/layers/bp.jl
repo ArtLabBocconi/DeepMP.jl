@@ -101,8 +101,8 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         @assert size(Btop) == (K, M)
         gcav = compute_g.(reshape(Btop,K,1,M), ωcav, reshape(V,K,1,M))
         g = compute_g.(Btop, ω, V)
-        # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
-        # @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
