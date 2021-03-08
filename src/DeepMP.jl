@@ -146,13 +146,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     initrand!(g)
     freezetop && freezetop!(g, 1)
     
-    reinfpar = ReinfParams(r, rstep, yy, ψ) |> device
+    reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if batchsize <= 0
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
                             altsolv, altconv, plotinfo,
                             teacher, verbose)
     else
+        ## MINI_BATCH message passing
         # TODO check reinfparams updates in mini-batch case
         
         for epoch = 1:epochs
@@ -160,7 +161,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             for (b, (x, y)) in enumerate(dtrain)
                 ρ > 0 && set_Hext_from_H!(g, ρ)
                 set_input_output!(g, x, y)
-                # ?? init!(gbatch) ??
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
                                         reinfpar, altsolv, altconv, plotinfo,
