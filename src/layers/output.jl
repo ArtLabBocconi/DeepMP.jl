@@ -1,17 +1,19 @@
-mutable struct OutputLayer <: AbstractLayer
+mutable struct OutputLayer{T,S,W} <: AbstractLayer
     l::Int
-    y::AbstractVector
-    B::AbstractMatrix{F}
-    β::F
+    y::T
+    B::S
+    β::W
 end
 
 function OutputLayer(y::AbstractVector; β=Inf)
     @assert β >= 0.
     @assert all(y.^2 .== 1)
     M = length(y)
-    B = F(β) .* reshape(y, 1, :)
+    B = β .* reshape(y, 1, :)
     return OutputLayer(-1, y, B, β)
 end
+
+@functor OutputLayer
 
 function set_output!(lay::OutputLayer, y)
     lay.B .= lay.β .* reshape(y, 1, :)

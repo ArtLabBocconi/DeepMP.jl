@@ -1,16 +1,17 @@
 using DeepMP
 using Test, DelimitedFiles, Random, Statistics
-
+using CUDA
+CUDA.allowscalar(false)
 
 include("mnist_utils.jl")
 
-@testset "Perceptron" begin
-    include("perceptron.jl")
-end
+# @testset "Perceptron" begin
+#     include("perceptron.jl")
+# end
 
-@testset "Stochastic BP" begin
-    include("stochastic_bp.jl")
-end
+# @testset "Stochastic BP" begin
+#     include("stochastic_bp.jl")
+# end
 
 @testset "BPI_MLP" begin
     include("bpi_mlp.jl")

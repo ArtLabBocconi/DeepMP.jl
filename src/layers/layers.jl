@@ -19,7 +19,7 @@ isfrozen(layer::AbstractLayer) = layer.isfrozen
 freeze!(layer::AbstractLayer) = layer.isfrozen = true
 unfreeze!(layer::AbstractLayer) = layer.isfrozen = false
 
-isbottomlayer(layer::AbstractLayer) = (typeof(layer.bottom_layer) == InputLayer)
+isbottomlayer(layer::AbstractLayer) = layer.bottom_layer isa InputLayer
 
 signB(x::T) where {T} = sign(x + 1f-10)
 

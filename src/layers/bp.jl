@@ -1,37 +1,39 @@
 
-mutable struct BPLayer <: AbstractLayer
+mutable struct BPLayer{A2,A3,M} <: AbstractLayer
     l::Int
     K::Int
     N::Int
     M::Int
 
-    x̂ 
-    x̂cav 
-    Δ
+    x̂::A2
+    x̂cav::A3 
+    Δ::A2
 
-    m 
-    mcav 
-    σ 
+    m::A2
+    mcav::A3 
+    σ::A2
 
-    Bup
-    B 
-    Bcav 
-    A 
-    
-    H
-    Hext
-    Hcav 
+    Bup::A2
+    B::A2 
+    Bcav::A3 
+    A::A2
 
-    ω 
-    ωcav 
-    V
+    H::A2
+    Hext::A2
+    Hcav::A3
+
+    ω::A2
+    ωcav::A3 
+    V::A2
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    weight_mask
+    weight_mask::M
     isfrozen::Bool
 end
+
+@functor BPLayer
 
 
 function BPLayer(K::Int, N::Int, M::Int; 
@@ -99,8 +101,8 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         @assert size(Btop) == (K, M)
         gcav = compute_g.(reshape(Btop,K,1,M), ωcav, reshape(V,K,1,M))
         g = compute_g.(Btop, ω, V)
-        # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
-        # @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
