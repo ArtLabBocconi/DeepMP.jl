@@ -1,11 +1,14 @@
-mutable struct ReinfParams
-    r::F         # reinforcement (γ for focusing) for W variables
-    rstep::F
-    y::F          # parameter for FocusingBP
-    ψ::F          # damping parameter
+mutable struct ReinfParams{T}
+    r::T         # reinforcement (γ for focusing) for W variables
+    rstep::T
+    y::T          # parameter for FocusingBP
+    ψ::T          # damping parameter
     wait_count::Int
-    ReinfParams(r=0., rstep=0., y=0, ψ=0.) = new(r, rstep, y, ψ, 0)
 end
+@functor ReinfParams
+
+ReinfParams(r=0., rstep=0., y=0, ψ=0.) = ReinfParams(r, rstep, y, ψ, 0)
+
 
 function update_reinforcement!(reinfpar::ReinfParams)
     if reinfpar.wait_count < 10

@@ -11,6 +11,7 @@ using Base: @propagate_inbounds # for DataLoader
 using Tullio
 using LoopVectorization
 using CUDA, KernelAbstractions
+using Adapt
 using Functors
 CUDA.allowscalar(false)
 
@@ -39,7 +40,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
                                  altconv=false, 
                                  plotinfo=0,
                                  teacher=nothing,
-                                 reinfpar::ReinfParams=ReinfParams(),
+                                 reinfpar,
                                  verbose=1)
 
     for it = 1:maxiters
@@ -102,14 +103,14 @@ end
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
                 maxiters = 10000,
-                ϵ = 1f-4,              # convergence criterium
+                ϵ = 1e-4,              # convergence criterium
                 K::Vector{Int} = [101, 3, 1],
                 layers=[:tap,:tapex,:tapex],
-                r = 0f0, rstep = 0.001f0,          # reinforcement parameters for W vars
-                ψ = 0f0,                         # dumping coefficient
-                yy = -1,                         # focusing BP parameter
+                r = 0., rstep = 0.001,          # reinforcement parameters for W vars
+                ψ = 0.,                         # dumping coefficient
+                yy = -1.,                         # focusing BP parameter
                 h0 = nothing,                   # external field
-                ρ = 1f0,                        # coefficient for external field
+                ρ = 1.,                        # coefficient for external field
                 freezetop=true,                # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
@@ -145,7 +146,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     initrand!(g)
     freezetop && freezetop!(g, 1)
     
-    reinfpar = ReinfParams(r, rstep, yy, ψ)
+    reinfpar = ReinfParams(r, rstep, yy, ψ) |> device
 
     if batchsize <= 0
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,

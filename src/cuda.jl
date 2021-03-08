@@ -1,14 +1,9 @@
+cpu(x) = fmap(x -> adapt(Array, x), x) 
 
-# CUDA.cu casts to Float32
-gpu(x::AbstractArray) = CUDA.cu(x)
-
-# go one level deep
-function gpu(x::T) where T
-    cufields = [CUDA.cu(getfield(x, f)) for f in fieldnames(T)]
-    T(cufields...)
-end
-
-cpu(x) = x
+gpu(x) = fmap(CUDA.cu, x) 
+# CUDA.cu(x::Integer) = x
+CUDA.cu(x::Float64) = Float32(x)
+CUDA.cu(x::Array{Int64}) = convert(CuArray{Int32}, x)
 
 """
     @gpu f(x) = ...

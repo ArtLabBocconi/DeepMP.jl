@@ -1,8 +1,10 @@
-mutable struct InputLayer <: AbstractLayer
+mutable struct InputLayer{T,S} <: AbstractLayer
     l::Int
-    Bup  # field from fact  ↑ to y
-    x::AbstractMatrix
+    Bup::T  # field from fact  ↑ to y
+    x::S
 end
+
+@functor InputLayer
 
 function InputLayer(x::AbstractMatrix)
     return InputLayer(1, zeros(F, 0,0), x)

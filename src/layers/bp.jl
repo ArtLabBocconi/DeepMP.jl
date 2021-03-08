@@ -1,37 +1,39 @@
 
-mutable struct BPLayer <: AbstractLayer
+mutable struct BPLayer{A2,A3,M} <: AbstractLayer
     l::Int
     K::Int
     N::Int
     M::Int
 
-    x̂ 
-    x̂cav 
-    Δ
+    x̂::A2
+    x̂cav::A3 
+    Δ::A2
 
-    m 
-    mcav 
-    σ 
+    m::A2
+    mcav::A3 
+    σ::A2
 
-    Bup
-    B 
-    Bcav 
-    A 
-    
-    H
-    Hext
-    Hcav 
+    Bup::A2
+    B::A2 
+    Bcav::A3 
+    A::A2
 
-    ω 
-    ωcav 
-    V
+    H::A2
+    Hext::A2
+    Hcav::A3
+
+    ω::A2
+    ωcav::A3 
+    V::A2
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    weight_mask
+    weight_mask::M
     isfrozen::Bool
 end
+
+@functor BPLayer
 
 
 function BPLayer(K::Int, N::Int, M::Int; 
