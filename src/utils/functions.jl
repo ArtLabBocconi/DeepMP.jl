@@ -44,7 +44,8 @@ function logsinhabs(x)
     ax  > 600 ? ax - lg2 : log(sinh(ax))
 end
 
-atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*0.25*(log(2π) + x^2 + 2log(abs(x))) : atanh(2H(x)-1)
+# TODO: non è preciso rispetto a codice CarloB (però potrebbe essere uguale lavorando in float32)
+atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*(log(2f0π) + x^2 + 2log(abs(x)))/4 : atanh(2H(x)-1)
 
 # cuda version, any change crashes julia
 CUDA.@cufunc atanh2Hm1(x) = atanh(2H(x)-1)

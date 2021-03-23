@@ -10,12 +10,11 @@ function printvec(q::Vector{Float64}, head = "")
     println()
 end
 
-
 function rand_teacher(K::Vector{Int}; density=1.)
     L = length(K)-1
     @assert K[L+1] == 1
     density = process_density(density, L)
-    
+        
     W = Vector{Matrix{F}}()
     for l=1:L
         w = rand(F[-1,1], K[l+1], K[l])
@@ -28,3 +27,20 @@ function rand_teacher(K::Vector{Int}; density=1.)
     return W
 end
 
+function mags_symmetry(g, K_list)
+    N, K = K_list[1], K_list[2]
+    overlaps = Matrix(1.0I, K, K)
+    wtemp = getW(g)
+    #@show size(wtemp[1])
+    #error()
+    for k1 = 1:K, k2 = k1+1:K
+        s = 0.0
+        for i = 1:N
+            s += (wtemp[1][k1, i] == wtemp[1][k2, i])
+        end
+        s /= N
+        overlaps[k1, k2] = s
+        overlaps[k2, k1] = s
+    end
+    return overlaps
+end
