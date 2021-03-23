@@ -6,7 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
-
+    
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int},
                 layertype::Vector{Symbol};
@@ -82,6 +82,15 @@ function process_density(density, L)
         # @warn "Setting density[$L] = 1.0"
     end
     return density
+end
+
+function has_same_size(g::FactorGraph, W::Vector{<:AbstractMatrix})
+    length(g.K) == length(W) + 1 || return false  
+    for i in 1:length(g.K)-1
+       g.K[i] == size(W[i], 2) || return false
+    end
+    g.K[end] == size(W[end], 1) || return false
+    return true
 end
 
 function set_weight_mask!(g::FactorGraph, W::Vector{<:AbstractMatrix})

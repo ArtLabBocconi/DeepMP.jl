@@ -5,7 +5,8 @@ using Random, Statistics
 
 # Odd vs Even or 1 class vs another
 function get_mnist(M=60000; classes=[], seed=17, fashion=false)
-    datadir = joinpath(homedir(), "Datasets", "MNIST")
+    namedir = fashion ? "FashionMNIST" : "MNIST"
+    datadir = joinpath(homedir(), "Datasets", namedir)
     Dataset = fashion ? FashionMNIST : MNIST
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
@@ -18,7 +19,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
         idxtrain = findall(filter, ytrain) |> shuffle
         idxtest = findall(filter, ytest) |> shuffle
         xtrain = xtrain[:, idxtrain]
-        xtest = xtest[:, idxtest] 
+        xtest = xtest[:, idxtest]
         ytrain = ytrain[idxtrain]
         ytest = ytest[idxtest]
         relabel = x -> x == classes[1] ? 1 : -1
@@ -71,7 +72,7 @@ function run_experiment(i)
         K = [28*28, 1]
         
         batchsize = 1
-        layers= [:bp]
+        layers = [:bp]
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
                             xtest, ytest,
                             K = K,
@@ -81,6 +82,7 @@ function run_experiment(i)
                             altsolv =false, altconv=true, 
                             ρ = 1, 
                             layers)
+            
         @test E == 0
 
         batchsize = 10
@@ -160,7 +162,7 @@ function run_experiment(i)
        
         end#testset
     elseif i == 5
-        @testset "SBP on COMMETTEE" begin
+        @testset "SBP on COMMITTEE" begin
         M = 1000
         xtrain, ytrain, xtest, ytest = get_mnist(M)
         K = [28*28, 7, 1]
@@ -239,7 +241,7 @@ function run_experiment(i)
 
         M = 2000
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, 
-                                            classes=[4,5])
+                                                 classes=[4,5])
         K = [28*28, 15, 15, 1]
         
         batchsize = 10

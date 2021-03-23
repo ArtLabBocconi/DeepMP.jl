@@ -34,7 +34,8 @@ if DeepMP.F == Float64
            
     @test_broken E == 0
     @test_broken E <= 10
-    @test_broken E <= 70
+    #@test_broken E <= 70
+    @test E <= 70
     @test E < 90
 
     @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1],

@@ -41,14 +41,30 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
                                  plotinfo=0,
                                  teacher=nothing,
                                  reinfpar,
-                                 verbose=1)
+                                 batchsize=-1,
+                                 verbose=1, 
+                                 xtest=nothing,
+                                 ytest=nothing)
 
     for it = 1:maxiters
-        Δ = update!(g, reinfpar)
+        
+        if batchsize <= 0
+            @time Δ = update!(g, reinfpar)
+        else
+            Δ = update!(g, reinfpar)
+        end
+        
         E = energy(g)
 
         verbose > 0 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
+        if batchsize <= 0
+            Etest = 100.0
+            if ytest != nothing
+                Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+            end
+            verbose > 0 && @printf("          Etest=%.2f%% rstep=%g\n", Etest, reinfpar.rstep)
+        end
 
         plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
         update_reinforcement!(reinfpar)
@@ -64,65 +80,90 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     return maxiters, 1, 1.0
 end
 
-function solve(; K::Vector{Int}=[101,3], α=0.6,
-                 seedx::Int=-1,
-                 density=1,
-                 TS=false,
-                 density_teacher=density,
-                 kw...)
+function solve(; K::Vector{Int} = [101, 3],
+                 Kteacher = K,
+                 α = 100., # num_examples/num_params. Ignore if M is used.
+                 M = -1, # num_params. If negative, set from alpha. 
+                 Mtest = 10000, # num test samples
+                 seedx::Int = -1,
+                 density = 1,
+                 TS = false, 
+                 hidden_manifold = false, 
+                 density_teacher = density,
+                 kws...)
 
     if seedx > 0
         Random.seed!(seedx)
         CUDA.seed!(seedx)
     end
+    
     L = length(K) - 1
     density = process_density(density, L)
     numW = length(K)==2 ? K[1]*K[2]*density[1]  :
             sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
     numW = round(Int, numW)
 
+    if M <= 0 
+        M = round(Int, α * numW)
+        α = M / numW
+    end
+    
     N = K[1]
-    M = round(Int, α * numW)
-    xtrain = rand(F[-1, 1], N, M)
+    D = Kteacher[1]
+    @assert !hidden_manifold || N == D 
+    xtrain = rand(F[-1, 1], D, M)
+    
     if TS
-        teacher = rand_teacher(K; density=density_teacher)
+        teacher = rand_teacher(Kteacher; density=density_teacher)
         ytrain = Int.(forward(teacher, xtrain) |> vec)
+        xtest = rand(F[-1, 1], D, M)
+        ytest = Int.(forward(teacher, xtest) |> vec)
     else
         teacher = nothing
         ytrain = rand([-1,1], M)
+        xtest, ytest = nothing, nothing
+    end
+
+    if hidden_manifold
+        features = rand(F[-1, 1], N, D)    
+        xtrain = sign.(features * xtrain ./ sqrt(D))
+        if xtest !== nothing
+            xtest = sign.(features * xtest ./ sqrt(D))
+        end
     end
 
     @assert size(xtrain) == (N, M)
     @assert size(ytrain) == (M,)
     @assert all(x -> x == -1 || x == 1, ytrain)
 
-    solve(xtrain, ytrain; K=K, density=density, teacher=teacher, kw...)
+    solve(xtrain, ytrain; K, density, teacher, xtest, ytest, kws...)
 end
 
 
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
                 maxiters = 10000,
-                ϵ = 1e-4,              # convergence criterium
+                ϵ = 1e-4,                      # convergence criterion
                 K::Vector{Int} = [101, 3, 1],
-                layers=[:tap,:tapex,:tapex],
-                r = 0., rstep = 0.001,          # reinforcement parameters for W vars
-                ψ = 0.,                         # dumping coefficient
-                yy = -1.,                         # focusing BP parameter
-                h0 = nothing,                   # external field
+                layers = [:tap, :tapex, :tapex],
+                r = 0., rstep = 0.001,         # reinforcement parameters for W vars
+                ψ = 0.,                        # damping coefficient
+                yy = -1.,                      # focusing BP parameter
+                h0 = nothing,                  # external field
                 ρ = 1.,                        # coefficient for external field
-                freezetop=true,                # freeze top-layer's weights to 1
+                freezetop = true,              # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
                 altconv::Bool = false,
-                seed::Int = -1, plotinfo=0,
-                β=Inf,
-                density = 1f0,                   # density of fully connected layer
-                batchsize=-1,                   # only supported by some algorithms
-                epochs = 1000,
+                seed::Int = -1, 
+                plotinfo = 0,
+                β = Inf,
+                density = 1f0,                  # density of fully connected layer
+                batchsize = -1,                 # only supported by some algorithms
+                epochs = 100,
                 verbose = 2,
-                infotime=10,
-                resfile="res.txt",
+                infotime = 10,
+                resfile = "res.txt",
                 usecuda = false,
                 )
 
@@ -134,14 +175,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
-    dtrain = DataLoader((xtrain, ytrain); 
-            batchsize, shuffle=true, partial=false)
+    dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
 
     g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
     if teacher !== nothing
         teacher = device.(teacher)
-        set_weight_mask!(g, teacher)
+        has_same_size(g, teacher) && set_weight_mask!(g, teacher)
     end
     initrand!(g)
     freezetop && freezetop!(g, 1)
@@ -149,22 +189,30 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if batchsize <= 0
+        
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
                             altsolv, altconv, plotinfo,
-                            teacher, verbose)
+                            teacher, batchsize, verbose,
+                            xtest, ytest)
+        
     else
+        
         ## MINI_BATCH message passing
         # TODO check reinfparams updates in mini-batch case
         
+        #resfile = make_resfile(layers, K[1], K[2], batchsize, ρ, r, density)
+        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+        f = open(resfile, "w")
+
         for epoch = 1:epochs
             converged = solved = meaniters = 0
-            for (b, (x, y)) in enumerate(dtrain)
+            @time for (b, (x, y)) in enumerate(dtrain)
                 ρ > 0 && set_Hext_from_H!(g, ρ)
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
                                         reinfpar, altsolv, altconv, plotinfo,
-                                        teacher, verbose=verbose-1)
+                                        teacher, batchsize, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)
                 meaniters += it
@@ -175,19 +223,31 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
             num_batches = length(dtrain)
             Etest = 100.0
-            if ytest != nothing
+            if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            verbose > 0 &&  @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% r=%g rstep=%g ρ=%g\n",
+            #
+            mags_all = mags_symmetry(g, K)
+            verbose > 1 && (println("mags overlaps="); display(mags_all); println())
+            n_el = (K[2]^2-K[2])/2
+            mag_ovrlp = ((sum(mags_all) - K[2])/2)/n_el
+            #
+            verbose > 0 &&  @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% mag_ov=%g r=%g rstep=%g ρ=%g\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ)
+                                Etrain, Etest, mag_ovrlp, reinfpar.r, reinfpar.rstep, ρ)
+            outf = @sprintf("%g %g %g", Etrain, Etest, mag_ovrlp)
+            println(f, outf)
+            flush(f)
+
             plot_info(g, 0, verbose=verbose, teacher=teacher)
             Etrain == 0 && break
         end
+        close(f)
     end
-
+    
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, E, it
+    
 end
 
 end #module
