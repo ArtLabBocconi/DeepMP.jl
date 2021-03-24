@@ -41,29 +41,23 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
                                  plotinfo=0,
                                  teacher=nothing,
                                  reinfpar,
-                                 batchsize=-1,
                                  verbose=1, 
                                  xtest=nothing,
                                  ytest=nothing)
 
     for it = 1:maxiters
         
-        if batchsize <= 0
-            @time Δ = update!(g, reinfpar)
-        else
-            Δ = update!(g, reinfpar)
-        end
-        
+        t = @timed Δ = update!(g, reinfpar)
         E = energy(g)
 
-        verbose > 0 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
+        verbose >= 1 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
-        if batchsize <= 0
+        if verbose >= 2
             Etest = 100.0
-            if ytest != nothing
+            if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            verbose > 0 && @printf("          Etest=%.2f%% rstep=%g\n", Etest, reinfpar.rstep)
+            @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
         plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose, teacher=teacher)
@@ -92,10 +86,7 @@ function solve(; K::Vector{Int} = [101, 3],
                  density_teacher = density,
                  kws...)
 
-    if seedx > 0
-        Random.seed!(seedx)
-        CUDA.seed!(seedx)
-    end
+    seedx > 0 && Random.seed!(seedx)
     
     L = length(K) - 1
     density = process_density(density, L)
@@ -110,7 +101,7 @@ function solve(; K::Vector{Int} = [101, 3],
     
     N = K[1]
     D = Kteacher[1]
-    @assert !hidden_manifold || N == D 
+    @assert hidden_manifold || N == D 
     xtrain = rand(F[-1, 1], D, M)
     
     if TS
@@ -163,15 +154,15 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 epochs = 100,
                 verbose = 2,
                 infotime = 10,
-                resfile = "res.txt",
                 usecuda = false,
                 )
 
+    usecuda = CUDA.functional() && usecuda
+    device =  usecuda ? gpu : cpu
     if seed > 0
         Random.seed!(seed)
-        CUDA.seed!(seed)
+        usecuda && CUDA.seed!(seed)
     end
-    device = CUDA.has_cuda() && usecuda ? gpu : cpu
     
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
@@ -192,7 +183,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
                             altsolv, altconv, plotinfo,
-                            teacher, batchsize, verbose,
+                            teacher, verbose,
                             xtest, ytest)
         
     else
@@ -206,18 +197,18 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
 
         for epoch = 1:epochs
             converged = solved = meaniters = 0
-            @time for (b, (x, y)) in enumerate(dtrain)
+            t = @timed for (b, (x, y)) in enumerate(dtrain)
                 ρ > 0 && set_Hext_from_H!(g, ρ)
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
                                         reinfpar, altsolv, altconv, plotinfo,
-                                        teacher, batchsize, verbose=verbose-1)
+                                        teacher, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)
                 meaniters += it
                 
-                verbose > 1 && print("b = $b / $(length(dtrain))\r")
+                verbose >= 2 && print("b = $b / $(length(dtrain))\r")
             end
 
             Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
@@ -232,14 +223,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             n_el = (K[2]^2-K[2])/2
             mag_ovrlp = ((sum(mags_all) - K[2])/2)/n_el
             #
-            verbose > 0 &&  @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% mag_ov=%g r=%g rstep=%g ρ=%g\n",
+            verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% mag_ov=%g r=%g rstep=%g ρ=%g  t=%g\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, mag_ovrlp, reinfpar.r, reinfpar.rstep, ρ)
+                                Etrain, Etest, mag_ovrlp, reinfpar.r, reinfpar.rstep, ρ, t.time)
             outf = @sprintf("%g %g %g", Etrain, Etest, mag_ovrlp)
             println(f, outf)
             flush(f)
 
-            plot_info(g, 0, verbose=verbose, teacher=teacher)
+            plot_info(g, 0, verbose=verbose)
             Etrain == 0 && break
         end
         close(f)

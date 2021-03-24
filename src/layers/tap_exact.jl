@@ -172,7 +172,7 @@ function updateFact!(layer::TapExactLayer, k::Int, reinfpar)
     end
 end
 
-function updateVarW!(layer::L, k::Int, r::F=0) where {L <: Union{TapExactLayer}}
+function updateVarW!(layer::L, k::Int, r=0) where {L <: Union{TapExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup l
     @extract layer: CYtot MYtot Mtot Ctot allh allhext
     Δ = 0.
