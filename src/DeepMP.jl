@@ -60,7 +60,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
-        plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose)
+        plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose  )
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
@@ -193,7 +193,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         
         #resfile = make_resfile(layers, K[1], K[2], batchsize, ρ, r, density)
         resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-        f = open(resfile, "w")
+        fres = open(resfile, "w")
 
         for epoch = 1:epochs
             converged = solved = meaniters = 0
@@ -217,23 +217,21 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            #
-            mags_all = mags_symmetry(g, K)
-            verbose > 1 && (println("mags overlaps="); display(mags_all); println())
-            n_el = (K[2]^2-K[2])/2
-            mag_ovrlp = ((sum(mags_all) - K[2])/2)/n_el
-            #
-            verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%% mag_ov=%g r=%g rstep=%g ρ=%g  t=%g\n",
+            
+            verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, mag_ovrlp, reinfpar.r, reinfpar.rstep, ρ, t.time)
-            outf = @sprintf("%g %g %g", Etrain, Etest, mag_ovrlp)
-            println(f, outf)
-            flush(f)
+                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time)
+            
+            
+            plot_info(g, 0; verbose)
 
-            plot_info(g, 0, verbose=verbose)
+            q0, qWαβ, _ = compute_overlaps(g.layers[2])
+            outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
+            println(fres, outf); flush(fres)
+
             Etrain == 0 && break
         end
-        close(f)
+        close(fres)
     end
     
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
