@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+BinaryCommitteeMachineFBP = "da8bbec8-7ffb-55a9-831d-2ba937c1046b"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ExtractMacro = "f86d3d12-fd5b-522c-99e9-61577282a1e9"
 FastGaussQuadrature = "442a2c76-b920-505d-bb47-c5924d526838"
