@@ -71,7 +71,7 @@ function BPLayer(K::Int, N::Int, M::Int;
 end
 
 @gpu function compute_g(B, ω, V)
-    1/√V * GH2(B, -ω / √V) 
+    GH2(B, -ω / V) / V
 end
 
 function update!(layer::BPLayer, reinfpar; mode=:both)
@@ -91,16 +91,14 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         
         @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
         @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
-        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
     end
 
     if mode == :back || mode == :both
         ## BACKWARD 
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
-        gcav = compute_g.(reshape(Btop,K,1,M), ωcav, reshape(V,K,1,M))
-        g = compute_g.(Btop, ω, V)
         @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
