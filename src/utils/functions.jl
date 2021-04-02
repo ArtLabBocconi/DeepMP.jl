@@ -1,10 +1,8 @@
-G(x) = exp(-(x^2)/2) / √(2f0*π)
-H(x) = erfc(x / √2f0) / 2
-CUDA.@cufunc H(x) = CUDA.erfc(x / √2f0) / 2
+G(x::T) where T = exp(-(x^2) / 2) / √(T(2)*π)
+H(x::T) where T = erfc(x / √T(2)) / 2
+CUDA.@cufunc H(x::T) where T = CUDA.erfc(x / √T(2)) / 2
 
-lg2 = log(2f0)
-
-∞atanh = 25f0
+∞atanh = 25.0
 
 function myatanh(x)
     y = atanh(x)
@@ -12,16 +10,15 @@ function myatanh(x)
 end
 
 myatanh(p,m) = _myatanh(p/(p+m), m/(p+m))
-function _myatanh(p,m)
+function _myatanh(p::T, m::T) where T
     # @assert p >= 0 "p >= 0 p=$p"
     # @assert m >= 0
-    p == 0 && return -∞atanh
-    m == 0 && return ∞atanh
-    y = 0.
+    p == 0 && return -T(∞atanh)
+    m == 0 && return T(∞atanh)
     if m < 1f-10
-        y = 0.5*(lg2 - log(2m))
+        y = (log(T(2)) - log(2m)) / 2
     elseif p < 1f-10
-        y = -0.5*(lg2 - log(2p))
+        y = -(log(T(2)) - log(2p)) / 2
     else
         y = atanh(p-m)
     end
@@ -35,56 +32,47 @@ end
     m + log1p(exp(-abs(x)))
 end
 
-function logcosh(x)
+function logcosh(x::T) where T
     ax = abs(x)
-    ax  > 600 ? ax - lg2 : log(cosh(x))
+    return ax + log1p(exp(-2ax)) - log(T(2))
 end
-function logsinhabs(x)
+function logsinhabs(x::T) where T
     ax = abs(x)
-    ax  > 600 ? ax - lg2 : log(sinh(ax))
+    return ax + log1p(-exp(-2ax)) - log(T(2))
 end
 
-# TODO: non è preciso rispetto a codice CarloB (però potrebbe essere uguale lavorando in float32)
-atanh2Hm1(x) = abs(x) > 6 ? -sign(x)*(log(2f0π) + x^2 + 2log(abs(x)))/4 : atanh(2H(x)-1)
+function atanherf(x)
+    ax = abs(x)
+    ax ≤ 1 && return atanh(erf(x))
+    return sign(x) * (log(2) + log1p(-erfc(ax)/2) - logerfc(ax)) / 2
+end
+atanh2Hm1(x::T) where T = -atanherf(x / √T(2))
 
 # cuda version, any change crashes julia
 CUDA.@cufunc atanh2Hm1(x) = atanh(2H(x)-1)
 CUDA.@cufunc logcosh(x) = log(cosh(x))
 CUDA.@cufunc logsinhabs(x) = log(sinh(abs(x)))
 
-@gpu function GHapp(x)
-    y = 1/x
-    y2 = y^2
-    x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
-end
+GH(x::T) where T = √(T(2) / π) / erfcx(x / √T(2))
 
-@gpu GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
+## in case cuda version of GH is needed
+# @gpu function GHapp(x)
+#     y = 1/x
+#     y2 = y^2
+#     x + y * (1 - 2y2 * (1 - 5y2 * (1 - 7.4f0y2)))
+# end
+# CUDA.@cufunc GH(x) = x > 30 ? GHapp(x) : G(x) / H(x)
 
-@gpu function GHnaive(uσ, x)
-    Hp = H(x)
-    Hm = 1-Hp
-    Gp = G(x)
-    p = (tanh(uσ)+1)/2
-    Gp*(2p-1) / (p*Hp + (1-p)*Hm)
-end
-
-@gpu function GH2(uσ, x)
-    uσ == 0 && return zero(x)
-    uσ == Inf && return GH(x)
-    uσ == -Inf && return -GH(-x)
-    # return GHnaive(uσ, x)
-    abs(x) < 5 && return GHnaive(uσ, x)
-    uh = atanh2Hm1(x)
-    ex = (logsinhabs(uσ) + logcosh(uh)) - (logcosh(uσ+uh) + x^2/2)
-    if abs(ex) > 600
-        ex = sign(ex) * 600
+@gpu function GHt(m, x::T) where T
+    r = GH(x)
+    if m ≠ 1
+        f = erfc(x / √T(2))
+        r *= m * (f / (1 - m + m * f))
     end
-    res = sign(uσ)* exp(ex) * √(2f0/π)
-    # if !isfinite(res)
-    #     @show p up ug uh ex log(abs(mp)) logcosh(up)  logcosh(uh) logcosh(up+uh)
-    # end
-    # @assert isfinite(res)
-    return res
+    return r
+end
+@gpu function GH2(uσ, x)
+    return GHt(tanh(uσ), x)
 end
 
 # TODO approx
