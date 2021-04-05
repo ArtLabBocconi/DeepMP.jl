@@ -69,8 +69,8 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
         end
         
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
 
         @assert all(isfinite, Bup)
     end
