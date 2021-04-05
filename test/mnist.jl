@@ -2,7 +2,6 @@ using MLDatasets: MNIST, FashionMNIST
 using DeepMP
 using Test
 using Random, Statistics
-using ProfileView
 
 @testset "BP on PERCEPTRON" begin
     M = 100
@@ -10,7 +9,7 @@ using ProfileView
     K = [28*28, 1]
 
     layers=[:bp]
-    @profview @time g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
+    @time g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; 
                         xtest, ytest,
                         seed=1, verbose=0,
                         K = K, ψ = 0.,
