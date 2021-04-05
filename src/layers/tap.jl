@@ -90,7 +90,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         ## BACKWARD 
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
-        @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], √V[k,a])  avx=false
         @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
 
         if !isbottomlayer(layer)

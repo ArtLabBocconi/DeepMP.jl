@@ -1,7 +1,6 @@
 module DeepMP
 
 using ExtractMacro
-using FastGaussQuadrature
 using SpecialFunctions
 using Printf
 using Random
@@ -10,7 +9,7 @@ using Statistics
 using Base: @propagate_inbounds # for DataLoader
 using Tullio
 using LoopVectorization
-using CUDA, KernelAbstractions
+using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
 using Functors
 CUDA.allowscalar(false)
