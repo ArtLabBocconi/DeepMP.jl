@@ -7,7 +7,7 @@ tfbp = @timed  focusingBP(321, 5, 0.3,
                         quiet=true,
                         accuracy1=:accurate, # :none, :accurate, :exact
                         accuracy2=:exact, # :none, :accurate, :exact
-                        messfmt = :plain,
+                        messfmt = :tanh,
                         damping=0.0);
 
 errs, messages, patterns = tfbp.value

@@ -193,9 +193,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         # TODO check reinfparams updates in mini-batch case
         
         #resfile = make_resfile(layers, K[1], K[2], batchsize, ρ, r, density)
-        # resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-        # fres = open(resfile, "w")
-
+        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+fres = open(resfile, "w")
+        
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             t = @timed for (b, (x, y)) in enumerate(dtrain)
@@ -227,12 +227,12 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             plot_info(g, 0; verbose)
 
             q0, qWαβ, _ = compute_overlaps(g.layers[2])
-            # outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
-            # println(fres, outf); flush(fres)
-
+            outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
+            println(fres, outf); flush(fres)
+            
             Etrain == 0 && break
         end
-        # close(fres)
+        close(fres)
     end
     
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
