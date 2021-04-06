@@ -33,6 +33,14 @@ version = "0.1.0"
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[BinaryCommitteeMachineFBP]]
+deps = ["ExtractMacro", "GZip", "LinearAlgebra", "Printf", "Random", "SpecialFunctions", "StatsFuns"]
+git-tree-sha1 = "7a9028b8333f3d2b67ac1e65cc08f7adaadb21df"
+repo-rev = "master"
+repo-url = "https://github.com/carlobaldassi/BinaryCommitteeMachineFBP.jl"
+uuid = "da8bbec8-7ffb-55a9-831d-2ba937c1046b"
+version = "0.0.0"
+
 [[CEnum]]
 git-tree-sha1 = "215a9aa4a1f23fbd05b92769fdd62559488d70e9"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
@@ -111,6 +119,12 @@ version = "0.8.4"
 deps = ["ArgTools", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 
+[[Einsum]]
+deps = ["Compat"]
+git-tree-sha1 = "4a6b3eee0161c89700b6c1949feae8b851da5494"
+uuid = "b7d42ee7-0b51-5a75-98ca-779d3107e4c0"
+version = "0.4.1"
+
 [[ExprTools]]
 git-tree-sha1 = "10407a39b87f29d47ebaca8edbc75d7c302ff93e"
 uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
@@ -138,6 +152,12 @@ deps = ["DataStructures", "ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Log
 git-tree-sha1 = "ef2839b063e158672583b9c09d2cf4876a8d3d55"
 uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
 version = "0.10.0"
+
+[[GZip]]
+deps = ["Libdl"]
+git-tree-sha1 = "039be665faf0b8ae36e089cd694233f5dee3f7d6"
+uuid = "92fee26a-97fe-5a0c-ad85-20a5f3185b63"
+version = "0.5.1"
 
 [[Hwloc]]
 deps = ["Hwloc_jll"]

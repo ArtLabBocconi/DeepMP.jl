@@ -71,6 +71,7 @@ GH(x::T) where T = √(T(2) / π) / erfcx(x / √T(2))
     end
     return r
 end
+
 @gpu function GH2(uσ, x)
     return GHt(tanh(uσ), x)
 end

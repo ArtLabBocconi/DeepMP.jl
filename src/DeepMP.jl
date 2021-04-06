@@ -8,6 +8,7 @@ using LinearAlgebra
 using Statistics
 using Base: @propagate_inbounds # for DataLoader
 using Tullio
+using Einsum
 using LoopVectorization
 using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
@@ -166,7 +167,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-
+	@show size(xtrain)
+	
     g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
     if teacher !== nothing

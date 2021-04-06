@@ -5,6 +5,7 @@ using Random, Statistics
 
 # Odd vs Even or 1 class vs another
 function get_mnist(M=60000; classes=[], seed=17, fashion=false)
+    seed > 0 && Random.seed!(seed)
     namedir = fashion ? "FashionMNIST" : "MNIST"
     datadir = joinpath(homedir(), "Datasets", namedir)
     Dataset = fashion ? FashionMNIST : MNIST
@@ -14,7 +15,6 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     xtest = reshape(xtest, :, 10000)
     if !isempty(classes)
         @assert length(classes) == 2
-        seed > 0 && Random.seed!(seed)
         filter = x -> x==classes[1] || x==classes[2]
         idxtrain = findall(filter, ytrain) |> shuffle
         idxtest = findall(filter, ytest) |> shuffle
@@ -28,14 +28,62 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     else
         ytrain = map(x-> isodd(x) ? 1 : -1, ytrain)
         ytest = map(x-> isodd(x) ? 1 : -1, ytest)
+        idxtrain = 1:length(ytrain) |> shuffle
+        xtrain = xtrain[:, idxtrain]
+        ytrain = ytrain[idxtrain]
     end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
+	#@show (ytrain); error()
     return xtrain, ytrain, xtest, ytest
 end
 
 function run_experiment(i)
-    if i == 1
+    if i == 7
+        #@testset "SBP on MLP" begin
+
+        M = 100
+        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        K = [28*28, 101, 1]
+        
+        batchsize = 1
+        layers=[:bp, :bp]
+
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+            xtest, ytest,
+            K = K,
+            seed = 1,
+            maxiters = 1,
+            r = 0., rstep = 0.,
+			ψ = 0.5, yy=-1,
+            batchsize, epochs = 50,
+            altsolv = false, altconv = true,
+            ρ = 1., layers, verbose = 1,
+            density = 1)
+        #end
+	elseif i == 8
+        #@testset "SBP on MLP" begin
+
+        M = 1000
+        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        K = [28*28, 101, 1]
+        
+        batchsize = -1
+        layers=[:bpi, :bpi]
+
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+            xtest, ytest,
+            K = K,
+            seed = 1,
+            maxiters = 100,
+            r = 0.9, rstep = 0.001,
+			ψ = 0.5, yy=-1,
+            batchsize, epochs = 50,
+            altsolv = false, altconv = true,
+            ρ = 0., layers, verbose = 2,
+            density = 1)
+        #en
+	elseif i == 1
         @testset "BP on PERCEPTRON" begin
         M = 100
         xtrain, ytrain, xtest, ytest = get_mnist(M)
