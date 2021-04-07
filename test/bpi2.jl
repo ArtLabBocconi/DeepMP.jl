@@ -115,35 +115,6 @@ end
 # end#testset
 
 @testset "MNIST MLP" begin
-    y = Int.(readdlm(@__DIR__() * "/../fmnist/seed7/Y.txt")) |> vec
-    X = readdlm(@__DIR__() * "/../fmnist/seed7/X.txt")
-
-    batchsize = 1
-    ρ, r = 1, 0
-    layers=[type, type, type]
-
-    @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],
-                    layers, verbose=1,
-                    ρ, r, rstep=0, 
-                    epochs=100, maxiters=10,
-                    seed=2, density=0.5,
-                    batchsize, altsolv=false, altconv=true);
-
-    @test_broken E == 0
-    
-    batchsize = 10
-    ρ, r = 1, 0
-    layers=[type, type, type]
-
-    @time g, W, teacher, E = DeepMP.solve(X,y; K=[784,31,31,1],
-                    layers, verbose=1,
-                    ρ, r, rstep=0, 
-                    epochs=100, maxiters=10,
-                    seed=2, density=0.5,
-                    batchsize, altsolv=false, altconv=true);
-
-    @test_broken E == 0
-
     ########### FASHION ##############
     M = 2000
     xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true)
