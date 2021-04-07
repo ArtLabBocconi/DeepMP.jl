@@ -4,10 +4,10 @@ using BinaryCommitteeMachineFBP
 tfbp = @timed  focusingBP(321, 5, 0.3, 
                         randfact=0.1, seed=135, 
                         max_steps=10, max_iters=1, 
-                        quiet=false,
+                        quiet=true,
                         accuracy1=:accurate, # :none, :accurate, :exact
                         accuracy2=:exact, # :none, :accurate, :exact
-                        messfmt = :plain,
+                        messfmt = :tanh,
                         damping=0.0);
 
 errs, messages, patterns = tfbp.value
@@ -25,7 +25,7 @@ tdeep = @timed DeepMP.solve(
                 batchsize=-1, #epochs = 50,
                 altsolv=false, altconv=false, 
                 freezetop=true,
-                verbose=1,
+                verbose=0,
                 ρ = 1, 
                 )
 

@@ -166,7 +166,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-
+	
     g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ);
     if teacher !== nothing
@@ -177,6 +177,30 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     freezetop && freezetop!(g, 1)
     
     reinfpar = ReinfParams(r, rstep, yy, ψ)
+    
+    function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
+        Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
+        num_batches = length(dtrain)
+        Etest = 100.0
+        if ytest !== nothing
+            Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+        end
+            
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g\n",
+                                epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
+                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time)
+            
+            
+        plot_info(g, 0; verbose)
+
+        q0, qWαβ, _ = compute_overlaps(g.layers[2])
+        outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
+        println(fres, outf); flush(fres)
+        
+        return Etrain
+        
+    end
+
 
     if batchsize <= 0
         
@@ -191,9 +215,10 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         # TODO check reinfparams updates in mini-batch case
         
         #resfile = make_resfile(layers, K[1], K[2], batchsize, ρ, r, density)
-        # resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-        # fres = open(resfile, "w")
-
+        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+        fres = open(resfile, "w")
+        
+        report(0)
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             t = @timed for (b, (x, y)) in enumerate(dtrain)
@@ -210,27 +235,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
             end
 
-            Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
-            num_batches = length(dtrain)
-            Etest = 100.0
-            if ytest !== nothing
-                Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
-            end
+            Etrain = report(epoch; t, converged, solved, meaniters)
             
-            verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g\n",
-                                epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time)
-            
-            
-            plot_info(g, 0; verbose)
-
-            q0, qWαβ, _ = compute_overlaps(g.layers[2])
-            # outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
-            # println(fres, outf); flush(fres)
-
             Etrain == 0 && break
         end
-        # close(fres)
+        close(fres)
     end
     
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
