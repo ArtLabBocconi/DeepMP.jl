@@ -1,6 +1,5 @@
 G(x::T) where T = exp(-(x^2) / 2) / √(T(2)*π)
 H(x::T) where T = erfc(x / √T(2)) / 2
-# CUDA.@cufunc H(x::T) where T = CUDA.erfc(x / √T(2)) / 2
 
 ∞atanh = 25.0
 
@@ -39,8 +38,8 @@ end
 
 function atanherf(x)
     ax = abs(x)
-    ax ≤ 1 && return atanh(erf(x))
-    return sign(x) * (log(2) + log1p(-erfc(ax)/2) - logerfc(ax)) / 2
+    #logerfc(ax) = log(erfcx(ax)) - ax^2 in SpecialFunctions.jl
+    return sign(x) * (log(2) + log1p(-erfc(ax)/2) - log(erfcx(ax)) + ax^2) / 2
 end
 
 atanh2Hm1(x::T) where T = -atanherf(x / √T(2))
