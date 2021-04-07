@@ -38,7 +38,6 @@ julia = "1.6"
 
 [extras]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-BinaryCommitteeMachineFBP = "da8bbec8-7ffb-55a9-831d-2ba937c1046b"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"

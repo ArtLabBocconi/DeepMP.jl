@@ -154,6 +154,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 verbose = 2,
                 infotime = 10,
                 usecuda = false,
+                saveres = false,
                 )
 
     usecuda = CUDA.functional() && usecuda
@@ -175,8 +176,12 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
     initrand!(g)
     freezetop && freezetop!(g, 1)
-    
     reinfpar = ReinfParams(r, rstep, yy, ψ)
+
+    if saveres
+        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+        fres = open(resfile, "w")
+    end
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
@@ -193,12 +198,12 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             
         plot_info(g, 0; verbose)
 
-        q0, qWαβ, _ = compute_overlaps(g.layers[2])
-        outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
-        println(fres, outf); flush(fres)
-        
+        if saveres
+            q0, qWαβ, _ = compute_overlaps(g.layers[2])
+            outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
+            println(fres, outf); flush(fres)
+        end
         return Etrain
-        
     end
 
 
@@ -213,10 +218,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         
         ## MINI_BATCH message passing
         # TODO check reinfparams updates in mini-batch case
-        
-        #resfile = make_resfile(layers, K[1], K[2], batchsize, ρ, r, density)
-        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-        fres = open(resfile, "w")
         
         report(0)
         for epoch = 1:epochs
@@ -234,17 +235,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
             end
-
             Etrain = report(epoch; t, converged, solved, meaniters)
-            
             Etrain == 0 && break
         end
-        close(fres)
+        saveres && close(fres)
     end
     
     E = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, E, it
-    
 end
 
 end #module
