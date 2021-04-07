@@ -70,7 +70,7 @@ function BPLayer(K::Int, N::Int, M::Int;
             weight_mask, isfrozen)
 end
 
-@gpu function compute_g(B, ω, V)
+function compute_g(B, ω, V)
     GH2(B, -ω / V) / V
 end
 
@@ -84,8 +84,12 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
-            @tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
-            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            bottBup = bottom_layer.Bup
+            # @show size(x̂cav) typeof(x̂cav) 
+            # @show size(bottom_layer.Bup)  typeof(bottom_layer.Bup) 
+            # @show size(Bcav)  typeof(Bcav) 
+            @tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
+            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             Δ .= 1 .- x̂.^2
         end
         
