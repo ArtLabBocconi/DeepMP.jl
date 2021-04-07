@@ -36,10 +36,10 @@ function logsinhabs(x::T) where T
     return ax + log1p(-exp(-2ax)) - log(T(2))
 end
 
-function atanherf(x)
+function atanherf(x::T) where T
     ax = abs(x)
     #logerfc(ax) = log(erfcx(ax)) - ax^2 in SpecialFunctions.jl
-    return sign(x) * (log(2) + log1p(-erfc(ax)/2) - log(erfcx(ax)) + ax^2) / 2
+    return sign(x) * (log(T(2)) + log1p(-erfc(ax)/2) - log(erfcx(ax)) + ax^2) / 2
 end
 
 atanh2Hm1(x::T) where T = -atanherf(x / √T(2))
