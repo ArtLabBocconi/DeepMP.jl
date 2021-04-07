@@ -43,8 +43,9 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1])
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
-
-        layers=[:bp, :bp, :bp]#, :bp, :bp]
+        
+        #layers=[:bp, :bp, :bp]
+        layers = [:bp for _=1:(length(K)-1)]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
