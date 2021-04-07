@@ -213,7 +213,7 @@ end
 function update!(g::FactorGraph, reinfpar)
     Δ = 0. 
     
-   for l = 2:g.L+1
+    for l = 2:g.L+1
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end

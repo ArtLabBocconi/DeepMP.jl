@@ -91,7 +91,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 			Threads.@threads for i in 1:N
 				for a in 1:M
 					for k in 1:K
-						x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
+						@inbounds x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
 					end
 				end
 			end
