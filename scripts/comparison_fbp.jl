@@ -30,3 +30,35 @@ tdeep = @timed DeepMP.solve(
                 )
 
 @show tdeep.time
+
+
+tdeep = @timed DeepMP.solve(
+                xtrain, ytrain;
+                K = [321, 5, 1],
+                layers = [:bp, :bp],
+                maxiters=10,
+                r = 0., rstep=0.,
+                batchsize=-1, #epochs = 50,
+                altsolv=false, altconv=false, 
+                freezetop=true,
+                verbose=1,
+                ρ = 1, 
+                )
+
+@show tdeep.time
+
+tdeep = @timed DeepMP.solve(
+                xtrain, ytrain;
+                K = [321, 5, 1],
+                layers = [:bp, :bp],
+                maxiters=10,
+                r = 0., rstep=0.,
+                batchsize=-1, #epochs = 50,
+                altsolv=false, altconv=false, 
+                freezetop=true,
+                usecuda = true,
+                verbose=1,
+                ρ = 1, 
+                )
+
+@show tdeep.time

@@ -48,7 +48,7 @@ version = "0.4.1"
 
 [[CUDA]]
 deps = ["AbstractFFTs", "Adapt", "BFloat16s", "CEnum", "CompilerSupportLibraries_jll", "DataStructures", "ExprTools", "GPUArrays", "GPUCompiler", "LLVM", "LazyArtifacts", "Libdl", "LinearAlgebra", "Logging", "MacroTools", "Memoize", "Printf", "Random", "RandomNumbers", "Reexport", "Requires", "SparseArrays", "SpecialFunctions", "Statistics", "TimerOutputs"]
-git-tree-sha1 = "a8f6b69d7eff397d48edab815bc60b19c32f252e"
+git-tree-sha1 = "9b276e35d167cf70b6a188c08dc216d41a000688"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaGPU/CUDA.jl.git"
 uuid = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -162,11 +162,11 @@ version = "6.2.1"
 
 [[GPUCompiler]]
 deps = ["DataStructures", "ExprTools", "InteractiveUtils", "LLVM", "Libdl", "Logging", "Scratch", "Serialization", "TimerOutputs", "UUIDs"]
-git-tree-sha1 = "9830d6ae131d5ac85f27f424e1f050ae08e78972"
+git-tree-sha1 = "a5a239b8c688f59872eb689edd75395e97cc6641"
 repo-rev = "master"
 repo-url = "https://github.com/JuliaGPU/GPUCompiler.jl.git"
 uuid = "61eb1bfa-7361-4325-ad38-22787b887f55"
-version = "0.11.1"
+version = "0.11.2"
 
 [[GZip]]
 deps = ["Libdl"]
