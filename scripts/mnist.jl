@@ -38,15 +38,13 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=100, batchsize=1)
+function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1])
     if i == 7
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
-        K = [28*28, 101, 101, 1]
-        #K = [28*28, 101, 101, 101, 1]
 
-        layers=[:bp, :bp, :bp, :bp]
+        layers=[:bp, :bp, :bp]#, :bp, :bp]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
@@ -54,13 +52,15 @@ function run_experiment(i; M=100, batchsize=1)
             seed = 1,
             maxiters = 1,
             r = 0., rstep = 0.,
-			ψ = 0.5, yy=21,
-            batchsize, epochs = 3,
+			ψ = 0.5, yy=-1,
+            batchsize, epochs = 100,
             altsolv = false, altconv = true,
             ρ = 1., layers, verbose = 1,
             density = 1)
         #end
+        
 	elseif i == 8
+        
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
