@@ -154,11 +154,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 verbose = 2,
                 infotime = 10,
                 usecuda = false,
+                gpu_id = 0,
                 saveres = false,
                 )
 
     usecuda = CUDA.functional() && usecuda
     device =  usecuda ? gpu : cpu
+    usecuda && gpu_id > 0 && device!(gpu_id)
     if seed > 0
         Random.seed!(seed)
         usecuda && CUDA.seed!(seed)
