@@ -58,7 +58,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
             batchsize, epochs = 100,
             altsolv = false, altconv = true,
             layers, verbose = 1,
-            density = 1)
+            density = 1, saveres = true)
         #end
         
 	elseif i == 8
@@ -74,13 +74,13 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
             usecuda, gpu_id,
             K = K,
             seed = 1,
-            maxiters = 10,
+            maxiters,
             r, rstep = 0.001,
 			ψ, yy,
             batchsize = -1, epochs = 50,
             altsolv = false, altconv = true,
             ρ = 0., layers, verbose = 2,
-            density = 1)
+            density = 1, saveres = true)
         #end
 	elseif i == 1
         @testset "BP on PERCEPTRON" begin
