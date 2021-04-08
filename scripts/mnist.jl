@@ -38,7 +38,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false)
+function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false, gpu_id=0)
     if i == 7
         #@testset "SBP on MLP" begin
 
@@ -49,7 +49,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
-            usecuda,
+            usecuda, gpu_id,
             K = K,
             seed = 1,
             maxiters = 1,
