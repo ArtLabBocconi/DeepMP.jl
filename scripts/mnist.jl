@@ -38,7 +38,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1])
+function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false, gpu_id=0)
     if i == 7
         #@testset "SBP on MLP" begin
 
@@ -49,6 +49,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1])
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
+            usecuda, gpu_id,
             K = K,
             seed = 1,
             maxiters = 1,
@@ -65,23 +66,22 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1])
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
-        K = [28*28, 101, 1]
         
-        batchsize = -1
-        layers=[:bp, :bp, :bp]
+        layers = [:bp for _=1:(length(K)-1)]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
+            usecuda, gpu_id,
             K = K,
             seed = 1,
             maxiters = 100,
             r = 0.9, rstep = 0.001,
-			ψ = 0.3, yy=-1,
-            batchsize, epochs = 50,
+			ψ = 0.5, yy=-1,
+            batchsize=-1, epochs = 50,
             altsolv = false, altconv = true,
             ρ = 0., layers, verbose = 2,
             density = 1)
-        #en
+        #end
 	elseif i == 1
         @testset "BP on PERCEPTRON" begin
         M = 100
