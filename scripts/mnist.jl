@@ -71,7 +71,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
-            usecuda,
+            usecuda, gpu_id,
             K = K,
             seed = 1,
             maxiters = 100,
