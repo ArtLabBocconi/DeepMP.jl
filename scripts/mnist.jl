@@ -4,13 +4,19 @@ using Test
 using Random, Statistics
 
 # Odd vs Even or 1 class vs another
-function get_mnist(M=60000; classes=[], seed=17, fashion=false)
+function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     seed > 0 && Random.seed!(seed)
     namedir = fashion ? "FashionMNIST" : "MNIST"
     datadir = joinpath(homedir(), "Datasets", namedir)
     Dataset = fashion ? FashionMNIST : MNIST
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
+    if normalize
+        mn = mean(xtrain, dims=(1,2,3))
+        st = std(xtrain, dims=(1,2,3))
+        xtrain = (xtrain .- mn) ./ ((st .+ 1e-5)
+        xtest = (xtest .- mn) ./ (st .+ 1e-5)
+    end
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
     if !isempty(classes)
@@ -38,7 +44,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false, gpu_id=0)
+function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false,gpu_id=0, maxiters=1, ρ=1., r=0., ψ=0., yy=-1)
     if i == 7
         #@testset "SBP on MLP" begin
 
@@ -52,13 +58,13 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
             usecuda, gpu_id,
             K = K,
             seed = 1,
-            maxiters = 1,
-            r = 0., rstep = 0.,
-			ψ = 0.5, yy=-1,
+            maxiters,
+            ρ, r, rstep = 0.,
+			ψ, yy,
             batchsize, epochs = 100,
             altsolv = false, altconv = true,
-            ρ = 1., layers, verbose = 1,
-            density = 1)
+            layers, verbose = 1,
+            density = 1, saveres = true)
         #end
         
 	elseif i == 8
@@ -74,13 +80,13 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
             usecuda, gpu_id,
             K = K,
             seed = 1,
-            maxiters = 100,
-            r = 0.9, rstep = 0.001,
-			ψ = 0.5, yy=-1,
-            batchsize=-1, epochs = 50,
+            maxiters,
+            r, rstep = 0.001,
+			ψ, yy,
+            batchsize = -1, epochs = 50,
             altsolv = false, altconv = true,
             ρ = 0., layers, verbose = 2,
-            density = 1)
+            density = 1, saveres = true)
         #end
 	elseif i == 1
         @testset "BP on PERCEPTRON" begin

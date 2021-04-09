@@ -70,7 +70,7 @@ function BPLayer(K::Int, N::Int, M::Int;
             weight_mask, isfrozen)
 end
 
-@gpu function compute_g(B, ω, V)
+function compute_g(B, ω, V)
     GH2(B, -ω / V) / V
 end
 
@@ -80,31 +80,26 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y
-	
     Δm = 0.
 
     if mode == :forw || mode == :both
-		
         if !isbottomlayer(layer)
-			
-            #@tullio x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
+            bottBup = bottom_layer.Bup
+            #@tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
 			Threads.@threads for i in 1:N
 				for a in 1:M
 					for k in 1:K
-						@inbounds x̂cav[k,i,a] = tanh(bottom_layer.Bup[i,a] + Bcav[k,i,a])
+						@inbounds x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
 					end
 				end
 			end
-			
-            #@tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            #@tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
 			Threads.@threads for i in 1:N
 				for a in 1:M
-					x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+					x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
 				end
 			end
-			
             Δ .= 1 .- x̂.^2
-			
         end
         
         #@tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
@@ -117,7 +112,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 				ω[k,a] = s
 			end
 		end
-		
         #@tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
 		Threads.@threads for i in 1:N
 			for a in 1:M
@@ -126,24 +120,19 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 				end
 			end
 		end
-		
         V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
-		
         #@tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
 		Threads.@threads for k in 1:K
 			for a in 1:M
 				Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a])
 			end
 		end
-		
-	end # forward
+    end
 
     if mode == :back || mode == :both
-		
         ## BACKWARD 
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
-		
         #@tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
 		gcav = similar(ωcav)
 		Threads.@threads for i in 1:N
@@ -153,7 +142,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 				end
 			end
 		end
-		
         #@tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
 		g = similar(ω)
 		Threads.@threads for k in 1:K
@@ -161,14 +149,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 				g[k,a] = compute_g(Btop[k,a], ω[k,a], V[k,a])
 			end
 		end
-
-		# commentato
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
-			# commentato
             # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-			
             #@tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
 			Threads.@threads for i in 1:N
 				for a in 1:M
@@ -177,7 +161,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 					end
 				end
 			end
-			
             #@tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
 			Threads.@threads for i in 1:N
 				for a in 1:M
@@ -186,12 +169,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 					end
 				end
 			end
-			
         end
 
         if !isfrozen(layer)
-			
-            #@tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a]
+            #@tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
 			Hin = similar(m)
 			Threads.@threads for i in 1:N
 				for k in 1:K
@@ -202,7 +183,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 					Hin[k,i] = s
 				end
 			end
-			
             if y > 0 # focusing
                 tγ = tanh(r)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
@@ -213,7 +193,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 # reinforcement
                 @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-			
             #@tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
 			Threads.@threads for i in 1:N
 				for a in 1:M
@@ -222,7 +201,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 					end
 				end
 			end
-			
             #@tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
 			Threads.@threads for i in 1:N
 				for a in 1:M
@@ -231,13 +209,11 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 					end
 				end
 			end
-
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
             m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
-			
         end
         
     end

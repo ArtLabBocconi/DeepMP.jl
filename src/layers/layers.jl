@@ -9,7 +9,7 @@ mutable struct DummyLayer <: AbstractLayer end
 include("input.jl")
 include("output.jl")
 include("bp.jl")
-#include("bp_explicitloops.jl")
+#include("bp_loops.jl")
 include("bp_exact.jl")
 include("tap.jl")
 include("tap_exact.jl")
