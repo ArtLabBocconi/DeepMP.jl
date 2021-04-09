@@ -89,25 +89,47 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             Δ .= 1 .- x̂.^2
         end
+        # @assert all(isfinite, x̂)
+        # @assert all(isfinite, x̂cav)
+
         
         @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
         @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
         V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
+        # @assert all(isfinite, ω)
+        # @assert all(isfinite, V)
+        # @assert all(isfinite, ωcav)
+        # @assert all(isfinite, Bup)
     end
 
     if mode == :back || mode == :both
         ## BACKWARD 
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
+        # @assert all(isfinite, Btop)
+
         @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        # @assert all(isfinite, g)
+        # @assert all(isfinite, gcav)
+        # for k=1:K, a=1:M 
+        #     try 
+        #         res = compute_g(Btop[k,a], ω[k,a], V[k,a])
+        #         @assert isfinite(res)
+        #     catch
+        #         @show Btop[k,a] ω[k,a] V[k,a]
+        #         error()
+        #     end
+        # end
         
         if !isbottomlayer(layer)
             # A .= (m.^2 + σ)' * Γ - σ' * g.^2
             @tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
             @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
+            # @assert all(isfinite, B)
+            # @assert all(isfinite, Bcav)
         end
 
         if !isfrozen(layer)
@@ -124,6 +146,9 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            # @assert all(isfinite, H)
+            # @assert all(isfinite, Hcav)
+
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
             m .= mnew

@@ -18,7 +18,7 @@ if DeepMP.F == Float64
                         ,r=.92,rstep=0.001, seedx=1,maxiters=300);
             
             @test_broken E == 0
-            @test_broken E <= 100
+            @test        E <= 100
         end
         
         @time g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
