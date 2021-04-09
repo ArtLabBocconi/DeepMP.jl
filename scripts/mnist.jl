@@ -45,9 +45,10 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
 end
 
 function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], 
-                          usecuda=false,gpu_id=0, maxiters=1, ρ=1., r=0., ψ=0., yy=-1,
+                          usecuda=false,gpu_id=0, ρ=1., r=0., ψ=0., yy=-1,
+                          maxiters=1, epochs=10,
                           density=1)
-    if i == 7
+    if i == 7   
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
@@ -59,10 +60,10 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1],
             usecuda, gpu_id,
             K = K,
             seed = 1,
-            maxiters,
+            maxiters, epochs,
             ρ, r, rstep = 0.,
 			ψ, yy,
-            batchsize, epochs = 100,
+            batchsize,
             altsolv = true, altconv = true,
             layers, verbose = 1,
             density, saveres = false)
