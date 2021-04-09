@@ -123,14 +123,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         #         error()
         #     end
         # end
-        # for i=1:N, k=1:K, a=1:M 
-        #     try 
-        #         compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])
-        #     catch
-        #         @show Btop[k,a] ωcav[k,i,a] V[k,a]
-        #         error()
-        #     end
-        # end
         
         if !isbottomlayer(layer)
             # A .= (m.^2 + σ)' * Γ - σ' * g.^2
