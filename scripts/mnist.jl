@@ -13,8 +13,9 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
     if normalize
         mn = mean(xtrain, dims=(1,2,3))
-        xtrain = xtrain .- mn
-        xtest = xtest .- mn
+        st = std(xtrain, dims=(1,2,3))
+        xtrain = (xtrain .- mn) ./ ((st .+ 1e-5)
+        xtest = (xtest .- mn) ./ (st .+ 1e-5)
     end
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
