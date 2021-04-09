@@ -14,7 +14,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     if normalize
         mn = mean(xtrain, dims=(1,2,3))
         st = std(xtrain, dims=(1,2,3))
-        xtrain = (xtrain .- mn) ./ ((st .+ 1e-5)
+        xtrain = (xtrain .- mn) ./ (st .+ 1e-5)
         xtest = (xtest .- mn) ./ (st .+ 1e-5)
     end
     xtrain = reshape(xtrain, :, 60000)
@@ -44,13 +44,14 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda=false,gpu_id=0, maxiters=1, ρ=1., r=0., ψ=0., yy=-1)
+function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], 
+                          usecuda=false,gpu_id=0, maxiters=1, ρ=1., r=0., ψ=0., yy=-1,
+                          density=1)
     if i == 7
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
         
-        #layers=[:bp, :bp, :bp]
         layers = [:bp for _=1:(length(K)-1)]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
@@ -62,11 +63,10 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], usecuda
             ρ, r, rstep = 0.,
 			ψ, yy,
             batchsize, epochs = 100,
-            altsolv = false, altconv = true,
+            altsolv = true, altconv = true,
             layers, verbose = 1,
-            density = 1, saveres = true)
-        #end
-        
+            density, saveres = false)
+
 	elseif i == 8
         
         #@testset "SBP on MLP" begin

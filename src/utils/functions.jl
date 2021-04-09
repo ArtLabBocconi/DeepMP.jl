@@ -56,7 +56,11 @@ function GHt(m, x::T) where T
 end
 
 function GH2(uσ, x)
-    return GHt(tanh(uσ), x)
+    m = tanh(uσ)
+    s = sign(uσ)
+    return sign(m) * GHt(abs(m), s*x)
+    # return m > 0 ? GHt(m, x) : - GHt(-m, -x) 
+    # return GHt(tanh(uσ), x)
 end
 
 # TODO approx
