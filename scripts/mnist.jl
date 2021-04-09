@@ -4,13 +4,18 @@ using Test
 using Random, Statistics
 
 # Odd vs Even or 1 class vs another
-function get_mnist(M=60000; classes=[], seed=17, fashion=false)
+function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     seed > 0 && Random.seed!(seed)
     namedir = fashion ? "FashionMNIST" : "MNIST"
     datadir = joinpath(homedir(), "Datasets", namedir)
     Dataset = fashion ? FashionMNIST : MNIST
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
+    if normalize
+        mn = mean(xtrain, dims=(1,2,3))
+        xtrain = xtrain .- mn
+        xtest = xtest .- mn
+    end
     xtrain = reshape(xtrain, :, 60000)
     xtest = reshape(xtest, :, 10000)
     if !isempty(classes)
