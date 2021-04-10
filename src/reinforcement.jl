@@ -8,6 +8,7 @@ end
 
 ReinfParams(r=0., rstep=0., y=0, ψ=0.) = ReinfParams(r, rstep, y, ψ, 0)
 
+damp(new_mess, old_mess, ψ) = new_mess * (1 - ψ) + old_mess * ψ
 
 function update_reinforcement!(reinfpar::ReinfParams)
     if reinfpar.wait_count < 10

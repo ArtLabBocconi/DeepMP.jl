@@ -47,7 +47,7 @@ end
 function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], 
                           usecuda=false,gpu_id=0, ρ=1., r=0., ψ=0., yy=-1,
                           maxiters=1, epochs=10,
-                          density=1)
+                          density=1, saveres=false)
     if i == 7   
         #@testset "SBP on MLP" begin
 
@@ -66,7 +66,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1],
             batchsize,
             altsolv = true, altconv = true,
             layers, verbose = 1,
-            density, saveres = false)
+            density, saveres)
 
 	elseif i == 8
         

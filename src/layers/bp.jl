@@ -79,7 +79,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r y
+    @extract reinfpar: r y ψ
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -151,7 +151,8 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
-            m .= mnew
+            m .= damp.(mnew, m, ψ)
+            #m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
         end
