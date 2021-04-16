@@ -140,7 +140,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 ψ = 0.,                        # damping coefficient
                 yy = -1.,                      # focusing BP parameter
                 h0 = nothing,                  # external field
-                ρ = 1.,                        # coefficient for external field
+                ρ = 1.,                        # coefficient for external field from mini-batch posterior
+                rbatch = 0.,                   # reinforcement parameter for external field
                 freezetop = true,              # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
@@ -171,7 +172,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
 	
     g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
-    h0 !== nothing && set_external_fields!(g, h0; ρ);
+    h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
         teacher = device.(teacher)
         has_same_size(g, teacher) && set_weight_mask!(g, teacher)
@@ -225,7 +226,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             t = @timed for (b, (x, y)) in enumerate(dtrain)
-                ρ > 0 && set_Hext_from_H!(g, ρ)
+                ρ > 0 && set_Hext_from_H!(g, ρ, rbatch)
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 

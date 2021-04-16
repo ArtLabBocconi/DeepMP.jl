@@ -79,7 +79,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r y
+    @extract reinfpar: r y ψ
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -87,6 +87,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             bottBup = bottom_layer.Bup
             @tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
+            # @tullio x̂cavnew[k,i,a] := tanh(bottBup[i,a] + Bcav[k,i,a])
+            # @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
+            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
+            # x̂cav .= ψ .* x̂cav .+ (1-ψ) .* x̂cavnew   
             Δ .= 1 .- x̂.^2
         end
         # @assert all(isfinite, x̂)
@@ -114,15 +118,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         # @assert all(isfinite, g)
         # @assert all(isfinite, gcav)
-        # for k=1:K, a=1:M 
-        #     try 
-        #         res = compute_g(Btop[k,a], ω[k,a], V[k,a])
-        #         @assert isfinite(res)
-        #     catch
-        #         @show Btop[k,a] ω[k,a] V[k,a]
-        #         error()
-        #     end
-        # end
         
         if !isbottomlayer(layer)
             # A .= (m.^2 + σ)' * Γ - σ' * g.^2
@@ -145,13 +140,15 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-            @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
+            
             # @assert all(isfinite, H)
             # @assert all(isfinite, Hcav)
 
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
-            m .= mnew
+            m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
         end
