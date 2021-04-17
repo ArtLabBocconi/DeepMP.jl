@@ -145,10 +145,13 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-            @tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            #@tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
             # @assert all(isfinite, H)
             # @assert all(isfinite, Hcav)
 
+            mcav .= damp.(mcavnew, mcav, ψ)
+            
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
             m .= damp.(mnew, m, ψ)
