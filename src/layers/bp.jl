@@ -87,6 +87,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             bottBup = bottom_layer.Bup
             @tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
+            # @tullio x̂cavnew[k,i,a] := tanh(bottBup[i,a] + Bcav[k,i,a])
+            # @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
+            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
+            # x̂cav .= ψ .* x̂cav .+ (1-ψ) .* x̂cavnew   
             Δ .= 1 .- x̂.^2
         end
         # @assert all(isfinite, x̂)
@@ -114,15 +118,6 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         # @assert all(isfinite, g)
         # @assert all(isfinite, gcav)
-        # for k=1:K, a=1:M 
-        #     try 
-        #         res = compute_g(Btop[k,a], ω[k,a], V[k,a])
-        #         @assert isfinite(res)
-        #     catch
-        #         @show Btop[k,a] ω[k,a] V[k,a]
-        #         error()
-        #     end
-        # end
         
         if !isbottomlayer(layer)
             # A .= (m.^2 + σ)' * Γ - σ' * g.^2
@@ -145,8 +140,14 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+<<<<<<< HEAD
             #@tullio mcav[k,i,a] = tanh(Hcav[k,i,a]) * weight_mask[k,i]
             @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
+=======
+            @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
+            
+>>>>>>> c8c4bddd7be24925f4c0d4d181c04a1294ea76dc
             # @assert all(isfinite, H)
             # @assert all(isfinite, Hcav)
 
@@ -154,8 +155,12 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew) 
+<<<<<<< HEAD
             m .= damp.(mnew, m, ψ)
             #m .= mnew
+=======
+            m .= ψ .* m .+ (1-ψ) .* mnew
+>>>>>>> c8c4bddd7be24925f4c0d4d181c04a1294ea76dc
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
         end

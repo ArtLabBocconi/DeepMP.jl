@@ -44,11 +44,40 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     return xtrain, ytrain, xtest, ytest
 end
 
+<<<<<<< HEAD
 function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1], 
                           usecuda=false,gpu_id=0, ρ=1., r=0., ψ=0., yy=-1,
                           maxiters=1, epochs=10,
                           density=1, saveres=false)
     if i == 7   
+=======
+function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1], 
+                          usecuda=false, gpu_id=0, ρ=1., 
+                          r=0., rstep=0, rbatch=0,
+                          ψ=0., yy=-1,
+                          maxiters=1, epochs=5,
+                          density=1)
+
+    if i == 9
+    
+        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        
+        layers = [:bp for _=1:(length(K)-1)]
+
+        g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
+            xtest, ytest,
+            usecuda, gpu_id,
+            K = K,
+            seed = 1,
+            maxiters, epochs,
+            ρ, r, rstep, rbatch,
+            ψ, yy,
+            batchsize,
+            altsolv = true, altconv = true,
+            layers, verbose = 1,
+            density, saveres = false)
+    elseif i == 7   
+>>>>>>> c8c4bddd7be24925f4c0d4d181c04a1294ea76dc
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
@@ -61,7 +90,7 @@ function run_experiment(i; M=100, batchsize=1, K = [28*28, 101, 101, 1],
             K = K,
             seed = 1,
             maxiters, epochs,
-            ρ, r, rstep = 0.,
+            ρ, r, rstep, rbatch,
 			ψ, yy,
             batchsize,
             altsolv = true, altconv = true,

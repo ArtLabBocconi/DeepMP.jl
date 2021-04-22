@@ -5,7 +5,6 @@ version = "0.1.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-BinaryCommitteeMachineFBP = "da8bbec8-7ffb-55a9-831d-2ba937c1046b"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 CUDAKernels = "72cfdca4-0801-4ab0-bf6a-d52aa10adc57"
 ExtractMacro = "f86d3d12-fd5b-522c-99e9-61577282a1e9"
@@ -25,8 +24,7 @@ Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 
 [compat]
 Adapt = "3.0"
-CUDA = "2.6"
-CUDAKernels = "0.1"
+CUDAKernels = "0.1,0.2"
 ExtractMacro = "1.0"
 Functors = "0.2"
 KernelAbstractions = "0.6"
