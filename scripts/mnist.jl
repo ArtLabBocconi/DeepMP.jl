@@ -47,7 +47,7 @@ end
 function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1], 
                           usecuda=false, gpu_id=0, ρ=1., 
                           r=0., rstep=0, rbatch=0,
-                          ψ=0., yy=-1,
+                          ψ=0., yy=-1, lay=:bp,
                           maxiters=1, epochs=5,
                           density=1)
 
@@ -55,7 +55,7 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
     
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
         
-        layers = [:bp for _=1:(length(K)-1)]
+        layers = [lay for _=1:(length(K)-1)]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
@@ -68,13 +68,13 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
             batchsize,
             altsolv = true, altconv = true,
             layers, verbose = 1,
-            density, saveres = false)
+            density, saveres = true)
     elseif i == 7   
         #@testset "SBP on MLP" begin
 
         xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
         
-        layers = [:bp for _=1:(length(K)-1)]
+        layers = [lay for _=1:(length(K)-1)]
 
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
