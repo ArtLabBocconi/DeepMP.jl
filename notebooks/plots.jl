@@ -12,11 +12,11 @@ K = [28*28, 101, 101, 1]
 batchsize = 1000
 
 if batchsize == 1000
-    ρs = [1.00001, 1.00001]
-    lays = [:bp, :tap]
+    ρs = [1.00001, 1.00001, 1.00001]
+    lays = [:bp, :tap, :bpi]
 elseif batchsize == 100
-    ρs = [1.00001]
-    lays = [:bp]
+    ρs = [1.00001, 1.00001, 1.00001]
+    lays = [:bp, :tap, :bpi]
 elseif batchsize == 10
     ρs = [1.00001, 1.000001, 1.00001]
     lays = [:bp, :tap, :bpi]
@@ -33,11 +33,14 @@ fig, ax1 = plt.subplots(1)
 ax2 = ax1.inset_axes([0.27, 0.575, 0.35, 0.4])
 ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
 
+algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue")
+algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x")
+
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
     
-    if batchsize == 1000 && lay == :tap
+    if batchsize in [100,1000] && lay in [:tap, :bpi]
         resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
     else
         resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
@@ -47,26 +50,23 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
 
     pars = "ρ=$(rd(ρ-1,1))"
 
-    ls = "-"
-
-    ax1.plot(dati[:,1], dati[:,2], ls=ls, label="train $lay $pars")
-    ax1.plot(dati[:,1], dati[:,3], ls=ls, label="test $lay $pars")
+    ax1.plot(dati[:,1], dati[:,2], ls="-", label="train $lay $pars", c=algo_color[lay])
+    ax1.plot(dati[:,1], dati[:,3], ls="--", label="test $lay $pars", c=algo_color[lay])
 
     #ax1.set_xlabel("epochs", fontsize=12)
     ax1.set_ylabel("error (%)", fontsize=12)
     ax1.set_ylim(0,30)
 
-    #colorb = "tab:blue"
-    ax2.plot(dati[:,1], dati[:,4], label="$lay $pars")#, color=colorb)
-    ax3.plot(dati[:,1], dati[:,5], label="$lay lay1 $pars")#, color="orange")
+    ax2.plot(dati[:,1], dati[:,4], ls="-", label="$lay $pars", c=algo_color[lay])
+    ax3.plot(dati[:,1], dati[:,5], ls="-", label="$lay lay1 $pars", c=algo_color[lay])
     #ax3.plot(dati[:,1], dati[:,5], label="qab (first layer)", color="orange")
     
 end
 
 dati_sgd = readdlm("../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden[101, 101]_biasfalse_freezetopfalse_lr1.0_bs$(batchsize).dat")
 
-ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="--", label="train bin-sgd bs=$batchsize")
-ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize")
+ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="-", label="train bin-sgd bs=$batchsize", c=algo_color[:sgd])
+ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize", c=algo_color[:sgd])
 
 ax1.set_xlabel("epochs", fontsize=12)
 ax2.set_ylabel("q0", fontsize=10)#, color=colorb)
@@ -92,5 +92,5 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
 #fig.tight_layout()
-fig.savefig("deepMP_K$(K)_comparison_bs$(batchsize).pdf")
+fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.pdf")
 plt.close()

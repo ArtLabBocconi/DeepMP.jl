@@ -194,16 +194,16 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
         end
             
-        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g\n",
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time)
+                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
             
         plot_info(g, 0; verbose)
 
         if saveres
             q0, qWαβ, _ = compute_overlaps(g.layers[2])
-            outf = @sprintf("%d %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ))
+            outf = @sprintf("%d %g %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ), t.time)
             println(fres, outf); flush(fres)
         end
         return Etrain
