@@ -59,12 +59,14 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r y
+    @extract reinfpar: r y ψ
     Δm = 0.
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
             @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            # @tullio x̂new[i,a] := tanh(bottom_layer.Bup[i,a] + B[i,a])
+            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
             Δ .= 1 .- x̂.^2
         end
         
@@ -110,7 +112,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
             end
             mnew = tanh.(H) .* weight_mask
             Δm = maximum(abs, m .- mnew)
-            m .= mnew
+            m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask
             @assert all(isfinite, m)
         end
