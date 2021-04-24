@@ -9,14 +9,14 @@ rd(x, n) = round(x, sigdigits=n)
 P = "6e4"
 
 K = [28*28, 101, 101, 1]
-batchsize = 10
+batchsize = 1000
 
 if batchsize == 1000
-    ρs = [1.00001, 1.00001]
-    lays = [:bp, :tap]
+    ρs = [1.00001, 1.00001, 1.00001]
+    lays = [:bp, :tap, :bpi]
 elseif batchsize == 100
-    ρs = [1.00001]
-    lays = [:bp]
+    ρs = [1.00001, 1.00001, 1.00001]
+    lays = [:bp, :tap, :bpi]
 elseif batchsize == 10
     ρs = [1.00001, 1.000001, 1.00001]
     lays = [:bp, :tap, :bpi]
@@ -33,13 +33,14 @@ fig, ax1 = plt.subplots(1)
 ax2 = ax1.inset_axes([0.27, 0.575, 0.35, 0.4])
 ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
 
-algo_color = Dict(:sgd=>"tab:red", :bp=>"tab:blue", :tap=>"tab:green", :bpi=>"dimgray")
+algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue")
+algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x")
 
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
     
-    if batchsize == 1000 && lay == :tap
+    if batchsize in [100,1000] && lay in [:tap, :bpi]
         resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
     else
         resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
@@ -91,5 +92,5 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
 #fig.tight_layout()
-fig.savefig("deepMP_K$(K)_comparison_bs$(batchsize).pdf")
+fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.pdf")
 plt.close()
