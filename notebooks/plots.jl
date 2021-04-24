@@ -9,7 +9,7 @@ rd(x, n) = round(x, sigdigits=n)
 P = "6e4"
 
 K = [28*28, 101, 101, 1]
-batchsize = 1000
+batchsize = 10
 
 if batchsize == 1000
     ρs = [1.00001, 1.00001]
@@ -33,6 +33,8 @@ fig, ax1 = plt.subplots(1)
 ax2 = ax1.inset_axes([0.27, 0.575, 0.35, 0.4])
 ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
 
+algo_color = Dict(:sgd=>"tab:red", :bp=>"tab:blue", :tap=>"tab:green", :bpi=>"dimgray")
+
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
@@ -47,26 +49,23 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
 
     pars = "ρ=$(rd(ρ-1,1))"
 
-    ls = "-"
-
-    ax1.plot(dati[:,1], dati[:,2], ls=ls, label="train $lay $pars")
-    ax1.plot(dati[:,1], dati[:,3], ls=ls, label="test $lay $pars")
+    ax1.plot(dati[:,1], dati[:,2], ls="-", label="train $lay $pars", c=algo_color[lay])
+    ax1.plot(dati[:,1], dati[:,3], ls="--", label="test $lay $pars", c=algo_color[lay])
 
     #ax1.set_xlabel("epochs", fontsize=12)
     ax1.set_ylabel("error (%)", fontsize=12)
     ax1.set_ylim(0,30)
 
-    #colorb = "tab:blue"
-    ax2.plot(dati[:,1], dati[:,4], label="$lay $pars")#, color=colorb)
-    ax3.plot(dati[:,1], dati[:,5], label="$lay lay1 $pars")#, color="orange")
+    ax2.plot(dati[:,1], dati[:,4], ls="-", label="$lay $pars", c=algo_color[lay])
+    ax3.plot(dati[:,1], dati[:,5], ls="-", label="$lay lay1 $pars", c=algo_color[lay])
     #ax3.plot(dati[:,1], dati[:,5], label="qab (first layer)", color="orange")
     
 end
 
 dati_sgd = readdlm("../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden[101, 101]_biasfalse_freezetopfalse_lr1.0_bs$(batchsize).dat")
 
-ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="--", label="train bin-sgd bs=$batchsize")
-ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize")
+ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="-", label="train bin-sgd bs=$batchsize", c=algo_color[:sgd])
+ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize", c=algo_color[:sgd])
 
 ax1.set_xlabel("epochs", fontsize=12)
 ax2.set_ylabel("q0", fontsize=10)#, color=colorb)
