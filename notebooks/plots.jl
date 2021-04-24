@@ -9,11 +9,14 @@ rd(x, n) = round(x, sigdigits=n)
 P = "6e4"
 
 K = [28*28, 101, 101, 1]
-batchsize = 100
+batchsize = 1000
 
-if batchsize == 100
-    ρs = [1.0001, 1.0001, 1.0001]
-    lays = [:bp, :tap, :bpi]
+if batchsize == 1000
+    ρs = [1.00001, 1.00001]
+    lays = [:bp, :tap]
+elseif batchsize == 100
+    ρs = [1.00001]
+    lays = [:bp]
 elseif batchsize == 10
     ρs = [1.00001, 1.000001, 1.00001]
     lays = [:bp, :tap, :bpi]
@@ -23,6 +26,7 @@ elseif batchsize == 1
 end
 
 r = 0.
+ψ = 0.5
 density = 1
 
 fig, ax1 = plt.subplots(1)
@@ -32,8 +36,13 @@ ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
-    resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-
+    
+    if batchsize == 1000 && lay == :tap
+        resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
+    else
+        resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+    end
+        
     dati = readdlm(resfile)
 
     pars = "ρ=$(rd(ρ-1,1))"

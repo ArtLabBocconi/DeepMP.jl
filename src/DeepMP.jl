@@ -182,7 +182,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
+        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
         fres = open(resfile, "w")
     end
     
