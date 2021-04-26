@@ -32,6 +32,8 @@ mutable struct TapLayer <: AbstractLayer
     isfrozen::Bool
 end
 
+@functor TapLayer
+
 function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
@@ -73,7 +75,8 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
     if mode == :forw || mode == :both
         ## FORWARD
         if !isbottomlayer(layer)
-            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            bottBup = bottom_layer.Bup
+            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             # @tullio x̂new[i,a] := tanh(bottom_layer.Bup[i,a] + B[i,a])
             # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
             Δ .= 1 .- x̂.^2
@@ -111,7 +114,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
 
             mnew = tanh.(H) .* weight_mask
-            Δm = maximum(abs, m .- mnew) 
+            Δm = mean(abs.(m .- mnew)) 
             m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask    
         end

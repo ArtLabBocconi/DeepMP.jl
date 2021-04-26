@@ -1,7 +1,7 @@
-function printvec(q::Vector{Float64}, head = "")
+function printvec(q::AbstractArray, head = "")
     print(head)
     if length(q) < 10
-        for e in q
+        for e in Array(q)
             @printf("%.6f ", e)
         end
     else

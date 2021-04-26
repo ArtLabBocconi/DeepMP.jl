@@ -23,6 +23,8 @@ mutable struct BPILayer <: AbstractLayer
     isfrozen::Bool
 end
 
+@functor BPILayer
+
 function BPILayer(K::Int, N::Int, M::Int; 
             density=1., isfrozen=false, type=:bpi)
     # for variables W
@@ -64,7 +66,8 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
-            @tullio x̂[i,a] = tanh(bottom_layer.Bup[i,a] + B[i,a])
+            bottBup = bottom_layer.Bup
+            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             # @tullio x̂new[i,a] := tanh(bottom_layer.Bup[i,a] + B[i,a])
             # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
             Δ .= 1 .- x̂.^2
@@ -111,7 +114,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
                 @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             mnew = tanh.(H) .* weight_mask
-            Δm = maximum(abs, m .- mnew)
+            Δm = mean(abs.(m .- mnew))
             m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask
             @assert all(isfinite, m)

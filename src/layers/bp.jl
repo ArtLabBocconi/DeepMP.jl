@@ -70,10 +70,6 @@ function BPLayer(K::Int, N::Int, M::Int;
             weight_mask, isfrozen)
 end
 
-function compute_g(B, ω, V)
-    GH2(B, -ω / V) / V
-end
-
 function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
@@ -84,7 +80,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
-            bottBup = bottom_layer.Bup
+            bottBup = bottom_layer.Bup # issue https://github.com/mcabbott/Tullio.jl/issues/96
             @tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             # @tullio x̂cavnew[k,i,a] := tanh(bottBup[i,a] + Bcav[k,i,a])
@@ -147,7 +143,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             # @assert all(isfinite, Hcav)
 
             mnew = tanh.(H) .* weight_mask
-            Δm = maximum(abs, m .- mnew) 
+            Δm = mean(abs.(m .- mnew))
             m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)

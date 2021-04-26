@@ -55,6 +55,8 @@ function GHt(m, x::T) where T
     return r
 end
 
+compute_g(B, ω, V) = GH2(B, -ω / V) / V
+
 function GH2(uσ, x)
     m = tanh(uσ)
     s = sign(uσ)
