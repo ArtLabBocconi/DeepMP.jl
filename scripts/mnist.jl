@@ -58,7 +58,7 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
         
         layers = [lay for _=1:(length(K)-1)]
 
-        @profview begin
+        # @profview begin
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
             usecuda, gpu_id,
@@ -71,7 +71,7 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
             altsolv = true, altconv = true,
             layers, verbose = 1,
             density, saveres = true)
-        end
+        # end #profview
     elseif i == 7   
         #@testset "SBP on MLP" begin
 
