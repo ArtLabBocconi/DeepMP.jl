@@ -2,6 +2,7 @@ using MLDatasets: MNIST, FashionMNIST
 using DeepMP
 using Test
 using Random, Statistics
+using ProfileView
 
 # Odd vs Even or 1 class vs another
 function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
@@ -57,6 +58,7 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
         
         layers = [lay for _=1:(length(K)-1)]
 
+        @profview begin
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
             usecuda, gpu_id,
@@ -69,6 +71,7 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
             altsolv = true, altconv = true,
             layers, verbose = 1,
             density, saveres = true)
+        end
     elseif i == 7   
         #@testset "SBP on MLP" begin
 

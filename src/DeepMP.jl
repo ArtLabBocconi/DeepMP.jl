@@ -59,7 +59,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
-        plotinfo >=0 && plot_info(g, plotinfo, verbose=verbose  )
+        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose  )
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
@@ -230,7 +230,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
-                                        reinfpar, altsolv, altconv, plotinfo,
+                                        reinfpar, altsolv, altconv, plotinfo=0,
                                         teacher, verbose=verbose-1)
                 converged += (δ < ϵ)
                 solved    += (e == 0)

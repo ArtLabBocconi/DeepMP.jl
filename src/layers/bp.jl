@@ -147,7 +147,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             # @assert all(isfinite, Hcav)
 
             mnew = tanh.(H) .* weight_mask
-            Δm = maximum(abs, m .- mnew) 
+            Δm = maximum(abs.(m .- mnew)) 
             m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)

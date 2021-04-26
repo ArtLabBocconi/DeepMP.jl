@@ -65,41 +65,46 @@ end
 
 function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     @extract layer: K N
-    q0 = Float64[]
-    qWαβ = Float64[]
+    # q0 = Float64[]
+    # qWαβ = Float64[]
     R = Float64[]
 
-    for k=1:K
-        # Nk = hasproperty(layer, :weight_mask) ?
-        #         sum(layer.weight_mask[k,:]) : N
-        if hasproperty(layer, :allm)
-            push!(q0, dot(layer.allm[k], layer.allm[k]) / N)
-        elseif hasproperty(layer, :m)
-            push!(q0, dot(layer.m[k,:], layer.m[k,:]) / N)
-        end
-        if teacher !== nothing
-            if hasproperty(layer, :allm)
-                push!(R, dot(layer.allm[k], teacher[k,:]) / N)
-            elseif hasproperty(layer, :m)
-                push!(R, dot(layer.m[k,:], teacher[k,:])/ N)
-            end
-        end
-        for p=k+1:K
-            # if hasproperty(layer, :weight_mask)
-            #     Np = sum(layer.weight_mask[p,:])
-            # else
-            #     Np = N
-            # end
-            if hasproperty(layer, :allm)
-                push!(qWαβ, dot(layer.allm[k], layer.allm[p])
-                        / N)
-            elseif hasproperty(layer, :m)
-                push!(qWαβ, dot(layer.m[k,:], layer.m[p,:])
-                        / N)
-            end
-            # push!(q, dot(W[l][k],W[l][p])/K[l])
-            # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])
-        end
-    end
-    q0, qWαβ, R
+    # for k=1:K
+    #     # Nk = hasproperty(layer, :weight_mask) ?
+    #     #         sum(layer.weight_mask[k,:]) : N
+    #     if hasproperty(layer, :allm)
+    #         push!(q0, dot(layer.allm[k], layer.allm[k]) / N)
+    #     elseif hasproperty(layer, :m)
+    #         push!(q0, dot(layer.m[k,:], layer.m[k,:]) / N)
+    #     end
+    #     if teacher !== nothing
+    #         if hasproperty(layer, :allm)
+    #             push!(R, dot(layer.allm[k], teacher[k,:]) / N)
+    #         elseif hasproperty(layer, :m)
+    #             push!(R, dot(layer.m[k,:], teacher[k,:])/ N)
+    #         end
+    #     end
+    #     for p=k+1:K
+    #         # if hasproperty(layer, :weight_mask)
+    #         #     Np = sum(layer.weight_mask[p,:])
+    #         # else
+    #         #     Np = N
+    #         # end
+    #         if hasproperty(layer, :allm)
+    #             push!(qWαβ, dot(layer.allm[k], layer.allm[p])
+    #                     / N)
+    #         elseif hasproperty(layer, :m)
+    #             push!(qWαβ, dot(layer.m[k,:], layer.m[p,:])
+    #                     / N)
+    #         end
+    #         # push!(q, dot(W[l][k],W[l][p])/K[l])
+    #         # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])
+    #     end
+    # end
+    m = layer.m
+    @tullio q0[k] := m[k,i] * m[k,i]
+    @tullio qWαβ[k,p] := m[k,i] * m[p,i]
+    q0 ./= N
+    qWαβ ./= N
+    return q0, qWαβ, R
 end
