@@ -20,10 +20,10 @@ fig, ax1 = plt.subplots(1)
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue")
 algo_mark = Dict(:sgd=>"x", :bp=>"o", :tap=>"^", :bpi=>"s")
 
-times_cpu = Dict(:sgd=>[600, 107, 23, 11], 
+times_cpu = Dict(:sgd=>[60, 11, 2.3, 1.], 
              :bp=>[4000, 540, 360, 93], 
-             :tap=>[3350, 376, 80, 11], 
-             :bpi=>[3700, 455, 92, 36])
+             :tap=>[2660, 376, 80, 6.5], 
+             :bpi=>[3080, 455, 92, 36])
 
 #times_gpu = Dict(:sgd=>[NaN, NaN, NaN, NaN], 
 #             :bp=>[10, 10, 10, 10], 

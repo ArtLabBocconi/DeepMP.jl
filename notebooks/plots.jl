@@ -9,7 +9,7 @@ rd(x, n) = round(x, sigdigits=n)
 P = "6e4"
 
 K = [28*28, 101, 101, 1]
-batchsize = 1000
+batchsize = 1
 
 if batchsize == 1000
     ρs = [1.00001, 1.00001, 1.00001]
