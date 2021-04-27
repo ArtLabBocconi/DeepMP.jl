@@ -1,3 +1,4 @@
 *.dat
 .ipynb_checkpoints
 L_dBP.jl
+*~
