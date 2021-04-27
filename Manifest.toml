@@ -93,12 +93,12 @@ version = "3.0.3"
 
 [[CUDAKernels]]
 deps = ["Adapt", "CUDA", "Cassette", "KernelAbstractions", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "e8c608cac70994ceaf06f6b38f734e645f6e84fc"
+git-tree-sha1 = "5ebd66bdb97f95fa7c0800199db4b458a006685e"
 repo-rev = "master"
 repo-subdir = "lib/CUDAKernels"
 repo-url = "https://github.com/JuliaGPU/KernelAbstractions.jl.git"
 uuid = "72cfdca4-0801-4ab0-bf6a-d52aa10adc57"
-version = "0.2.0"
+version = "0.3.0"
 
 [[Cairo]]
 deps = ["Cairo_jll", "Colors", "Glib_jll", "Graphics", "Libdl", "Pango_jll"]
@@ -415,9 +415,11 @@ version = "2.0.1+3"
 
 [[KernelAbstractions]]
 deps = ["Adapt", "Cassette", "InteractiveUtils", "MacroTools", "SpecialFunctions", "StaticArrays", "UUIDs"]
-git-tree-sha1 = "0158a3efe86a7c0a3162ded188172a0ad302353b"
+git-tree-sha1 = "19bb607011fe9b797c5fdb8332a8246e69acd667"
+repo-rev = "master"
+repo-url = "https://github.com/JuliaGPU/KernelAbstractions.jl.git"
 uuid = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
-version = "0.6.0"
+version = "0.7.0"
 
 [[LLVM]]
 deps = ["CEnum", "Libdl", "Printf", "Unicode"]

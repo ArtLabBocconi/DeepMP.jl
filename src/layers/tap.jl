@@ -101,9 +101,8 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         if !isbottomlayer(layer)
             # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
             @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
-            @tullio B[i,a] = m[k,i] * g[k,a]
+            @tullio B[i,a] = m[k,i] * g[k,a] - σ[k,i] * Γ[k,a]
             @tullio B[i,a] += x̂[i,a] * A[i,a]
-            @tullio B[i,a] += -σ[k,i] * Γ[k,a] #
         end
 
         if !isfrozen(layer) 
