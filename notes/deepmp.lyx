@@ -86,7 +86,11 @@ Deep Message Passing
 \end_layout
 
 \begin_layout Section
-Problem Setting
+Introduction
+\end_layout
+
+\begin_layout Section
+Learning through message passing
 \end_layout
 
 \begin_layout Standard
@@ -205,7 +209,11 @@ expansion ratio.
 \end_layout
 
 \begin_layout Section
-Deep Belief Propagation
+Belief Propagation
+\end_layout
+
+\begin_layout Subsection
+BP updates
 \end_layout
 
 \begin_layout Standard
@@ -365,8 +373,52 @@ Notice that
  on the top layer.
 \end_layout
 
+\begin_layout Subsection
+Experiments on MNIST
+\end_layout
+
+\begin_layout Subsubsection
+Varying batch-size
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $\rho$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $maxiters$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $r$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying damping
+\end_layout
+
+\begin_layout Subsubsection
+Varying dataset size
+\end_layout
+
+\begin_layout Subsubsection
+Varying initial weights
+\end_layout
+
 \begin_layout Section
-Deep AMP
+Approximate Message Passing
 \end_layout
 
 \begin_layout Paragraph
@@ -487,6 +539,42 @@ Notice that
 \end_inset
 
  on the top layer.
+\end_layout
+
+\begin_layout Subsection
+Experiments on MNIST
+\end_layout
+
+\begin_layout Subsubsection
+Varying batch-size
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $\rho$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $maxiters$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying 
+\begin_inset Formula $r$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Varying dataset size
 \end_layout
 
 \end_body
