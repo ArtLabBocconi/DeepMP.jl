@@ -39,6 +39,9 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
         xtrain = xtrain[:, idxtrain]
         ytrain = ytrain[idxtrain]
     end
+    if M < 0
+        M = 60000
+    end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
 	#@show (ytrain); error()
@@ -49,12 +52,12 @@ function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1],
                           usecuda=false, gpu_id=0, ρ=1., 
                           r=0., rstep=0, rbatch=0,
                           ψ=0., yy=-1, lay=:bp,
-                          maxiters=1, epochs=5,
+                          maxiters=1, epochs=5, fashion=true,
                           density=1)
 
     if i == 9
     
-        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=fashion, classes=[])
         
         layers = [lay for _=1:(length(K)-1)]
 

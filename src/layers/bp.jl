@@ -125,26 +125,34 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
-            if y > 0 # focusing
-                tγ = tanh(r)
-                @tullio mjs[k,i] := tanh(Hin[k,i])
-                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
-                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
-                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i]
-            else
+            # if y > 0 # focusing
+            #     tγ = tanh(r)
+            #     @tullio mjs[k,i] := tanh(Hin[k,i])
+            #     @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+            #     @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+            #     @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i]
+            # else
                 # reinforcement
-                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
-            end
-            @tullio Hcav[k,i,a] = H[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+            # end
+            @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+            # H .= ψ .* H .+ (1 - ψ) .* Hnew 
+            # Hcav .= ψ .* Hcav .+ (1 - ψ) .* Hcavnew 
+            H .= Hnew 
+            Hcav .= Hcavnew 
+            
             @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
             mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
+            # mcav .= mcavnew
             
             # @assert all(isfinite, H)
             # @assert all(isfinite, Hcav)
 
+
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= ψ .* m .+ (1-ψ) .* mnew
+            # m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
         end
