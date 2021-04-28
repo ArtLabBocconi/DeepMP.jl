@@ -24,6 +24,7 @@ Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 [compat]
 Adapt = "3.0"
 CUDA = "2.6, 3.0"
+CUDAKernels = "0.1"
 ExtractMacro = "1.0"
 Functors = "0.2"
 KernelAbstractions = "0.6, 0.7"
