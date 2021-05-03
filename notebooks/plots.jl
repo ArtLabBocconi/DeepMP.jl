@@ -7,8 +7,8 @@ plt.style.use("seaborn-whitegrid")
 rd(x, n) = round(x, sigdigits=n)
 
 P = "6e4"
-
 K = [28*28, 101, 101, 1]
+
 batchsize = 1000
 
 if batchsize == 1000
@@ -93,4 +93,4 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
 #fig.tight_layout()
 fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.pdf")
-plt.close()
+#plt.close()

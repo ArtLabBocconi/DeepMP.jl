@@ -10,7 +10,7 @@ P = "6e4"
 K = [28*28, 101, 101, 1]
 
 lays = [:bp, :tap, :bpi]
-batchsizes = [1, 10, 100, 1000]
+batchsizes = [1, 16, 128, 1024]
 
 ψ = 0.5
 density = 1
@@ -25,10 +25,16 @@ times_cpu = Dict(:sgd=>[600, 107, 23, 11],
              :tap=>[3350, 376, 80, 11], 
              :bpi=>[3700, 455, 92, 36])
 
-#times_gpu = Dict(:sgd=>[NaN, NaN, NaN, NaN], 
-#             :bp=>[10, 10, 10, 10], 
-#             :tap=>[100, 100, 100, 100], 
-#             :bpi=>[1000, 1000, 1000, 1000])
+times_gpu = Dict(:sgd=>[NaN, 3, NaN, NaN], 
+             :bp=>[NaN, 7.5, 2.5, 2.5], 
+             :tap=>[NaN, 6.5, 0.8, 0.3], 
+             :bpi=>[NaN, 6.3, 1.2, 0.8])
+
+# almeno per SGD mi sa che c'è un memory leakage
+memory_gpu = Dict(:sgd=>[NaN, 4e3, NaN, NaN], 
+             :bp=>[NaN, 22.5e3, 21e3, 22e3], 
+             :tap=>[NaN, 8e3, 8e3, 22e3], 
+             :bpi=>[NaN, 22e3, 21e3, 21e3])
 
 
 for lay in [lays..., :sgd]
