@@ -25,21 +25,21 @@ times_cpu = Dict(:sgd=>[600, 107, 23, 11],
              :tap=>[3350, 376, 80, 11], 
              :bpi=>[3700, 455, 92, 36])
 
-times_gpu = Dict(:sgd=>[NaN, 3, NaN, NaN], 
-             :bp=>[NaN, 7.5, 2.5, 2.5], 
-             :tap=>[NaN, 6.5, 0.8, 0.3], 
-             :bpi=>[NaN, 6.3, 1.2, 0.8])
+times_gpu = Dict(:sgd=>[48, 3, 0.45, 0.2], 
+             :bp=>[118, 7.5, 2.5, 2.5], 
+             :tap=>[104, 6.5, 0.8, 0.3], 
+             :bpi=>[91, 6.3, 1.2, 0.8])
 
-# almeno per SGD mi sa che c'è un memory leakage
-memory_gpu = Dict(:sgd=>[NaN, 4e3, NaN, NaN], 
-             :bp=>[NaN, 22.5e3, 21e3, 22e3], 
-             :tap=>[NaN, 8e3, 8e3, 22e3], 
-             :bpi=>[NaN, 22e3, 21e3, 21e3])
+# almeno per SGD mi sa che c'è un memory leakage (non ha senso che bs minore occupa di più oltretutto)
+memory_gpu = Dict(:sgd=>[6e3, 4e3, 4e3, NaN], 
+             :bp=>[15e3, 22.5e3, 21e3, 22e3], 
+             :tap=>[8e3, 8e3, 8e3, 22e3], 
+             :bpi=>[14e3, 22e3, 21e3, 21e3])
 
 
 for lay in [lays..., :sgd]
-    device = lay == :sgd ? "GPU" : "CPU, 12 threads"
-    ax1.plot(batchsizes, times_cpu[lay], marker=algo_mark[lay], ls=":", label="$lay ($device)", c=algo_color[lay])
+    device = lay == :sgd ? "GPU" : "GPU"
+    ax1.plot(batchsizes, times_gpu[lay], marker=algo_mark[lay], ls=":", label="$lay ($device)", c=algo_color[lay])
     #ax1.plot(batchsizes, times_gpu[lay], ls="-", label="$lay", c=algo_color[lay])
 end
 
@@ -55,4 +55,4 @@ ax1.legend(loc="best", frameon=false, fontsize=12)
 fig.suptitle("MNIST even vs odd, P=$P, K=$K")
 #fig.tight_layout()
 fig.savefig("deepMP_times_K$(K).pdf")
-plt.close()
+#plt.close()
