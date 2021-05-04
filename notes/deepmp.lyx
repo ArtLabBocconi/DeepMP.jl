@@ -4,10 +4,42 @@
 \begin_header
 \save_transient_properties true
 \origin unavailable
-\textclass article
+\textclass revtex4-1
 \begin_preamble
 \DeclareMathOperator\atanh{atanh}
 \DeclareMathOperator\sign{sign}
+
+\usepackage[T1]{fontenc}
+\setcounter{secnumdepth}{3}
+\usepackage{color}
+\usepackage{babel}
+\usepackage{mathrsfs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[unicode=true,pdfusetitle,
+ bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
+ breaklinks=false,pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]
+ {hyperref}
+\hypersetup{
+ linkcolor=burntgreen,citecolor=red,urlcolor=burntorange}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{color}
+\definecolor{burntorange}{rgb}{0.8, 0.33, 0.0}
+\definecolor{charcoal}{rgb}{0.21, 0.27, 0.31}
+\definecolor{coolblack}{rgb}{0.0, 0.28, 0.49}
+\definecolor{burntgreen}{rgb}{0.05, 0.45, 0.27}
+\definecolor{burntblue}{rgb}{0.05, 0.27, 0.8}
+
+\setcitestyle{authoryear,round}
+\setlength{\bibsep}{2mm}
+
+\makeatother
+
+\bibliography{refs.bib}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -32,6 +64,7 @@
 \output_sync 0
 \bibtex_command default
 \index_command default
+\float_placement H
 \paperfontsize default
 \spacing single
 \use_hyperref false
@@ -47,8 +80,8 @@
 \use_package stackrel 1
 \use_package stmaryrd 1
 \use_package undertilde 1
-\cite_engine basic
-\cite_engine_type default
+\cite_engine natbib
+\cite_engine_type authoryear
 \biblio_style plain
 \use_bibtopic false
 \use_indices false
@@ -83,6 +116,21 @@
 
 \begin_layout Title
 Deep Message Passing
+\end_layout
+
+\begin_layout Abstract
+Around the middle of the XVII century, a young man called Baruch Spinoza
+ was dealing with a problem tougher than yours: finding the essence of God
+ Himself.
+\end_layout
+
+\begin_layout Abstract
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section
@@ -374,50 +422,6 @@ Notice that
 \end_layout
 
 \begin_layout Subsection
-Experiments on MNIST
-\end_layout
-
-\begin_layout Subsubsection
-Varying batch-size
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $\rho$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $maxiters$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $r$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying damping
-\end_layout
-
-\begin_layout Subsubsection
-Varying dataset size
-\end_layout
-
-\begin_layout Subsubsection
-Varying initial weights
-\end_layout
-
-\begin_layout Section
 Approximate Message Passing
 \end_layout
 
@@ -460,7 +464,7 @@ As the initial condition for the iterations, we set to zero the following
 m_{ki}^{\ell,t} & =\partial_{H}\psi_{ki}^{\ell,t^{-}}\\
 \sigma_{ki}^{\ell,t} & =\partial_{H}^{2}\psi_{ki}^{\ell,t^{-}}\\
 V_{ka}^{\ell,t} & =\sum_{i}\left(\left(m_{ki}^{\ell,t}\right)^{2}\Delta_{ia}^{\ell,t}+\sigma_{ki}^{\ell,t}(\hat{x}_{ia}^{\ell,t})^{2}+\sigma_{ki}^{\ell,t}\Delta_{ia}^{\ell,t}\right)\label{eq:upd-V-2-1}\\
-\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsagsize(x̂)er\label{eq:upd-w-2-1}
+\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsagsize(x)er\label{eq:upd-w-2-1}
 \end{align}
 
 \end_inset
@@ -541,12 +545,137 @@ Notice that
  on the top layer.
 \end_layout
 
-\begin_layout Subsection
+\begin_layout Section
 Experiments on MNIST
 \end_layout
 
 \begin_layout Subsubsection
 Varying batch-size
+\end_layout
+
+\begin_layout Standard
+The command to reproduce the experiments in this section is:
+\end_layout
+
+\begin_layout Standard
+
+\color blue
+run_experiment(9; M=Int(6e4), batchsize=batchsize, usecuda=true, gpu_id=0,
+ ρ=1+1e-5, ψ=0.5, lay=lay, epochs=100)
+\end_layout
+
+\begin_layout Standard
+with batchsize={1,16,128,1024} and lay={:bp, :bpi, :tap}.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/bs1.pdf
+	scale 55
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/bs16.pdf
+	scale 55
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/bs128.pdf
+	scale 55
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/bs1024.pdf
+	scale 55
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Comparison of BP, TAP, BPI, SGD varying the batchsize (upper left: bs=1;
+ upper right: bs=16, lower left: bs=128; lower right=1024).
+ The parameter 
+\begin_inset Formula $\rho-1$
+\end_inset
+
+ is fixed in all experiments to 
+\begin_inset Formula $10^{-5}$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/times_bp.pdf
+	scale 75
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Algorithms time scaling with the batchsize.
+ The reported time refers to one epoch for each algorithm.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection
@@ -574,7 +703,15 @@ Varying
 \end_layout
 
 \begin_layout Subsubsection
+Varying damping
+\end_layout
+
+\begin_layout Subsubsection
 Varying dataset size
+\end_layout
+
+\begin_layout Subsubsection
+Varying initial weights
 \end_layout
 
 \end_body
