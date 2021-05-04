@@ -546,6 +546,10 @@ Notice that
 \end_layout
 
 \begin_layout Section
+Numerical results
+\end_layout
+
+\begin_layout Subsection
 Experiments on MNIST
 \end_layout
 
@@ -647,7 +651,7 @@ Comparison of BP, TAP, BPI, SGD varying the batchsize (upper left: bs=1;
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -712,6 +716,58 @@ Varying dataset size
 
 \begin_layout Subsubsection
 Varying initial weights
+\end_layout
+
+\begin_layout Subsection
+Experiments on RFM
+\end_layout
+
+\begin_layout Standard
+Here we present results with the Random Features Model, concerning in particular
+ the permutation symmetry.
+ In order to investigate the role of the permutation symmetry we present
+ results on the fully connected committee machine (1 hidden layer network
+ learning only the first weight layer, with the weights of the second layer
+ fixed to all ones).
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/rfm_bp.png
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Overlap varying 
+\begin_inset Formula $N$
+\end_inset
+
+ in the RFM, fully connected committee machine with various algorithms.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_body
