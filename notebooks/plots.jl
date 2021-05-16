@@ -7,22 +7,23 @@ plt.style.use("seaborn-whitegrid")
 rd(x, n) = round(x, sigdigits=n)
 
 P = "6e4"
-
 K = [28*28, 101, 101, 1]
-batchsize = 1000
+lays = [:bp, :tap, :bpi]
+
+batchsize = 1024
 
 if batchsize == 1000
     ρs = [1.00001, 1.00001, 1.00001]
-    lays = [:bp, :tap, :bpi]
 elseif batchsize == 100
     ρs = [1.00001, 1.00001, 1.00001]
-    lays = [:bp, :tap, :bpi]
 elseif batchsize == 10
     ρs = [1.00001, 1.000001, 1.00001]
-    lays = [:bp, :tap, :bpi]
 elseif batchsize == 1
     ρs = [1.000001, 1.000001, 1.000001]
-    lays = [:bp, :tap, :bpi]
+end
+
+if batchsize in [1, 16, 128, 1024]
+    ρs = [1+1e-5, 1+1e-5, 1+1e-5]
 end
 
 r = 0.
@@ -40,11 +41,7 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
     
-    if batchsize in [100,1000] && lay in [:tap, :bpi]
-        resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
-    else
-        resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_density$(density).dat"
-    end
+    resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
         
     dati = readdlm(resfile)
 
@@ -93,4 +90,4 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
 #fig.tight_layout()
 fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.pdf")
-plt.close()
+#plt.close()
