@@ -17,10 +17,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage[unicode=true,pdfusetitle,
- bookmarks=true,bookmarksnumbered=false,bookmarksopen=false,
- breaklinks=false,pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]
- {hyperref}
+%\usepackage[unicode=true,pdfusetitle, bookmarks=true,bookmarksnumbered=false,bookmarksopen=false, breaklinks=false,pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]{hyperref}
 \hypersetup{
  linkcolor=burntgreen,citecolor=red,urlcolor=burntorange}
 
@@ -42,6 +39,13 @@
 \bibliography{refs.bib}
 \end_preamble
 \use_default_options true
+\begin_modules
+initials
+eqs-within-sections
+figs-within-sections
+tabs-within-sections
+theorems-ams
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -67,9 +71,20 @@
 \float_placement H
 \paperfontsize default
 \spacing single
-\use_hyperref false
-\papersize default
-\use_geometry false
+\use_hyperref true
+\pdf_author "Fabrizio Pittorino"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered true
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\pdf_quoted_options "pdfstartview=XYZ, plainpages=false, pdfpagelabels"
+\papersize a4paper
+\use_geometry true
 \use_package amsmath 1
 \use_package amssymb 1
 \use_package cancel 1
@@ -90,10 +105,19 @@
 \justification true
 \use_refstyle 1
 \use_minted 0
+\branch 1
+\selected 0
+\filename_suffix 0
+\color #faf0e6
+\end_branch
 \index Index
 \shortcut idx
 \color #008000
 \end_index
+\leftmargin 3cm
+\topmargin 2.5cm
+\rightmargin 3cm
+\bottommargin 2.5cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -135,6 +159,30 @@ LatexCommand tableofcontents
 
 \begin_layout Section
 Introduction
+\end_layout
+
+\begin_layout Standard
+Possible TODOS:
+\end_layout
+
+\begin_layout Enumerate
+Performance of algorithms on (Fashion-)MNIST
+\end_layout
+
+\begin_layout Enumerate
+RFM & permutation symmetry on the fully-connected committee machine
+\end_layout
+
+\begin_layout Enumerate
+Teacher-Student
+\end_layout
+
+\begin_layout Enumerate
+BP (truly?) online
+\end_layout
+
+\begin_layout Enumerate
+Free energy & local entropy
 \end_layout
 
 \begin_layout Section
@@ -558,6 +606,12 @@ Varying batch-size
 \end_layout
 
 \begin_layout Standard
+Here we fix all hyper-parameters to somewhat arbitrary values and we vary
+ only the batchsize, in order to compare the performance (time) of BP with
+ binary-SGD (both on GPUs).
+\end_layout
+
+\begin_layout Standard
 The command to reproduce the experiments in this section is:
 \end_layout
 
@@ -577,19 +631,19 @@ with batchsize={1,16,128,1024} and lay={:bp, :bpi, :tap}.
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/bs1.pdf
+	filename figures/deepMP_bs1_K[784, 101, 101, 1]_comparison.png
 	scale 55
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/bs16.pdf
+	filename figures/deepMP_bs16_K[784, 101, 101, 1]_comparison.png
 	scale 55
 
 \end_inset
@@ -600,14 +654,14 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/bs128.pdf
+	filename figures/deepMP_bs128_K[784, 101, 101, 1]_comparison.png
 	scale 55
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/bs1024.pdf
+	filename figures/deepMP_bs1024_K[784, 101, 101, 1]_comparison.png
 	scale 55
 
 \end_inset
@@ -656,7 +710,7 @@ status collapsed
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/times_bp.pdf
+	filename figures/deepMP_times_K[784, 101, 101, 1].png
 	scale 75
 
 \end_inset
@@ -732,11 +786,15 @@ Here we present results with the Random Features Model, concerning in particular
 \end_layout
 
 \begin_layout Standard
+The teacher in the latent space is a perceptron (check).
+\end_layout
+
+\begin_layout Standard
 \align center
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
