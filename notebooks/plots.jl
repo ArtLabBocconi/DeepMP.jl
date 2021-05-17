@@ -9,6 +9,7 @@ rd(x, n) = round(x, sigdigits=n)
 P = "6e4"
 K = [28*28, 101, 101, 1]
 lays = [:bp, :tap, :bpi]
+lays = [:bp]
 
 batchsize = 128 # 1, 16, 128, 1024
 
@@ -23,12 +24,13 @@ elseif batchsize == 1
 end
 
 if batchsize in [1, 16, 128, 1024]
-    ρ1 = -1e-1
+    ρ1 = 1e-4
+    #ρs = [-1e-1, -1e-5, 0., 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] .+ 1.
     ρs = [ρ1, ρ1, ρ1] .+ 1.
 end
 
 r = 0.
-ψ = 0.5
+ψ = 0.
 density = 1
 
 fig, ax1 = plt.subplots(1)

@@ -1,5 +1,5 @@
 using Distributed
-distributed = false
+distributed = true
 
 usecuda = true
 if length(ARGS) ≠ 0
@@ -16,6 +16,8 @@ M = Int(6e4)
 
 ρs = [1e-4]
 ψs = [0:0.2:1;]
+@show ψs 
+error()
 
 maxiters = 1
 r = 0.
