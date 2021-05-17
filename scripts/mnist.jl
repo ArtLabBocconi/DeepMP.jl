@@ -1,8 +1,12 @@
+using Pkg
+Pkg.activate("../")
+Pkg.instantiate()
+
 using MLDatasets: MNIST, FashionMNIST
 using DeepMP
 using Test
 using Random, Statistics
-using ProfileView
+#using ProfileView
 using CUDA
 
 # Odd vs Even or 1 class vs another
@@ -49,7 +53,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(i; M=1000, batchsize=10, K = [28*28, 101, 101, 1], 
+function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1], 
                           usecuda=false, gpu_id=0, ρ=1., 
                           r=0., rstep=0, rbatch=0,
                           ψ=0., yy=-1, lay=:bp,
