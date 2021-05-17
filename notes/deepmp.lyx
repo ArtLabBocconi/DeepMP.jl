@@ -185,6 +185,21 @@ BP (truly?) online
 Free energy & local entropy
 \end_layout
 
+\begin_layout Enumerate
+\begin_inset Formula $10$
+\end_inset
+
+ classes
+\end_layout
+
+\begin_layout Enumerate
+convolutional layers
+\end_layout
+
+\begin_layout Enumerate
+biases
+\end_layout
+
 \begin_layout Section
 Learning through message passing
 \end_layout
@@ -597,8 +612,43 @@ Notice that
 Numerical results
 \end_layout
 
+\begin_layout Standard
+In this section we study a multilayer perceptron with two hidden layers
+ both of size 
+\begin_inset Formula $101$
+\end_inset
+
+ (apart from the section in which we modify the architecture) on the binary
+ classification task 
+\begin_inset Quotes eld
+\end_inset
+
+odd/even
+\begin_inset Quotes erd
+\end_inset
+
+ on the Fashion-MNIST dataset.
+ No biases are present.
+\end_layout
+
 \begin_layout Subsection
-Experiments on MNIST
+Experiments on Fashion-MNIST: performance
+\end_layout
+
+\begin_layout Standard
+We compare the BP family with binary-SGD without biases and without additional
+ parameters for batch normalization.
+ In order to keep the inputs to each hidden layer normalized we only rescale
+ the preactivations by 
+\begin_inset Formula $\frac{1}{\sqrt{N_{\text{in}}}}$
+\end_inset
+
+ where 
+\begin_inset Formula $N_{\text{in}}$
+\end_inset
+
+ is the size of the previous hidden layer - or the input size in the case
+ of the preactivations afferent to the first hidden layer.
 \end_layout
 
 \begin_layout Subsubsection
@@ -736,12 +786,50 @@ Algorithms time scaling with the batchsize.
 
 \end_layout
 
+\begin_layout Subsection
+Experiments on MNIST: parameters
+\end_layout
+
+\begin_layout Standard
+Here we stick to batchsize 128 and we vary the other hyperparameters.
+ However, we expect that some of the parameters scale with the batchsize
+ (in particular we expect 
+\begin_inset Formula $\rho-1\propto\frac{\text{batchsize}}{\text{data set size}}$
+\end_inset
+
+).
+\end_layout
+
 \begin_layout Subsubsection
 Varying 
 \begin_inset Formula $\rho$
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+-> mandati (per tutti i layers) a bs=128
+\end_layout
+
+\begin_layout Standard
+-> ora dovrei trovare un valore di 
+\begin_inset Formula $\rho$
+\end_inset
+
+ sensato
+\end_layout
+
+\begin_layout Subsubsection
+Varying damping
+\end_layout
+
+\begin_layout Subsubsection
+Varying initial weights
+\end_layout
+
+\begin_layout Subsubsection
+Varying dataset size
 \end_layout
 
 \begin_layout Subsubsection
@@ -761,15 +849,11 @@ Varying
 \end_layout
 
 \begin_layout Subsubsection
-Varying damping
+Varying the number of layers
 \end_layout
 
 \begin_layout Subsubsection
-Varying dataset size
-\end_layout
-
-\begin_layout Subsubsection
-Varying initial weights
+Varying the size of the hidden layer
 \end_layout
 
 \begin_layout Subsection
