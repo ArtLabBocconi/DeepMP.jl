@@ -10,7 +10,7 @@ P = "6e4"
 K = [28*28, 101, 101, 1]
 lays = [:bp, :tap, :bpi]
 
-batchsize = 1024
+batchsize = 128 # 1, 16, 128, 1024
 
 if batchsize == 1000
     ρs = [1.00001, 1.00001, 1.00001]
@@ -23,7 +23,8 @@ elseif batchsize == 1
 end
 
 if batchsize in [1, 16, 128, 1024]
-    ρs = [1+1e-5, 1+1e-5, 1+1e-5]
+    ρ1 = -1e-1
+    ρs = [ρ1, ρ1, ρ1] .+ 1.
 end
 
 r = 0.
@@ -41,8 +42,9 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
     layers = [lay for i in 1:(length(K)-1)]
     
-    resfile = "../results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
-        
+    resfile = "../scripts/results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
+    @show resfile
+
     dati = readdlm(resfile)
 
     pars = "ρ=$(rd(ρ-1,1))"
@@ -60,7 +62,8 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
     
 end
 
-dati_sgd = readdlm("../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden[101, 101]_biasfalse_freezetopfalse_lr1.0_bs$(batchsize).dat")
+file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden[101, 101]_biasfalse_freezetopfalse_lr1.0_bs$(batchsize).dat"
+dati_sgd = readdlm(file)
 
 ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="-", label="train bin-sgd bs=$batchsize", c=algo_color[:sgd])
 ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize", c=algo_color[:sgd])
@@ -89,5 +92,7 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
 #fig.tight_layout()
-fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.pdf")
-#plt.close()
+#fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.png")
+fig.savefig("figure_deepMP.png")
+
+plt.close()

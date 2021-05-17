@@ -54,5 +54,5 @@ ax1.legend(loc="best", frameon=false, fontsize=12)
 
 fig.suptitle("MNIST even vs odd, P=$P, K=$K")
 #fig.tight_layout()
-fig.savefig("deepMP_times_K$(K).pdf")
+fig.savefig("deepMP_times_K$(K).png")
 #plt.close()
