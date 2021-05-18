@@ -142,7 +142,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 h0 = nothing,                  # external field
                 ρ = 1.,                        # coefficient for external field from mini-batch posterior
                 rbatch = 0.,                   # reinforcement parameter for external field
-                freezetop = true,              # freeze top-layer's weights to 1
+                freezetop = false,              # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
                 altconv::Bool = false,

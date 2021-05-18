@@ -4,12 +4,48 @@
 \begin_header
 \save_transient_properties true
 \origin unavailable
-\textclass article
+\textclass revtex4-1
 \begin_preamble
 \DeclareMathOperator\atanh{atanh}
 \DeclareMathOperator\sign{sign}
+
+\usepackage[T1]{fontenc}
+\setcounter{secnumdepth}{3}
+\usepackage{color}
+\usepackage{babel}
+\usepackage{mathrsfs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+%\usepackage[unicode=true,pdfusetitle, bookmarks=true,bookmarksnumbered=false,bookmarksopen=false, breaklinks=false,pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]{hyperref}
+\hypersetup{
+ linkcolor=burntgreen,citecolor=red,urlcolor=burntorange}
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{color}
+\definecolor{burntorange}{rgb}{0.8, 0.33, 0.0}
+\definecolor{charcoal}{rgb}{0.21, 0.27, 0.31}
+\definecolor{coolblack}{rgb}{0.0, 0.28, 0.49}
+\definecolor{burntgreen}{rgb}{0.05, 0.45, 0.27}
+\definecolor{burntblue}{rgb}{0.05, 0.27, 0.8}
+
+\setcitestyle{authoryear,round}
+\setlength{\bibsep}{2mm}
+
+\makeatother
+
+\bibliography{refs.bib}
 \end_preamble
 \use_default_options true
+\begin_modules
+initials
+eqs-within-sections
+figs-within-sections
+tabs-within-sections
+theorems-ams
+\end_modules
 \maintain_unincluded_children false
 \language english
 \language_package default
@@ -32,11 +68,23 @@
 \output_sync 0
 \bibtex_command default
 \index_command default
+\float_placement H
 \paperfontsize default
 \spacing single
-\use_hyperref false
-\papersize default
-\use_geometry false
+\use_hyperref true
+\pdf_author "Fabrizio Pittorino"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered true
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\pdf_quoted_options "pdfstartview=XYZ, plainpages=false, pdfpagelabels"
+\papersize a4paper
+\use_geometry true
 \use_package amsmath 1
 \use_package amssymb 1
 \use_package cancel 1
@@ -47,8 +95,8 @@
 \use_package stackrel 1
 \use_package stmaryrd 1
 \use_package undertilde 1
-\cite_engine basic
-\cite_engine_type default
+\cite_engine natbib
+\cite_engine_type authoryear
 \biblio_style plain
 \use_bibtopic false
 \use_indices false
@@ -57,10 +105,19 @@
 \justification true
 \use_refstyle 1
 \use_minted 0
+\branch 1
+\selected 0
+\filename_suffix 0
+\color #faf0e6
+\end_branch
 \index Index
 \shortcut idx
 \color #008000
 \end_index
+\leftmargin 3cm
+\topmargin 2.5cm
+\rightmargin 3cm
+\bottommargin 2.5cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -85,8 +142,62 @@
 Deep Message Passing
 \end_layout
 
+\begin_layout Abstract
+Around the middle of the XVII century, a young man called Baruch Spinoza
+ was dealing with a problem tougher than yours: finding the essence of God
+ Himself.
+\end_layout
+
+\begin_layout Abstract
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 Introduction
+\end_layout
+
+\begin_layout Standard
+Possible TODOS:
+\end_layout
+
+\begin_layout Enumerate
+Performance of algorithms on (Fashion-)MNIST
+\end_layout
+
+\begin_layout Enumerate
+RFM & permutation symmetry on the fully-connected committee machine
+\end_layout
+
+\begin_layout Enumerate
+Teacher-Student
+\end_layout
+
+\begin_layout Enumerate
+BP (truly?) online
+\end_layout
+
+\begin_layout Enumerate
+Free energy & local entropy
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset Formula $10$
+\end_inset
+
+ classes
+\end_layout
+
+\begin_layout Enumerate
+convolutional layers
+\end_layout
+
+\begin_layout Enumerate
+biases
 \end_layout
 
 \begin_layout Section
@@ -374,50 +485,6 @@ Notice that
 \end_layout
 
 \begin_layout Subsection
-Experiments on MNIST
-\end_layout
-
-\begin_layout Subsubsection
-Varying batch-size
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $\rho$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $maxiters$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying 
-\begin_inset Formula $r$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
-Varying damping
-\end_layout
-
-\begin_layout Subsubsection
-Varying dataset size
-\end_layout
-
-\begin_layout Subsubsection
-Varying initial weights
-\end_layout
-
-\begin_layout Section
 Approximate Message Passing
 \end_layout
 
@@ -460,7 +527,7 @@ As the initial condition for the iterations, we set to zero the following
 m_{ki}^{\ell,t} & =\partial_{H}\psi_{ki}^{\ell,t^{-}}\\
 \sigma_{ki}^{\ell,t} & =\partial_{H}^{2}\psi_{ki}^{\ell,t^{-}}\\
 V_{ka}^{\ell,t} & =\sum_{i}\left(\left(m_{ki}^{\ell,t}\right)^{2}\Delta_{ia}^{\ell,t}+\sigma_{ki}^{\ell,t}(\hat{x}_{ia}^{\ell,t})^{2}+\sigma_{ki}^{\ell,t}\Delta_{ia}^{\ell,t}\right)\label{eq:upd-V-2-1}\\
-\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsagsize(x̂)er\label{eq:upd-w-2-1}
+\omega_{ka}^{\ell,t} & =\sum_{i}m_{ki}^{\ell,t}\hat{x}_{ia}^{\ell,t}+TODO:onsagsize(x)er\label{eq:upd-w-2-1}
 \end{align}
 
 \end_inset
@@ -541,12 +608,196 @@ Notice that
  on the top layer.
 \end_layout
 
+\begin_layout Section
+Numerical results
+\end_layout
+
+\begin_layout Standard
+In this section we study a multilayer perceptron with two hidden layers
+ both of size 
+\begin_inset Formula $101$
+\end_inset
+
+ (apart from the section in which we modify the architecture) on the binary
+ classification task 
+\begin_inset Quotes eld
+\end_inset
+
+odd/even
+\begin_inset Quotes erd
+\end_inset
+
+ on the Fashion-MNIST dataset.
+ No biases are present.
+\end_layout
+
 \begin_layout Subsection
-Experiments on MNIST
+Experiments on Fashion-MNIST: performance
+\end_layout
+
+\begin_layout Standard
+We compare the BP family with binary-SGD without biases and without additional
+ parameters for batch normalization.
+ In order to keep the inputs to each hidden layer normalized we only rescale
+ the preactivations by 
+\begin_inset Formula $\frac{1}{\sqrt{N_{\text{in}}}}$
+\end_inset
+
+ where 
+\begin_inset Formula $N_{\text{in}}$
+\end_inset
+
+ is the size of the previous hidden layer - or the input size in the case
+ of the preactivations afferent to the first hidden layer.
 \end_layout
 
 \begin_layout Subsubsection
 Varying batch-size
+\end_layout
+
+\begin_layout Standard
+Here we fix all hyper-parameters to somewhat arbitrary values and we vary
+ only the batchsize, in order to compare the performance (time) of BP with
+ binary-SGD (both on GPUs).
+\end_layout
+
+\begin_layout Standard
+The command to reproduce the experiments in this section is:
+\end_layout
+
+\begin_layout Standard
+
+\color blue
+run_experiment(9; M=Int(6e4), batchsize=batchsize, usecuda=true, gpu_id=0,
+ ρ=1+1e-5, ψ=0.5, lay=lay, epochs=100)
+\end_layout
+
+\begin_layout Standard
+with batchsize={1,16,128,1024} and lay={:bp, :bpi, :tap}.
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/deepMP_bs1_K[784, 101, 101, 1]_comparison.png
+	scale 55
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/deepMP_bs16_K[784, 101, 101, 1]_comparison.png
+	scale 55
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/deepMP_bs128_K[784, 101, 101, 1]_comparison.png
+	scale 55
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/deepMP_bs1024_K[784, 101, 101, 1]_comparison.png
+	scale 55
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Comparison of BP, TAP, BPI, SGD varying the batchsize (upper left: bs=1;
+ upper right: bs=16, lower left: bs=128; lower right=1024).
+ The parameter 
+\begin_inset Formula $\rho-1$
+\end_inset
+
+ is fixed in all experiments to 
+\begin_inset Formula $10^{-5}$
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/deepMP_times_K[784, 101, 101, 1].png
+	scale 75
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Algorithms time scaling with the batchsize.
+ The reported time refers to one epoch for each algorithm.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Experiments on MNIST: parameters
+\end_layout
+
+\begin_layout Standard
+Here we stick to batchsize 128 and we vary the other hyperparameters.
+ However, we expect that some of the parameters scale with the batchsize
+ (in particular we expect 
+\begin_inset Formula $\rho-1\propto\frac{\text{batchsize}}{\text{data set size}}$
+\end_inset
+
+).
 \end_layout
 
 \begin_layout Subsubsection
@@ -555,6 +806,30 @@ Varying
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+-> mandati (per tutti i layers) a bs=128
+\end_layout
+
+\begin_layout Standard
+-> ora dovrei trovare un valore di 
+\begin_inset Formula $\rho$
+\end_inset
+
+ sensato
+\end_layout
+
+\begin_layout Subsubsection
+Varying damping
+\end_layout
+
+\begin_layout Subsubsection
+Varying initial weights
+\end_layout
+
+\begin_layout Subsubsection
+Varying dataset size
 \end_layout
 
 \begin_layout Subsubsection
@@ -574,7 +849,67 @@ Varying
 \end_layout
 
 \begin_layout Subsubsection
-Varying dataset size
+Varying the number of layers
+\end_layout
+
+\begin_layout Subsubsection
+Varying the size of the hidden layer
+\end_layout
+
+\begin_layout Subsection
+Experiments on RFM
+\end_layout
+
+\begin_layout Standard
+Here we present results with the Random Features Model, concerning in particular
+ the permutation symmetry.
+ In order to investigate the role of the permutation symmetry we present
+ results on the fully connected committee machine (1 hidden layer network
+ learning only the first weight layer, with the weights of the second layer
+ fixed to all ones).
+\end_layout
+
+\begin_layout Standard
+The teacher in the latent space is a perceptron (check).
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename figures/rfm_bp.png
+	scale 25
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Overlap varying 
+\begin_inset Formula $N$
+\end_inset
+
+ in the RFM, fully connected committee machine with various algorithms.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_body
