@@ -6,7 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
-    
+
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int},
                 layertype::Vector{Symbol};
@@ -47,7 +47,7 @@ mutable struct FactorGraph
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] ∈ [:bpi, :bpi2]
-                push!(layers, BPILayer(K[l+1], K[l], M, 
+                push!(layers, BPILayer(K[l+1], K[l], M,
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
@@ -85,7 +85,7 @@ function process_density(density, L)
 end
 
 function has_same_size(g::FactorGraph, W::Vector{<:AbstractMatrix})
-    length(g.K) == length(W) + 1 || return false  
+    length(g.K) == length(W) + 1 || return false
     for i in 1:length(g.K)-1
        g.K[i] == size(W[i], 2) || return false
     end
@@ -108,20 +108,20 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
-function set_external_fields!(layer::AbstractLayer, h0; ρ=1., r=0)
+function set_external_fields!(layer::AbstractLayer, h0; ρ=1., rbatch=0)
     if hasproperty(layer, :allhext)
         for k = 1:layer.K
-            layer.allhext[k] .= ρ .* h0[k] .+ r .* layer.allhext[k]
+            layer.allhext[k] .= ρ .* h0[k] .+ rbatch .* layer.allhext[k]
         end
     else
-        layer.Hext .= ρ .* h0 .+ r .* layer.Hext
+        layer.Hext .= ρ .* h0 .+ rbatch .* layer.Hext
     end
 end
 
-function set_external_fields!(g::FactorGraph, h0; ρ=1.0, r=0)
+function set_external_fields!(g::FactorGraph, h0; ρ=1.0, rbatch=0)
     @assert length(h0) == g.L
     for l = 2:g.L+1
-        set_external_fields!(g.layers[l], h0[l-1]; ρ, r)
+        set_external_fields!(g.layers[l], h0[l-1]; ρ, rbatch)
     end
 end
 
@@ -211,18 +211,18 @@ function freezetop!(g::FactorGraph, w)
 end
 
 function update!(g::FactorGraph, reinfpar)
-    Δ = 0. 
-    
+    Δ = 0.
+
     for l = 2:g.L+1
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
-    
+
     for l = (g.L+1):-1:2
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end
-    
+
     return Δ
 end
 
