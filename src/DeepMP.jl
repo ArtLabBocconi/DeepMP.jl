@@ -152,6 +152,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 density = 1f0,                  # density of fully connected layer
                 batchsize = -1,                 # only supported by some algorithms
                 epochs = 100,
+                ϵinit = 0.,
                 verbose = 2,
                 infotime = 10,
                 usecuda = false,
@@ -171,7 +172,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
 	
-    g = FactorGraph(first(dtrain)..., K, layers; β, density, device)
+    g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
         teacher = device.(teacher)
@@ -182,7 +183,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        resfile = "results/res_Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)_density$(density).dat"
+        resfile = "results/res_"
+        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+        resfile *= "_density$(density)"
+        resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+        resfile *= ".dat"
         fres = open(resfile, "w")
     end
     

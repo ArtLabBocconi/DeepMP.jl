@@ -4,6 +4,7 @@ mutable struct BPLayer{A2,A3,M} <: AbstractLayer
     K::Int
     N::Int
     M::Int
+    ϵinit
 
     x̂::A2
     x̂cav::A3 
@@ -36,8 +37,8 @@ end
 @functor BPLayer
 
 
-function BPLayer(K::Int, N::Int, M::Int; 
-        density=1., isfrozen=false)
+function BPLayer(K::Int, N::Int, M::Int, ϵinit; 
+                 density=1., isfrozen=false)
     x̂ = zeros(F, N, M)
     x̂cav = zeros(F, K, N, M)
     Δ = zeros(F, N, M)
@@ -61,7 +62,7 @@ function BPLayer(K::Int, N::Int, M::Int;
     
     weight_mask = rand(K, N) .< density
 
-    return BPLayer(-1, K, N, M,
+    return BPLayer(-1, K, N, M, ϵinit,
             x̂, x̂cav, Δ, m, mcav, σ,
             Bup, B, Bcav, A, 
             H, Hext, Hcav,
@@ -163,12 +164,11 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 end
 
 function initrand!(layer::L) where {L <: Union{BPLayer}}
-    @extract layer: K N M weight_mask
+    @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂ x̂cav Δ m mcav σ Hext
     @extract layer: B Bcav A ω H Hcav ωcav V
     # TODO reset all variables
-    ϵ = 1f-1
-    H .= ϵ .* randn!(similar(Hext)) + Hext
+    H .= ϵinit .* randn!(similar(Hext)) + Hext
     m .= tanh.(H) .* weight_mask
     mcav .= m .* weight_mask 
     σ .= (1 .- m.^2) .* weight_mask

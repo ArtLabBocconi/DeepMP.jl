@@ -7,6 +7,7 @@ mutable struct TapLayer <: AbstractLayer
     K::Int
     N::Int
     M::Int
+    ϵinit::F
 
     x̂ 
     Δ
@@ -34,7 +35,7 @@ end
 
 @functor TapLayer
 
-function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
+function TapLayer(K::Int, N::Int, M::Int, ϵinit::F; density=1, isfrozen=false)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
     
@@ -54,7 +55,7 @@ function TapLayer(K::Int, N::Int, M::Int; density=1, isfrozen=false)
     
     weight_mask = rand(K, N) .< density
     
-    return TapLayer(-1, K, N, M,
+    return TapLayer(-1, K, N, M, ϵinit,
             x̂, Δ, m, σ,
             Bup, B, A, 
             H, Hext,
@@ -124,12 +125,10 @@ end
 
 
 function initrand!(layer::TapLayer)
-    @extract layer: K N M weight_mask
+    @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂  Δ m σ 
     @extract layer: B A ω H  V Hext
-    
-    ϵ = 1f-1
-    H .= ϵ .* randn!(similar(m)) + Hext
+    H .= ϵinit .* randn!(similar(m)) + Hext
     m .= tanh.(H) .* weight_mask
     σ .= (1 .- m.^2) .* weight_mask
 end

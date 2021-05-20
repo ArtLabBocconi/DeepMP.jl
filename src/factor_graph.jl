@@ -8,7 +8,7 @@ mutable struct FactorGraph
     device
     
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
-                K::Vector{Int},
+                K::Vector{Int}, ϵinit::F,
                 layertype::Vector{Symbol};
                 β=Inf,
                 density=1., verbose=1,
@@ -32,13 +32,13 @@ mutable struct FactorGraph
 
         for l=1:L
             if  layertype[l] == :tap
-                push!(layers, TapLayer(K[l+1], K[l], M, density=density[l]))
+                push!(layers, TapLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created TapLayer\t $(K[l])")
             elseif  layertype[l] == :tapex
                 push!(layers, TapExactLayer(K[l+1], K[l], M))
                 verbose > 0 && println("Created TapExactLayer\t $(K[l])")
             elseif  layertype[l] == :bp
-                push!(layers, BPLayer(K[l+1], K[l], M, density=density[l]))
+                push!(layers, BPLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpacc
                 push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
@@ -47,7 +47,7 @@ mutable struct FactorGraph
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] ∈ [:bpi, :bpi2]
-                push!(layers, BPILayer(K[l+1], K[l], M, 
+                push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
