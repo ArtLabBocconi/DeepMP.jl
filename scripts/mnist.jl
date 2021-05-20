@@ -49,12 +49,11 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
     end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
-	#@show (ytrain); error()
     return xtrain, ytrain, xtest, ytest
 end
 
 function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1], 
-                          usecuda=false, gpu_id=0, ρ=1., 
+                          usecuda=true, gpu_id=0, ρ=1., ϵinit=1e-1,
                           r=0., rstep=0, rbatch=0,
                           ψ=0., yy=-1, lay=:bp,
                           maxiters=1, epochs=5, fashion=true,
@@ -70,7 +69,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
             usecuda, gpu_id,
-            K = K,
+            K, ϵinit,
             seed = 1,
             maxiters, epochs,
             ρ, r, rstep, rbatch,

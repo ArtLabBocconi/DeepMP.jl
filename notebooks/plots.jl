@@ -12,23 +12,13 @@ lays = [:bp, :tap, :bpi]
 
 batchsize = 128 # 1, 16, 128, 1024
 
-if batchsize == 1000
-    ρs = [1.00001, 1.00001, 1.00001]
-elseif batchsize == 100
-    ρs = [1.00001, 1.00001, 1.00001]
-elseif batchsize == 10
-    ρs = [1.00001, 1.000001, 1.00001]
-elseif batchsize == 1
-    ρs = [1.000001, 1.000001, 1.000001]
-end
+ρ1 = 1e-4 #ρs = [-1e-1, -1e-5, 0., 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] .+ 1.
+ψ = 0.8 #ψs = [0:0.2:1;], [0.9, 0.99, 0.999, 0.9999]
 
-if batchsize in [1, 16, 128, 1024]
-    ρ1 = -1e-1
-    ρs = [ρ1, ρ1, ρ1] .+ 1.
-end
+ρs = [ρ1, ρ1, ρ1] .+ 1.
 
 r = 0.
-ψ = 0.5
+
 density = 1
 
 fig, ax1 = plt.subplots(1)
@@ -90,9 +80,21 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 #plt.grid(false)
 
-fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize")
+fig.suptitle("MNIST even vs odd, P=$P, K=$K, bs=$batchsize, ψ=$ψ")
 #fig.tight_layout()
 #fig.savefig("deepMP_bs$(batchsize)_K$(K)_comparison.png")
 fig.savefig("figure_deepMP.png")
 
 plt.close()
+
+
+
+#if batchsize == 1000
+#    ρs = [1.00001, 1.00001, 1.00001]
+#elseif batchsize == 100
+#    ρs = [1.00001, 1.00001, 1.00001]
+#elseif batchsize == 10
+#    ρs = [1.00001, 1.000001, 1.00001]
+#elseif batchsize == 1
+#    ρs = [1.000001, 1.000001, 1.000001]
+#end
