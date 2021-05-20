@@ -7,7 +7,7 @@ mutable struct TapLayer <: AbstractLayer
     K::Int
     N::Int
     M::Int
-    ϵinit::F
+    ϵinit
 
     x̂ 
     Δ
@@ -35,7 +35,7 @@ end
 
 @functor TapLayer
 
-function TapLayer(K::Int, N::Int, M::Int, ϵinit::F; density=1, isfrozen=false)
+function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
     
