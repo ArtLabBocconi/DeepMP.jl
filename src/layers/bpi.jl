@@ -3,6 +3,7 @@ mutable struct BPILayer <: AbstractLayer
     K::Int
     N::Int
     M::Int
+    ϵinit::F
 
     x̂ 
     Δ
@@ -25,7 +26,7 @@ end
 
 @functor BPILayer
 
-function BPILayer(K::Int, N::Int, M::Int; 
+function BPILayer(K::Int, N::Int, M::Int, ϵinit::F; 
             density=1., isfrozen=false, type=:bpi)
     # for variables W
     x̂ = zeros(F, N, M)
@@ -46,7 +47,7 @@ function BPILayer(K::Int, N::Int, M::Int;
     
     weight_mask = rand(F, K, N) .< density
 
-    return BPILayer(-1, K, N, M,
+    return BPILayer(-1, K, N, M, ϵinit,
             x̂, Δ, m, σ,
             Bup, B, A, 
             H, Hext,
@@ -125,12 +126,11 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
 end
 
 function initrand!(layer::L) where {L <: Union{BPILayer}}
-    @extract layer: K N M weight_mask
+    @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂ Δ m σ 
     @extract layer: B A ω H V Hext
     # TODO reset all variables
-    ϵ = 1f-1
-    H .= ϵ .* randn!(similar(m)) + Hext
+    H .= ϵinit .* randn!(similar(m)) + Hext
     m .= tanh.(H) .* weight_mask
     σ .= (1 .- m.^2) .* weight_mask
 end
