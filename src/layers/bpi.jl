@@ -3,7 +3,7 @@ mutable struct BPILayer <: AbstractLayer
     K::Int
     N::Int
     M::Int
-    ϵinit::F
+    ϵinit
 
     x̂ 
     Δ
@@ -26,7 +26,7 @@ end
 
 @functor BPILayer
 
-function BPILayer(K::Int, N::Int, M::Int, ϵinit::F; 
+function BPILayer(K::Int, N::Int, M::Int, ϵinit; 
             density=1., isfrozen=false, type=:bpi)
     # for variables W
     x̂ = zeros(F, N, M)
