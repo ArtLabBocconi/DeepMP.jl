@@ -5,10 +5,11 @@ usecuda = true
 if length(ARGS) ≠ 0
     gpu_id = parse(Int, ARGS[1])
 else
-    gpu_id = 2
+    gpu_id = 1
 end
 epochs = 100
 lays = [:bp, :bpi, :tap]
+lays = [:bpi]
 
 # parametri selezionati
 ρs = [1e-6] .+ 1.
