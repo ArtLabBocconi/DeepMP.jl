@@ -1,8 +1,10 @@
 using DelimitedFiles
 using PyPlot
+using Printf
 
 plt.style.use("default")
 plt.style.use("seaborn-whitegrid")
+cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
@@ -21,10 +23,10 @@ if !final_params
     ρ1 = ρs[7]
     ψ = 0.8         # ψs = [0:0.2:1;], [0.9, 0.99, 0.999, 0.9999]
     ϵinit = 0.    # 0., 1e-3, 1e-2, 1e-1, 5e-1, 1e0 # saveres = true
-    P = 6e4
-    #P = 6e4; batchsize = Int(P/1e2) # 1e2, 1e3, 1e4, 6e4 (bs = 1e0, 1e1, 1e2, 6e2 respectively) # saveres=true
-    maxiters = 10    # 1, 10, 50, 100 # saveres = true, ϵinit = 0 (non va bene sto valore)
-    r = 0.2          # [0:0.2:1.2;] (for maxiters=10) # saveres = true
+    #P = 6e4
+    P = 1e4; batchsize = Int(P/1e2) # 1e2, 1e3, 1e4, 6e4 (bs = 1e0, 1e1, 1e2, 6e2 respectively) # saveres=true
+    maxiters = 1    # 1, 10, 50, 100 # saveres = true, ϵinit = 0 (non va bene sto valore)
+    r = 0.          # [0:0.2:1.2;] (for maxiters=10) # saveres = true
     K = [28*28, 101, 101, 1] # [[28*28, 1-5-10-01, (1-5-10-01), (1-5-10-01), 1]]
     ρs = [ρ1, ρ1, ρ1] .+ 1.
 elseif final_params && bs == 1 # parameters for batchsize=1
@@ -103,7 +105,11 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
 end
 
 Ksgd = K[2:end-1]
-file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse_lr$(lrsgd)_bs$(batchsize).dat"
+#file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse_lr$(lrsgd)_bs$(batchsize).dat"
+file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
+P > 0 && (file *= "_P$(Int(P))")
+file *= "_lr$(lrsgd)_bs$(batchsize)"
+file *= ".dat"
 
 if plot_sgd
     dati_sgd = readdlm(file)
@@ -133,7 +139,8 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 #plt.grid(false)
 
-fig.suptitle("MNIST 2class, P=$(Int(P)), K=$K, bs=$batchsize, ψ=$ψ, maxit=$maxiters, Δinit=$ϵinit")
+Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
+fig.suptitle("MNIST 2class, P=$(Pstring), K=$K, bs=$batchsize, ψ=$ψ, maxit=$maxiters, init=$ϵinit")
 #fig.tight_layout()
 
 #fig.savefig("deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
