@@ -140,7 +140,7 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 #plt.grid(false)
 
 Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
-fig.suptitle("MNIST 2class, P=$(Pstring), K=$K, bs=$batchsize, ψ=$ψ, maxit=$maxiters, init=$ϵinit")
+fig.suptitle("FashionMNIST 2class P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
 #fig.tight_layout()
 
 #fig.savefig("deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
