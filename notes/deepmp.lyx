@@ -617,22 +617,41 @@ Numerical results
 \end_layout
 
 \begin_layout Standard
-In this section we study a multilayer perceptron with two hidden layers
- both of size 
+In this section we study multi-layer perceptrons (MLPs) on a binary classificati
+on task on the Fashion-MNIST dataset (divided arbitrarily in two classes:
+ the first/last 5 classes in the original dataset represent the first/second
+ class in the binary classification task respectively).
+ We perform experiments on the whole dataset and with a MLP with two hidden
+ layers of size 
 \begin_inset Formula $101$
 \end_inset
 
- (apart from the section in which we modify the architecture or otherwise
- stated) on the binary classification task 
+ (apart from the sections in which we modify the architecture or the dataset
+ size, or otherwise stated).
+\begin_inset Newline linebreak
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+NB: in all figures the title reports 
 \begin_inset Quotes eld
 \end_inset
 
-odd/even
+MNIST
 \begin_inset Quotes erd
 \end_inset
 
- on the Fashion-MNIST dataset.
- No biases are present.
+ while it should be 
+\begin_inset Quotes eld
+\end_inset
+
+Fashion-MNIST
+\begin_inset Quotes erd
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Subsection
@@ -642,8 +661,8 @@ Experiments on Fashion-MNIST
 \begin_layout Standard
 We compare the BP family with binary-SGD without biases and without additional
  parameters for batch normalization.
- In order to keep the inputs to each hidden layer normalized we only rescale
- the preactivations by 
+ In order to keep the pre-activations of each hidden layer normalized we
+ rescale them by 
 \begin_inset Formula $\frac{1}{\sqrt{N_{\text{in}}}}$
 \end_inset
 
@@ -651,24 +670,19 @@ We compare the BP family with binary-SGD without biases and without additional
 \begin_inset Formula $N_{\text{in}}$
 \end_inset
 
- is the size of the previous hidden layer - or the input size in the case
- of the preactivations afferent to the first hidden layer.
-\end_layout
-
-\begin_layout Standard
-We test the algorithms on the binary classification of the whole Fashion-MNIST
- dataset divided arbitrarily in two classes (the first/last 5 classes in
- the original dataset represent the first/second class in the binary classificat
-ion task respectively).
+ is the size of the previous hidden layer (or the input size in the case
+ of the preactivations afferent to the first hidden layer).
 \end_layout
 
 \begin_layout Subsubsection
-Good parameters: batch-size = 1 and batch-size 128
+Good parameters: batch-size 1 and batch-size 128
 \end_layout
 
 \begin_layout Standard
-We report comparable final train/test error between the BP family and SGD
- for some good configuration of the parameters.
+We report that it is possible to find values of the hyper-parameters such
+ that the BP family has final train/test error comparable with SGD.
+ In our experiments this holds for generic dataset sizes and generic MLPs
+ (generic depth / hidden layer size).
 \end_layout
 
 \begin_layout Standard
@@ -676,13 +690,13 @@ We report comparable final train/test error between the BP family and SGD
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
 	filename figures/deepMP_bs1_K[784, 501, 501, 501, 1]_rho1.0e-6_ψ_0.8_P60000.0_maxiters_1_r0.0_ϵinit_1.0_.png
-	scale 90
+	scale 80
 
 \end_inset
 
@@ -693,7 +707,7 @@ status collapsed
 \align center
 \begin_inset Graphics
 	filename figures/pasted/pasted25.png
-	scale 35
+	scale 30
 
 \end_inset
 
@@ -706,7 +720,7 @@ status collapsed
 \begin_layout Plain Layout
 Left panel: MLP with 3 hidden layers with 501 hidden units each, batch-size=1
  on the Fashion-MNIST dataset.
- Right panel: MLP with 2 hidden layers with 201 hidden units each, batch-size=12
+ Right panel: MLP with 2 hidden layers with 101 hidden units each, batch-size=12
 8 on the Fashion-MNIST dataset.
  Here we have selected some 
 \begin_inset Quotes eld
@@ -764,7 +778,7 @@ with batchsize={1,16,128,1024} and lay={:bp, :bpi, :tap}.
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
@@ -870,7 +884,7 @@ Algorithms time scaling with the batchsize.
 \end_layout
 
 \begin_layout Subsection
-Experiments on MNIST: parameters
+Experiments on Fashion-MNIST: parameters
 \end_layout
 
 \begin_layout Standard
@@ -881,6 +895,10 @@ Here we stick to batchsize 128 and we vary the other hyperparameters.
 \end_inset
 
 ).
+\end_layout
+
+\begin_layout Standard
+The command to reproduce the experiments is along the lines of:
 \end_layout
 
 \begin_layout Standard
@@ -1112,7 +1130,7 @@ For
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1258,7 +1276,7 @@ Varying initial weights
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1318,9 +1336,35 @@ status collapsed
 MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
  Fashion-MNIST dataset.
  We vary the parameter 
-\begin_inset Formula $\epsilon init$
+\begin_inset Formula $\epsilon$
 \end_inset
 
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+init
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
 .
 \end_layout
 
@@ -1343,12 +1387,12 @@ Ms = [Int(1e2), Int(1e3), Int(1e4), Int(6e4)]
 \end_layout
 
 \begin_layout Standard
-bs = [Int(1e0), Int(1e1), Int(1e2), Int(6e2)] 
+bs = [Int(1e0), Int(1e1), Int(1e2), Int(6e2)]
 \end_layout
 
 \begin_layout Standard
 We fix the ratio 
-\begin_inset Formula $\frac{\text{dataset size}}{\text{batch size}}=\frac{M}{b}$
+\begin_inset Formula $\frac{\text{dataset size}}{\text{batch size}}=\frac{M}{b}=10^{2}$
 \end_inset
 
 .
@@ -1359,18 +1403,18 @@ We fix the ratio
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted35.png
+	filename figures/pasted/pasted44.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted36.png
+	filename figures/pasted/pasted45.png
 	scale 20
 
 \end_inset
@@ -1380,7 +1424,7 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted37.png
+	filename figures/pasted/pasted46.png
 	scale 20
 
 \end_inset
@@ -1402,10 +1446,14 @@ status collapsed
 MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
  Fashion-MNIST dataset.
  We vary the parameter 
-\begin_inset Formula $\psi$
+\begin_inset Formula $M$
 \end_inset
 
-.
+ (with 
+\begin_inset Formula $\frac{M}{b}=10^{2}$
+\end_inset
+
+).
 \end_layout
 
 \end_inset
@@ -1504,7 +1552,8 @@ Varying
 \end_layout
 
 \begin_layout Standard
-rs = [0:0.2:1.2;] (for maxiters=10)
+rs = [0:0.2:1.2;] (for maxiters=10).
+ Da rifare.
 \end_layout
 
 \begin_layout Standard
@@ -1512,7 +1561,7 @@ rs = [0:0.2:1.2;] (for maxiters=10)
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
