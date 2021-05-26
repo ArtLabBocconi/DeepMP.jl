@@ -619,8 +619,8 @@ Numerical results
 \begin_layout Standard
 In this section we study multi-layer perceptrons (MLPs) on a binary classificati
 on task on the Fashion-MNIST dataset (divided arbitrarily in two classes:
- the first/last 5 classes in the original dataset represent the first/second
- class in the binary classification task respectively).
+ the first/last 5 classes in the original dataset respectively represent
+ the first/second class in the binary classification task).
  We perform experiments on the whole dataset and with a MLP with two hidden
  layers of size 
 \begin_inset Formula $101$
@@ -628,10 +628,6 @@ on task on the Fashion-MNIST dataset (divided arbitrarily in two classes:
 
  (apart from the sections in which we modify the architecture or the dataset
  size, or otherwise stated).
-\begin_inset Newline linebreak
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -652,6 +648,18 @@ Fashion-MNIST
 \end_inset
 
 .
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $M$
+\end_inset
+
+ and 
+\begin_inset Formula $P$
+\end_inset
+
+ are the same parameter (the dataset size).
 \end_layout
 
 \begin_layout Subsection
@@ -681,8 +689,45 @@ Good parameters: batch-size 1 and batch-size 128
 \begin_layout Standard
 We report that it is possible to find values of the hyper-parameters such
  that the BP family has final train/test error comparable with SGD.
- In our experiments this holds for generic dataset sizes and generic MLPs
- (generic depth / hidden layer size).
+ In our experiments this holds for generic dataset sizes and batch-sizes,
+ and for generic MLPs (generic depth / hidden layer size).
+\end_layout
+
+\begin_layout Standard
+In summary, up to now the best hyper-parameters (apart from 
+\begin_inset Formula $P$
+\end_inset
+
+, batch-size and 
+\begin_inset Formula $\rho$
+\end_inset
+
+ that has to be tuned similarly to the learning rate for SGD) are:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\psi=0.8$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $\epsilon init=1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $maxiters=1$
+\end_inset
+
+ (
+\begin_inset Formula $r=0$
+\end_inset
+
+)
 \end_layout
 
 \begin_layout Standard
@@ -690,13 +735,13 @@ We report that it is possible to find values of the hyper-parameters such
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
 	filename figures/deepMP_bs1_K[784, 501, 501, 501, 1]_rho1.0e-6_ψ_0.8_P60000.0_maxiters_1_r0.0_ϵinit_1.0_.png
-	scale 80
+	scale 70
 
 \end_inset
 
@@ -707,7 +752,7 @@ status open
 \align center
 \begin_inset Graphics
 	filename figures/pasted/pasted25.png
-	scale 30
+	scale 25
 
 \end_inset
 
@@ -753,9 +798,9 @@ Varying batch-size: computational performance
 \end_layout
 
 \begin_layout Standard
-Here we fix all hyper-parameters to somewhat arbitrary values and we vary
- only the batchsize, in order to compare the performance (time) of BP with
- binary-SGD (both on GPUs).
+Here we vary only the batchsize (per completezza farlo per un buon set degli
+ altri iperparametri), in order to compare the performance (time) of BP
+ with binary-SGD (both on GPUs).
 \end_layout
 
 \begin_layout Standard
@@ -778,7 +823,7 @@ with batchsize={1,16,128,1024} and lay={:bp, :bpi, :tap}.
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -1130,7 +1175,7 @@ For
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1276,7 +1321,7 @@ Varying initial weights
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1399,11 +1444,15 @@ We fix the ratio
 \end_layout
 
 \begin_layout Standard
+BP seems promising for small dataset size.
+\end_layout
+
+\begin_layout Standard
 \align center
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1477,6 +1526,11 @@ Varying
 \begin_layout Standard
 maxiterss = [1, 10, 50, 100].
  Here also time is interesting.
+ It is not very favorable in terms of time compared to SGD to choose 
+\begin_inset Formula $maxiters>1$
+\end_inset
+
+, however it is interesting how many iterations are necessary for convergence.
 \end_layout
 
 \begin_layout Standard
@@ -1484,7 +1538,7 @@ maxiterss = [1, 10, 50, 100].
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1527,7 +1581,7 @@ status collapsed
 MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
  Fashion-MNIST dataset.
  We vary the parameter 
-\begin_inset Formula $\psi$
+\begin_inset Formula $maxiters$
 \end_inset
 
 .
@@ -1561,7 +1615,7 @@ rs = [0:0.2:1.2;] (for maxiters=10).
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1586,7 +1640,11 @@ status collapsed
 \begin_layout Plain Layout
 MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
  Fashion-MNIST dataset.
- We vary the parameter 
+ We fix 
+\begin_inset Formula $maxiters=10$
+\end_inset
+
+ (just to be faster) and we vary the parameter 
 \begin_inset Formula $r$
 \end_inset
 
@@ -1615,8 +1673,31 @@ Varying the number of layers and the size of the hidden layer
 
 \begin_layout Standard
 We fix some reasonable values of the hyperparameters (see previous experiments,
- in particular: ) and want to check if the algorithm converges and the time
- scaling.
+ in particular: 
+\begin_inset Formula $P=6e4$
+\end_inset
+
+, 
+\begin_inset Formula $bs=128$
+\end_inset
+
+, 
+\begin_inset Formula $\psi=0.8$
+\end_inset
+
+, 
+\begin_inset Formula $\epsilon init=1$
+\end_inset
+
+, 
+\begin_inset Formula $maxiters=1$
+\end_inset
+
+, 
+\begin_inset Formula $r=0$
+\end_inset
+
+) and want to check if the algorithm converges (and todo the time scaling).
 \end_layout
 
 \begin_layout Standard
