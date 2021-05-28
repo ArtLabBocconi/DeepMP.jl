@@ -1444,26 +1444,22 @@ We fix the ratio
 \end_layout
 
 \begin_layout Standard
-BP seems promising for small dataset size.
-\end_layout
-
-\begin_layout Standard
 \align center
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted44.png
+	filename figures/pasted/pasted51.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted45.png
+	filename figures/pasted/pasted52.png
 	scale 20
 
 \end_inset
@@ -1473,14 +1469,14 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted46.png
+	filename figures/pasted/pasted49.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted38.png
+	filename figures/pasted/pasted50.png
 	scale 20
 
 \end_inset
@@ -1538,7 +1534,7 @@ maxiterss = [1, 10, 50, 100].
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
