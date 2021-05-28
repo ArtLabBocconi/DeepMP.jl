@@ -12,6 +12,7 @@ using LoopVectorization
 using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
 using Functors
+import Cassette
 CUDA.allowscalar(false)
 
 # using PyPlot
