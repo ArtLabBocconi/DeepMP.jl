@@ -31,7 +31,10 @@ mutable struct FactorGraph
         # verbose > 0 &&  println("Created InputLayer")
 
         for l=1:L
-            if  layertype[l] == :tap
+            if  layertype[l] == :mf
+                push!(layers, MeanFieldLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
+                verbose > 0 && println("Created MeanFieldLayer\t $(K[l])")
+            elseif  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created TapLayer\t $(K[l])")
             elseif  layertype[l] == :tapex
