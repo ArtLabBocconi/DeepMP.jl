@@ -1,6 +1,7 @@
 using Pkg
-Pkg.activate("../")
-Pkg.instantiate()
+# Pkg.activate("../")
+# Pkg.activate("./")
+# Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST
 using DeepMP

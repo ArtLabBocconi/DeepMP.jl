@@ -35,7 +35,7 @@ Ms = [Int(1e2), Int(1e3), Int(1e4), Int(6e4)]; bs = [Int(1e0), Int(1e1), Int(1e2
 #      [28*28, 101, 101, 101, 1], [28*28, 501, 501, 501, 1], [28*28, 1001, 1001, 1001, 1]]
 
 # TODO: pmap non funziona bene, forse per la gpu? la gpu potrebbe riempirsi troppo. bisogna occuparsene.
-
+lays = [:bp]
 # TODO: usare un dizionario
 params = []
 for lay in lays, ρ in ρs, ψ in ψs, (M, b) in zip(Ms, bs), maxiters in maxiterss, r in rs, ϵinit in ϵinits, K in Ks
