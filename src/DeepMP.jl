@@ -244,7 +244,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
             end
             Etrain = report(epoch; t, converged, solved, meaniters)
-            Etrain == 0 && break
+            #Etrain == 0 && break
         end
         saveres && close(fres)
     end

@@ -57,7 +57,8 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
                           r=0., rstep=0, rbatch=0,
                           ψ=0., yy=-1, lay=:bp,
                           maxiters=1, epochs=5, fashion=true,
-                          density=1)
+                          density=1, 
+                          altsolv=true, altconv=true)
 
     if i == 9
     
@@ -75,7 +76,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
             ρ, r, rstep, rbatch,
             ψ, yy,
             batchsize,
-            altsolv = true, altconv = true,
+            altsolv, altconv,
             layers, verbose = 1,
             density, saveres = true)
         # end #profview

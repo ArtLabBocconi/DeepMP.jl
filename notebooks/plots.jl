@@ -17,17 +17,17 @@ saveres = true
 final_params = false
 bs = 0
 if !final_params
-    batchsizes = [1, 16, 128, 1024] # saveres = false, ψ=0.5
-    batchsize = batchsizes[3]
+    K = [28*28, 101, 101, 1] # [[28*28, 1-5-10-01, (1-5-10-01), (1-5-10-01), 1]]
     ρs = [-1e-1, -1e-5, 0., 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] # saveres=false, ψ=0.5
-    ρ1 = ρs[7]
+    ρ1 = 1e-4
+    ϵinit = 1.    # 0., 1e-3, 1e-2, 1e-1, 5e-1, 1e0 # saveres = true
     ψ = 0.8         # ψs = [0:0.2:1;], [0.9, 0.99, 0.999, 0.9999]
-    ϵinit = 0.    # 0., 1e-3, 1e-2, 1e-1, 5e-1, 1e0 # saveres = true
-    #P = 6e4
-    P = 1e4; batchsize = Int(P/1e2) # 1e2, 1e3, 1e4, 6e4 (bs = 1e0, 1e1, 1e2, 6e2 respectively) # saveres=true
     maxiters = 1    # 1, 10, 50, 100 # saveres = true, ϵinit = 0 (non va bene sto valore)
     r = 0.          # [0:0.2:1.2;] (for maxiters=10) # saveres = true
-    K = [28*28, 101, 101, 1] # [[28*28, 1-5-10-01, (1-5-10-01), (1-5-10-01), 1]]
+    #P = 6e4
+    batchsizes = [1, 16, 128, 1024] # saveres = false, ψ=0.5
+    batchsize = batchsizes[3]
+    P = 1e3; batchsize = Int(P/1e2) # 1e2, 1e3, 1e4, 6e4 (bs = 1e0, 1e1, 1e2, 6e2 respectively) # saveres=true
     ρs = [ρ1, ρ1, ρ1] .+ 1.
 elseif final_params && bs == 1 # parameters for batchsize=1
     batchsize = 1 
@@ -39,8 +39,7 @@ elseif final_params && bs == 1 # parameters for batchsize=1
     ϵinit = 1e0   
     K = [28*28, 501, 501, 501, 1] 
     ρs = [ρ1, ρ1, ρ1] .+ 1.
-elseif final_params && bs == 128
-    # for beautiful final figure with bs=128
+elseif final_params && bs == 128 # for beautiful final figure with bs=128
     batchsize = 128
     ρ1 = 1e-5       
     ψ = 0.8         
@@ -50,8 +49,7 @@ elseif final_params && bs == 128
     ϵinit = 1e0
     K = [28*28, 101, 101, 1]
     ρs = [ρ1, ρ1*10, ρ1] .+ 1.
-elseif final_params && bs == 0
-    # for varying architecture, saveres=true
+elseif final_params && bs == 0 # for varying architecture, saveres=true
     batchsize = 128
     ρ1 = 1e-4 
     ψ = 0.8         
