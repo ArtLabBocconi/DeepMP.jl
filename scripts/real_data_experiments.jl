@@ -3,7 +3,7 @@ using Pkg
 # Pkg.activate("./")
 # Pkg.instantiate()
 
-using MLDatasets: MNIST, FashionMNIST
+using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
 using Test
 using Random, Statistics
@@ -11,21 +11,26 @@ using Random, Statistics
 using CUDA
 
 # Odd vs Even or 1 class vs another
-function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
+function get_dataset(M=-1; classes=[], seed=17, dataset=:mnist, normalize=true)
     seed > 0 && Random.seed!(seed)
-    namedir = fashion ? "FashionMNIST" : "MNIST"
+    namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
+                                     dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
+                                     dataset == :cifar10 ? ("CIFAR10", CIFAR10, (1,2,4)) :
+                                     dataset == :cifar100 ? ("CIFAR100", CIFAR100, (1,2,4)) : 
+                                     error("uknown dataset")
+    
     datadir = joinpath(homedir(), "Datasets", namedir)
-    Dataset = fashion ? FashionMNIST : MNIST
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
+    @assert all(isinteger.(ytest))
     if normalize
-        mn = mean(xtrain, dims=(1,2,3))
-        st = std(xtrain, dims=(1,2,3))
+        mn = mean(xtrain, dims=reduce_dims)
+        st = std(xtrain, dims=reduce_dims)
         xtrain = (xtrain .- mn) ./ (st .+ 1e-5)
         xtest = (xtest .- mn) ./ (st .+ 1e-5)
     end
-    xtrain = reshape(xtrain, :, 60000)
-    xtest = reshape(xtest, :, 10000)
+    xtrain = reshape(xtrain, :, size(xtrain)[end])
+    xtest = reshape(xtest, :, size(xtest)[end])
     if !isempty(classes)
         @assert length(classes) == 2
         filter = x -> x==classes[1] || x==classes[2]
@@ -46,7 +51,7 @@ function get_mnist(M=60000; classes=[], seed=17, fashion=false, normalize=true)
         ytrain = ytrain[idxtrain]
     end
     if M < 0
-        M = 60000
+        M = size(xtrain)[end]
     end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
@@ -57,13 +62,13 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
                           usecuda=true, gpu_id=0, ρ=1., ϵinit=1e-1,
                           r=0., rstep=0, rbatch=0,
                           ψ=0., yy=-1, lay=:bp,
-                          maxiters=1, epochs=5, fashion=true,
+                          maxiters=1, epochs=5, dataset=:fashion,
                           density=1, 
                           altsolv=true, altconv=true)
 
     if i == 9
     
-        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=fashion, classes=[])
+        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, classes=[])
         
         layers = [lay for _=1:(length(K)-1)]
 
@@ -84,7 +89,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
     elseif i == 7   
         #@testset "SBP on MLP" begin
 
-        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, classes=[])
         
         layers = [lay for _=1:(length(K)-1)]
 
@@ -105,7 +110,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         
         #@testset "SBP on MLP" begin
 
-        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, classes=[])
+        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, classes=[])
         
         layers = [:bp for _=1:(length(K)-1)]
 
@@ -125,7 +130,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
 	elseif i == 1
         @testset "BP on PERCEPTRON" begin
         M = 100
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 1]
 
         layers=[:bp]
@@ -139,7 +144,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         @test E == 0 
         
         M = 300
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 1]
 
         layers=[:bpacc]
@@ -155,7 +160,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
     elseif i == 2
         @testset "SBP on PERCEPTRON" begin
         M = 300 # 
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 1]
         
         batchsize = 1
@@ -212,7 +217,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
     elseif i == 3
         @testset "STAP on PERCEPTRON" begin
         M = 300
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 1]
         
         batchsize = 1
@@ -251,7 +256,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
     elseif i == 5
         @testset "SBP on COMMITTEE" begin
         M = 1000
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 7, 1]
         
         # batchsize = 1
@@ -269,7 +274,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         # @test E < 5 
         
         # M = 1000
-        # xtrain, ytrain, xtest, ytest = get_mnist(M)
+        # xtrain, ytrain, xtest, ytest = get_dataset(M)
         # K = [28*28, 7, 1]
         
         # batchsize = 1
@@ -287,7 +292,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         # @test E < 5
         
         M = 1000
-        xtrain, ytrain, xtest, ytest = get_mnist(M)
+        xtrain, ytrain, xtest, ytest = get_dataset(M)
         K = [28*28, 7, 1]
         
         batchsize = 1
@@ -309,7 +314,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
     elseif i == 6
         @testset "SBP on MLP" begin
         # M = 10000
-        # xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, 
+        # xtrain, ytrain, xtest, ytest = get_dataset(M, dataset, 
         #                                     classes=[4,5])
         # K = [28*28, 1]
         
@@ -327,7 +332,7 @@ function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1],
         # end
 
         M = 2000
-        xtrain, ytrain, xtest, ytest = get_mnist(M, fashion=true, 
+        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, 
                                                  classes=[4,5])
         K = [28*28, 15, 15, 1]
         

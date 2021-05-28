@@ -1,7 +1,7 @@
 ###########################
-#       TAP LAYER
+#       MeanField LAYER
 #######################################
-mutable struct TapLayer <: AbstractLayer
+mutable struct MeanFieldLayer <: AbstractLayer
     l::Int
 
     K::Int
@@ -33,9 +33,9 @@ mutable struct TapLayer <: AbstractLayer
     isfrozen::Bool
 end
 
-@functor TapLayer
+@functor MeanFieldLayer
 
-function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
+function MeanFieldLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
     
@@ -55,7 +55,7 @@ function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
     
     weight_mask = rand(K, N) .< density
     
-    return TapLayer(-1, K, N, M, ϵinit,
+    return MeanFieldLayer(-1, K, N, M, ϵinit,
             x̂, Δ, m, σ,
             Bup, B, A, 
             H, Hext,
@@ -65,7 +65,7 @@ function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
 end
 
 
-function update!(layer::TapLayer, reinfpar; mode=:both)
+function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m σ 
     @extract layer: Bup B  A H Hext ω  V g
@@ -81,11 +81,8 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             Δ .= 1 .- x̂.^2
         end
         
-        # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        # V[k,a] = σ[k,i] * (x̂.^2)[i,a]
         V .= σ * x̂.^2 + m.^2 * Δ 
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        @tullio ω[k,a] += - g[k,a] * V[k,a] 
         V .+= σ * Δ .+ 1f-8 
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
@@ -95,21 +92,21 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
         @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], √V[k,a])  avx=false
-        @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
+        # @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
 
         if !isbottomlayer(layer)
             # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
-            @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
-            @tullio B[i,a] = m[k,i] * g[k,a] - σ[k,i] * Γ[k,a]
-            @tullio B[i,a] += x̂[i,a] * A[i,a]
+            # @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
+            @tullio B[i,a] = m[k,i] * g[k,a] #O - σ[k,i] * Γ[k,a]
+            #O @tullio B[i,a] += x̂[i,a] * A[i,a]
         end
 
         if !isfrozen(layer) 
-            # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
-            @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
+            #O G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
+            # @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio H[k,i] = Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
-            @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
+            @tullio H[k,i] = Hin[k,i]  + r*H[k,i] + Hext[k,i] #O + m[k,i] * G[k,i]
+            #O @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew)) 
@@ -122,7 +119,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
 end
 
 
-function initrand!(layer::TapLayer)
+function initrand!(layer::MeanFieldLayer)
     @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂  Δ m σ 
     @extract layer: B A ω H  V Hext
@@ -131,7 +128,7 @@ function initrand!(layer::TapLayer)
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
+function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{MeanFieldLayer}}
     @extract layer: K N M 
     @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)
@@ -139,18 +136,18 @@ function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
     Δ .= 0
 end
 
-function getW(layer::L) where L <: Union{TapLayer}
+function getW(layer::L) where L <: Union{MeanFieldLayer}
     return sign.(layer.m) .* layer.weight_mask
 end
 
-function forward(layer::L, x) where L <: Union{TapLayer}
+function forward(layer::L, x) where L <: Union{MeanFieldLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
     return sign.(W*x .+ 1f-10)
 end
 
-function fixW!(layer::L, w=1.) where {L <: Union{TapLayer}}
+function fixW!(layer::L, w=1.) where {L <: Union{MeanFieldLayer}}
     @extract layer: K N M m σ  weight_mask
     m .= w .* weight_mask
     σ .= 0
