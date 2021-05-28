@@ -1,5 +1,5 @@
 ###########################
-#       TAP LAYER
+#       MeanField LAYER
 #######################################
 mutable struct MeanFieldLayer <: AbstractLayer
     l::Int

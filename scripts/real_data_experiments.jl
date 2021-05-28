@@ -11,7 +11,7 @@ using Random, Statistics
 using CUDA
 
 # Odd vs Even or 1 class vs another
-function get_dataset(M=60000; classes=[], seed=17, dataset=:mnist, normalize=true)
+function get_dataset(M=-1; classes=[], seed=17, dataset=:mnist, normalize=true)
     seed > 0 && Random.seed!(seed)
     namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
                                      dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
