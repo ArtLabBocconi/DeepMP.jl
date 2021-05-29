@@ -49,7 +49,7 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
-            elseif  layertype[l] ∈ :bpi
+            elseif  layertype[l] == :bpi
                 push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
