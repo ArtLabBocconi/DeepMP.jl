@@ -204,6 +204,9 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
+    for lay in g.layers[2:end-1]
+        lay.B .= 0  # set to 0 the messages going down
+    end
 end
 
 function freezetop!(g::FactorGraph, w)
