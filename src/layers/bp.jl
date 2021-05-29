@@ -126,13 +126,13 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
-            # if y > 0 # focusing
-            #     tγ = tanh(r)
-            #     @tullio mjs[k,i] := tanh(Hin[k,i])
-            #     @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
-            #     @tullio Hfoc[k,i] := atanh(mfoc[k,i])
-            #     @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i]
-            # else
+            if y > 0 # focusing
+                tγ = tanh(r)
+                @tullio mjs[k,i] := tanh(Hin[k,i])
+                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+                @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i]
+            else
                 # reinforcement
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             # end
