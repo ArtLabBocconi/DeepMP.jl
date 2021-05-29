@@ -49,7 +49,7 @@ mutable struct FactorGraph
             elseif  layertype[l] == :bpex
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
-            elseif  layertype[l] ∈ [:bpi, :bpi2]
+            elseif  layertype[l] == :bpi
                 push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
@@ -204,8 +204,19 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
+    
+    # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
-        lay.B .= 0  # set to 0 the messages going down
+        lay.B .= 0  
+        if hasproperty(lay, :Bcav)
+            lay.Bcav .= 0
+        end
+        if hasproperty(lay, :mcav)
+            lay.mcav .= lay.m
+        end
+        if hasproperty(lay, :g)
+            lay.g .= 0
+        end
     end
 end
 

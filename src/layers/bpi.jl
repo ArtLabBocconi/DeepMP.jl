@@ -69,8 +69,6 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
-            # @tullio x̂new[i,a] := tanh(bottom_layer.Bup[i,a] + B[i,a])
-            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
             Δ .= 1 .- x̂.^2
         end
         
@@ -82,43 +80,32 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-        if layer.type == :bpi
-            @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
-        end
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
-            if layer.type == :bpi
-                @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-            # if layer.type == :bpi2
-            #     @tullio B[i,a] = m[k,i] * (g[k,i,a]
-            else
-                # A .= (m.^2 + σ)' * Γ - σ' * g.^2
-                @tullio B[i,a] = m[k,i] * g[k,a]
-            end
+            @tullio B[i,a] = m[k,i] * gcav[k,i,a]
         end
 
         if !isfrozen(layer)
-            if layer.type == :bpi 
-                @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
-            else
-                @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            end
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
             if y > 0 # focusing
                 tγ = tanh(r)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
                 @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
                 @tullio Hfoc[k,i] := atanh(mfoc[k,i])
-                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
+                @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
             else
                 # reinforcement 
-                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
+            H .= ψ .* H .+ (1-ψ) .* Hnew
+
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
-            m .= ψ .* m .+ (1-ψ) .* mnew
+            m .= mnew
             σ .= (1 .- m.^2) .* weight_mask
-            @assert all(isfinite, m)
+            # @assert all(isfinite, m)
         end
     end
     
