@@ -8,8 +8,6 @@
 \begin_preamble
 \DeclareMathOperator\atanh{atanh}
 \DeclareMathOperator\sign{sign}
-\DeclareMathOperator\erfcx{erfcx}
-
 
 \usepackage[T1]{fontenc}
 \setcounter{secnumdepth}{3}
@@ -709,32 +707,30 @@ This gives, for
 
 \begin_layout Standard
 \begin_inset Formula 
-\begin{equation}
-\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}=\begin{cases}
--\frac{1}{\sqrt{V_{k}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k}+V_{k^{*}}}}\right) & k\neq k^{*}\\
-\sum_{k'\neq k^{*}}\frac{1}{\sqrt{V_{k'}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k'}+V_{k^{*}}}}\right) & k=k^{*}
-\end{cases}
-\end{equation}
+\[
+\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}=\sum_{k\neq k^{*}}\log\mathbb{E}_{\epsilon\sim\mathcal{N}(0,1)}H\left(-\frac{\omega_{k^{*}}+\epsilon\sqrt{V_{k^{*}}}-\omega_{k}}{\sqrt{V_{k}}}\right)
+\]
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Standard
-Notice that 
-\begin_inset Formula $\partial_{\omega_{k^{*}}}\tilde{\phi}_{k^{*}}=-\sum_{k\neq k^{*}}\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}$
-\end_inset
-
-.
- In last formulas we used the definition
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula 
-\begin{equation}
-GH(x)=\frac{G(x)}{H(x)}=\frac{\sqrt{2/\pi}}{\erfcx(x/2)}
-\end{equation}
+\[
+GH(x)=\frac{\sqrt{2/}}{}√(T(2)/π)/erfcx(x/√T(2))
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\]
 
 \end_inset
 
