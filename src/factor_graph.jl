@@ -214,6 +214,9 @@ function set_input_output!(g, x, y)
         if hasproperty(lay, :mcav)
             lay.mcav .= lay.m
         end
+        if hasproperty(lay, :g)
+            lay.g .= 0
+        end
     end
 end
 
