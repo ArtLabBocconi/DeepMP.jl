@@ -135,7 +135,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             else
                 # reinforcement
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
-            # end
+            end
             @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             H .= ψ .* H .+ (1 - ψ) .* Hnew 
             Hcav .= ψ .* Hcav .+ (1 - ψ) .* Hcavnew 
