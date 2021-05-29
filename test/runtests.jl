@@ -30,7 +30,7 @@ end
 #     include("mnist.jl")
 # end
 
-# @testset "BPI2" begin
+# @testset "BPI2" begin # TODO change to MeanField
 #     include("bpi2.jl")
 # end
 

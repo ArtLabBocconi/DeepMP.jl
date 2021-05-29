@@ -92,25 +92,19 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
         @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], √V[k,a])  avx=false
-        # @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
-
+        
         if !isbottomlayer(layer)
-            # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
-            # @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
-            @tullio B[i,a] = m[k,i] * g[k,a] #O - σ[k,i] * Γ[k,a]
-            #O @tullio B[i,a] += x̂[i,a] * A[i,a]
+            @tullio B[i,a] = m[k,i] * g[k,a]
         end
 
         if !isfrozen(layer) 
-            #O G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
-            # @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio H[k,i] = Hin[k,i]  + r*H[k,i] + Hext[k,i] #O + m[k,i] * G[k,i]
-            #O @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
-
+            @tullio Hnew[k,i] := Hin[k,i]  + r*H[k,i] + Hext[k,i]
+            
+            H .= ψ .* H .+ (1-ψ) .* Hnew
             mnew = tanh.(H) .* weight_mask
-            Δm = mean(abs.(m .- mnew)) 
-            m .= ψ .* m .+ (1-ψ) .* mnew
+            Δm = mean(abs.(m .- mnew))
+            m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
         end
     end
