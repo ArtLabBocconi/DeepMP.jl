@@ -105,7 +105,7 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= mnew
-            σ .= (1 .- m.^2) .* weight_mask    
+            σ .= (1 .- m.^2) .* weight_mask
         end
     end
     

@@ -108,13 +108,15 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
             @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio H[k,i] = Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
-            @tullio H[k,i] += -Δ[i,a] * Γ[k,a]
+            @tullio Hnew[k,i] := Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
+            @tullio Hnew[k,i] += -Δ[i,a] * Γ[k,a]
+
+            H .= ψ .* H .+ (1-ψ) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
-            Δm = mean(abs.(m .- mnew)) 
-            m .= ψ .* m .+ (1-ψ) .* mnew
-            σ .= (1 .- m.^2) .* weight_mask    
+            Δm = mean(abs.(m .- mnew))
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask
         end
     end
     
