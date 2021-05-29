@@ -68,9 +68,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
-            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
-            # @tullio x̂new[i,a] := tanh(bottom_layer.Bup[i,a] + B[i,a])
-            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
+            @tullio x̂[i,a] = tanh(bottBup[i,a])
             Δ .= 1 .- x̂.^2
         end
         
@@ -109,17 +107,14 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
                 @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
                 @tullio Hfoc[k,i] := atanh(mfoc[k,i])
-                @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
+                @tullio H[k,i] = Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
             else
                 # reinforcement 
-                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio H[k,i] = Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-            H .= ψ .* H .+ (1-ψ) .* Hnew
-
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
-            # m .= ψ .* m .+ (1-ψ) .* mnew
-            m .= mnew
+            m .= ψ .* m .+ (1-ψ) .* mnew
             σ .= (1 .- m.^2) .* weight_mask
             @assert all(isfinite, m)
         end
