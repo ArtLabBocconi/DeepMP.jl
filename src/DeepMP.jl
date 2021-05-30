@@ -107,7 +107,7 @@ function solve(; K::Vector{Int} = [101, 3],
     if TS
         teacher = rand_teacher(Kteacher; density=density_teacher)
         ytrain = Int.(forward(teacher, xtrain) |> vec)
-        xtest = rand(F[-1, 1], D, M)
+        xtest = rand(F[-1, 1], D, Mtest)
         ytest = Int.(forward(teacher, xtest) |> vec)
     else
         teacher = nothing
@@ -155,7 +155,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 epochs = 100,
                 ϵinit = 0.,
                 verbose = 2,
-                infotime = 10,
                 usecuda = false,
                 gpu_id = -1,
                 saveres = false,
@@ -217,17 +216,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
 
 
     if batchsize <= 0
-        
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
                             altsolv, altconv, plotinfo,
                             teacher, verbose,
                             xtest, ytest)
         
     else
-        
         ## MINI_BATCH message passing
-        # TODO check reinfparams updates in mini-batch case
-        
+        # TODO check reinfparams updates in mini-batch case   
         report(0)
         for epoch = 1:epochs
             converged = solved = meaniters = 0
@@ -247,11 +243,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
         end
-        saveres && close(fres)
     end
+    saveres && close(fres)
     
-    E = sum(vec(forward(g, xtrain)) .!= ytrain)
-    return g, getW(g), teacher, E, it
+    Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
+    return g, getW(g), teacher, Etrain, it
 end
 
 end #module

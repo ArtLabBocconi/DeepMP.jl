@@ -1,4 +1,4 @@
-mutable struct BPILayer <: AbstractLayer
+mutable struct ArgmaxLayer <: AbstractLayer
     l::Int
     K::Int
     N::Int
@@ -24,9 +24,9 @@ mutable struct BPILayer <: AbstractLayer
     isfrozen::Bool
 end
 
-@functor BPILayer
+@functor ArgmaxLayer
 
-function BPILayer(K::Int, N::Int, M::Int, ϵinit; 
+function ArgmaxLayer(K::Int, N::Int, M::Int, ϵinit; 
             density=1., isfrozen=false, type=:bpi)
     # for variables W
     x̂ = zeros(F, N, M)
@@ -47,7 +47,7 @@ function BPILayer(K::Int, N::Int, M::Int, ϵinit;
     
     weight_mask = rand(F, K, N) .< density
 
-    return BPILayer(-1, K, N, M, ϵinit,
+    return ArgmaxLayer(-1, K, N, M, ϵinit,
             x̂, Δ, m, σ,
             Bup, B, A, 
             H, Hext,
@@ -57,7 +57,18 @@ function BPILayer(K::Int, N::Int, M::Int, ϵinit;
             weight_mask, isfrozen)
 end
 
-function update!(layer::BPILayer, reinfpar; mode=:both)
+function compute_g_argmax(y, ω, V)
+    # transform y (vector of integers) to 2d array of CartesianIndex
+    yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
+    yc = reshape(yc, 1, :)
+    Vtot = .√(V .+ V[yc])
+    dω = ω[yc] .- ω 
+    g = @. -GH(-dω / Vtot) / Vtot 
+    g[yc] .= .- sum(g, dims=1) .+ g[yc]  
+    return g
+end
+
+function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
@@ -73,22 +84,25 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
         end
         
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
     end
     if mode == :back || mode == :both
-        Btop = top_layer.B 
-        @assert size(Btop) == (K, M)
-        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
+        ytrue = top_layer.y
+        @assert size(ytrue) == (M,)
+        g = compute_g_argmax(ytrue, ω, V)
+        # @tullio gcav[k,i,a] := g[k,a]
+        # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
-            @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            # @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            @tullio B[i,a] = m[k,i] * g[k,a]
         end
 
         if !isfrozen(layer)
-            @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+            # @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+            @tullio Hin[k,i] := g[k,a] * x̂[i,a]
             if y > 0 # focusing
                 tγ = tanh(r)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
@@ -112,7 +126,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
     return Δm
 end
 
-function initrand!(layer::L) where {L <: Union{BPILayer}}
+function initrand!(layer::L) where {L <: Union{ArgmaxLayer}}
     @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂ Δ m σ 
     @extract layer: B A ω H V Hext
@@ -122,7 +136,7 @@ function initrand!(layer::L) where {L <: Union{BPILayer}}
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPILayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{ArgmaxLayer}}
     @extract layer: K N M 
     @extract layer: x̂ Δ m σ 
     @assert size(x) == size(x̂)
@@ -130,18 +144,19 @@ function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPILayer}}
     Δ .= 0
 end
 
-function getW(layer::BPILayer)
+function getW(layer::ArgmaxLayer)
     return sign.(layer.m) .* layer.weight_mask
 end
 
-function forward(layer::BPILayer, x)
+function forward(layer::ArgmaxLayer, x)
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return sign.(W*x .+ 1f-10)
+    y = argmax(W*x, dims=1)
+    return getindex.(y, 1)
 end
 
-function fixW!(layer::BPILayer, w=1.)
+function fixW!(layer::ArgmaxLayer, w=1.)
     @extract layer: K N M m σ weight_mask
     m .= w .* weight_mask
     σ .= 0

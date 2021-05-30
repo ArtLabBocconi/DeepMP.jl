@@ -278,7 +278,7 @@ function fixW!(layer::BPRealLayer, w=1.)
     end
 end
 
-function fixY!(layer::BPRealLayer, x::Matrix)
+function fix_input!(layer::BPRealLayer, x::Matrix)
     @extract layer K N M allm allmy allmh B Bup
     @extract layer allmcav allmycav allmhcavtow allmhcavtoy
 

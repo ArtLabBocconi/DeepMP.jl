@@ -133,7 +133,7 @@ function initrand!(layer::TapLayer)
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
     @extract layer: K N M 
     @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)
