@@ -8,6 +8,8 @@
 \begin_preamble
 \DeclareMathOperator\atanh{atanh}
 \DeclareMathOperator\sign{sign}
+\DeclareMathOperator\erfcx{erfcx}
+
 
 \usepackage[T1]{fontenc}
 \setcounter{secnumdepth}{3}
@@ -159,49 +161,6 @@ LatexCommand tableofcontents
 
 \begin_layout Section
 Introduction
-\end_layout
-
-\begin_layout Standard
-Possible TODOS:
-\end_layout
-
-\begin_layout Enumerate
-Performance of algorithms on (Fashion-)MNIST
-\end_layout
-
-\begin_layout Enumerate
-RFM & permutation symmetry on the fully-connected committee machine
-\end_layout
-
-\begin_layout Enumerate
-Teacher-Student
-\end_layout
-
-\begin_layout Enumerate
-BP (truly?) online
-\end_layout
-
-\begin_layout Enumerate
-Free energy & local entropy
-\end_layout
-
-\begin_layout Enumerate
-\begin_inset Formula $10$
-\end_inset
-
- classes
-\end_layout
-
-\begin_layout Enumerate
-convolutional layers
-\end_layout
-
-\begin_layout Enumerate
-biases
-\end_layout
-
-\begin_layout Enumerate
-comparison with simple algorithm (F)
 \end_layout
 
 \begin_layout Section
@@ -610,6 +569,176 @@ Notice that
 \end_inset
 
  on the top layer.
+\end_layout
+
+\begin_layout Section
+ArgMax layer
+\end_layout
+
+\begin_layout Standard
+In order to perform multi-class classification, we have perform an argmax
+ operation.
+ Call 
+\begin_inset Formula $z_{k}$
+\end_inset
+
+, for 
+\begin_inset Formula $k=1,\dots,K$
+\end_inset
+
+, the Gaussian random variables output of the last layer of the network
+ in correspondence of some input 
+\begin_inset Formula $\boldsymbol{x}$
+\end_inset
+
+.
+ Assuming the correct label is class 
+\begin_inset Formula $k$
+\end_inset
+
+, the effective partition function corresponding to the output constraint
+ reads
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+Z_{k^{*}} & =\int\prod_{k}dz_{k}\,\mathcal{N}(z_{k};\omega_{k},V_{k})\ \prod_{k\neq k^{*}}\theta(z_{k^{*}}-z_{k})\\
+ & =\int dz_{k^{*}}\,\mathcal{N}(z_{k^{*}};\omega_{k^{*}},V_{k^{*}})\ \prod_{k\neq k^{*}}H\left(-\frac{z_{k^{*}}-\omega_{k}}{\sqrt{V_{k}}}\right)
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This last integral is intractable, therefore we have to resort to approximations.
+\end_layout
+
+\begin_layout Subsection
+Approach 1: Jensen Inequality
+\end_layout
+
+\begin_layout Standard
+Using the Jensen inequality we obtain
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\phi_{k^{*}}= & \log Z_{k^{*}}=\log\mathbb{E}_{z\sim\mathcal{N}(\omega_{k^{*}},V_{k^{*}})}\prod_{k\neq k^{*}}H\left(-\frac{z-\omega_{k}}{\sqrt{V_{k}}}\right)\\
+ & \geq\sum_{k\neq k^{*}}\mathbb{E}_{z\sim\mathcal{N}(\omega_{k^{*}},V_{k^{*}})}\log H\left(-\frac{z-\omega_{k}}{\sqrt{V_{k}}}\right)
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Reparameterizing the expections we have 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\tilde{\phi}_{k^{*}}=\sum_{k\neq k^{*}}\mathbb{E}_{\epsilon\sim\mathcal{N}(0,1)}\log H\left(-\frac{\omega_{k^{*}}+\epsilon\sqrt{V_{k^{*}}}-\omega_{k}}{\sqrt{V_{k}}}\right)\label{eq:argmax1}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The derivative 
+\begin_inset Formula $\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}$
+\end_inset
+
+ and 
+\begin_inset Formula $\partial_{\omega_{k}}^{2}\tilde{\phi}_{k^{*}}$
+\end_inset
+
+ that we need can then be estimated by sampling (once?) 
+\begin_inset Formula $\epsilon$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Approach 2: Jensen again
+\end_layout
+
+\begin_layout Standard
+A further simplification is obtained by applying Jensen inequality again
+ to 
+\begin_inset CommandInset ref
+LatexCommand eqref
+reference "eq:argmax1"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ but in the opposite direction.
+ We have the new effective free energy
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\tilde{\phi}_{k^{*}} & =\sum_{k\neq k^{*}}\log\mathbb{E}_{\epsilon\sim\mathcal{N}(0,1)}H\left(-\frac{\omega_{k^{*}}+\epsilon\sqrt{V_{k^{*}}}-\omega_{k}}{\sqrt{V_{k}}}\right)\\
+ & =\sum_{k\neq k^{*}}\log H\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k}+V_{k^{*}}}}\right)
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This gives, for 
+\begin_inset Formula $k\neq k^{*}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}=\begin{cases}
+-\frac{1}{\sqrt{V_{k}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k}+V_{k^{*}}}}\right) & k\neq k^{*}\\
+\sum_{k'\neq k^{*}}\frac{1}{\sqrt{V_{k'}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k'}}{\sqrt{V_{k'}+V_{k^{*}}}}\right) & k=k^{*}
+\end{cases}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Notice that 
+\begin_inset Formula $\partial_{\omega_{k^{*}}}\tilde{\phi}_{k^{*}}=-\sum_{k\neq k^{*}}\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}$
+\end_inset
+
+.
+ In last formulas we used the definition
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+GH(x)=\frac{G(x)}{H(x)}=\frac{\sqrt{2/\pi}}{\erfcx(x/2)}
+\end{equation}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Section

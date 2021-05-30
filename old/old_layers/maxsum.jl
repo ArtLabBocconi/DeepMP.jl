@@ -350,7 +350,7 @@ function initrand!(layer::MaxSumLayer)
     end
 end
 
-function fixY!(layer::MaxSumLayer, x::AbstractMatrix)
+function fix_input!(layer::MaxSumLayer, x::AbstractMatrix)
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allhy allmycav
 

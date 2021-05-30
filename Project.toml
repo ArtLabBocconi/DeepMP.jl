@@ -25,6 +25,7 @@ Tullio = "bc48ee85-29a4-5162-ae0b-a64e1601d4bc"
 [compat]
 Adapt = "3.0"
 CUDA = "2.6, 3.0"
+CUDAKernels = "0.2"
 Cassette = "0.3"
 ExtractMacro = "1.0"
 Functors = "0.2"
@@ -45,4 +46,4 @@ PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["MLDatasets", "DelimitedFiles", "Test"]
+test = ["DelimitedFiles", "Test"]

@@ -441,7 +441,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPAccurateLayer, BPExactLayer}}
     @extract layer: K N M allm allmy allmh B Bup
     @extract layer: allmcav allmycav allmhcavtow allmhcavtoy
 

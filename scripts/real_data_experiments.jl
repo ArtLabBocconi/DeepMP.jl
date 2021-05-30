@@ -11,7 +11,7 @@ using Random, Statistics
 using CUDA
 
 # Odd vs Even or 1 class vs another
-function get_dataset(M=-1; classes=[], seed=17, dataset=:mnist, normalize=true)
+function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist, normalize=true)
     seed > 0 && Random.seed!(seed)
     namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
                                      dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
@@ -32,6 +32,7 @@ function get_dataset(M=-1; classes=[], seed=17, dataset=:mnist, normalize=true)
     xtrain = reshape(xtrain, :, size(xtrain)[end])
     xtest = reshape(xtest, :, size(xtest)[end])
     if !isempty(classes)
+        # ONE CLASS VS ANOTHER
         @assert length(classes) == 2
         filter = x -> x==classes[1] || x==classes[2]
         idxtrain = findall(filter, ytrain) |> shuffle
@@ -43,13 +44,22 @@ function get_dataset(M=-1; classes=[], seed=17, dataset=:mnist, normalize=true)
         relabel = x -> x == classes[1] ? 1 : -1
         ytrain = map(relabel, ytrain)
         ytest = map(relabel, ytest)
-    else
+    elseif !multiclass
+        # ODD VS EVEN        
         ytrain = map(x-> isodd(x) ? 1 : -1, ytrain)
         ytest = map(x-> isodd(x) ? 1 : -1, ytest)
         idxtrain = 1:length(ytrain) |> shuffle
         xtrain = xtrain[:, idxtrain]
         ytrain = ytrain[idxtrain]
+    else
+        # MULTICLASS CLASSIFICATION
+        # set labels always in 1:K
+        classes = ytest |> unique |> sort
+        class_map = Dict(v => k for (k, v) in enumerate(classes))
+        ytrain = map(y -> class_map[y], ytrain)
+        ytest = map(y -> class_map[y], ytest)   
     end
+
     if M < 0
         M = size(xtrain)[end]
     end
@@ -61,17 +71,14 @@ end
 function run_experiment(i; M=1000, batchsize=16, K = [28*28, 101, 101, 1], 
                           usecuda=true, gpu_id=0, ρ=1., ϵinit=1e-1,
                           r=0., rstep=0, rbatch=0,
-                          ψ=0., yy=-1, lay=:bp,
+                          ψ=0., yy=-1, layers=:bp,
                           maxiters=1, epochs=5, dataset=:fashion,
-                          density=1, 
+                          density=1, multiclass=false,
                           altsolv=true, altconv=true)
 
     if i == 9
-    
-        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, classes=[])
+        xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, multiclass)
         
-        layers = [lay for _=1:(length(K)-1)]
-
         # @profview begin
         g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain;
             xtest, ytest,
