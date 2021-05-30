@@ -57,14 +57,15 @@ function ArgmaxLayer(K::Int, N::Int, M::Int, ϵinit;
             weight_mask, isfrozen)
 end
 
-function compute_g_argmax(y, ω, V)
+function compute_g_argmax(y, ω, V, ωcav)
     # transform y (vector of integers) to 2d array of CartesianIndex
     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
     yc = reshape(yc, 1, :)
     Vtot = .√(V .+ V[yc])
     dω = ω[yc] .- ω 
     g = @. -GH(-dω / Vtot) / Vtot 
-    g[yc] .= .- sum(g, dims=1) .+ g[yc]  
+    g[yc] .= .- sum(g, dims=1) .+ g[yc]
+
     return g
 end
 
@@ -90,19 +91,20 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     if mode == :back || mode == :both
         ytrue = top_layer.y
         @assert size(ytrue) == (M,)
-        g = compute_g_argmax(ytrue, ω, V)
+        @tuillo ωcav[k,i,a] := ω[k,a]- m[k,i] * x̂[i,a]
+        g, gcav = compute_g_argmax(ytrue, ω, V, ωcav)
         # @tullio gcav[k,i,a] := g[k,a]
         # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         
         if !isbottomlayer(layer)
-            # @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-            @tullio B[i,a] = m[k,i] * g[k,a]
+            @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            # @tullio B[i,a] = m[k,i] * g[k,a]
         end
 
         if !isfrozen(layer)
-            # @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
-            @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂[i,a]
+            # @tullio Hin[k,i] := g[k,a] * x̂[i,a]
             if y > 0 # focusing
                 tγ = tanh(r)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
