@@ -1076,8 +1076,16 @@ The command to reproduce the experiments is along the lines of:
 \end_layout
 
 \begin_layout Standard
-run_experiment(9; usecuda=true, gpu_id=0, epochs=100, lay={:bp, :bpi, :tap},
- batchsize=128, ρ=p[2], ψ=0.5, M=Int(6e4), maxiters=1, r=0., K=[28*28,101,101,1])
+run_experiment(9; usecuda=true, gpu_id=0, epochs=100, lay={:bp, :bpi, :tap,
+ :mf}, batchsize=128, ρ=
+\begin_inset Formula $\star$
+\end_inset
+
+, ψ=0.8, M=Int(6e4), maxiters=1, r=0., 
+\begin_inset Formula $\epsilon init=1$
+\end_inset
+
+, K=[28*28,101,101,1])
 \end_layout
 
 \begin_layout Subsubsection
@@ -1099,10 +1107,14 @@ For
 \end_inset
 
  we choose 
-\begin_inset Formula $\rho-1=10^{-4}$
+\begin_inset Formula $\rho-1=10^{-5}$
 \end_inset
 
-.
+ for bp, bpi, tap and 
+\begin_inset Formula $10^{-4}$
+\end_inset
+
+ for mf.
  The command is the same as the one in the first paragraph of section B
  except for 
 \begin_inset Formula $\rho$
@@ -1116,36 +1128,19 @@ For
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename figures/deepMP_bs128_K[784, 101, 101, 1]_rho-0.1_ψ_0.5_P60000.0_maxiters_1_r0.0_ϵinit_1.0_.png
-	scale 50
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/deepMP_bs128_K[784, 101, 101, 1]_rho-1.0e-5_ψ_0.5_P60000.0_maxiters_1_r0.0_ϵinit_1.0_.png
-	scale 50
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted1.png
+	filename figures/pasted_new/pasted9.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted2.png
+	filename figures/pasted_new/pasted10.png
 	scale 20
 
 \end_inset
@@ -1155,14 +1150,48 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted3.png
+	filename figures/pasted_new/pasted11.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted4.png
+	filename figures/pasted_new/pasted12.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted13.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted14.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted15.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted16.png
 	scale 20
 
 \end_inset
@@ -1193,6 +1222,14 @@ MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
 
 \end_layout
 
+\begin_layout Subsubsection
+Varying initial weights
+\end_layout
+
+\begin_layout Standard
+ϵinits = [0., 0.01, 0.1, 0.5, 1, 1.5, 2, 3]
+\end_layout
+
 \begin_layout Standard
 \align center
 \begin_inset Float figure
@@ -1202,14 +1239,14 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted5.png
+	filename figures/pasted_new/pasted6.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted6.png
+	filename figures/pasted_new/pasted4.png
 	scale 20
 
 \end_inset
@@ -1219,14 +1256,48 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted7.png
+	filename figures/pasted_new/pasted7.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted8.png
+	filename figures/pasted_new/pasted8.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted1.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted2.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted3.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted5.png
 	scale 20
 
 \end_inset
@@ -1241,9 +1312,35 @@ status collapsed
 MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
  Fashion-MNIST dataset.
  We vary the parameter 
-\begin_inset Formula $\rho$
+\begin_inset Formula $\epsilon$
 \end_inset
 
+
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\xout off
+\uuline off
+\uwave off
+\noun off
+\color none
+init
+\family default
+\series default
+\shape default
+\size default
+\emph default
+\bar default
+\strikeout default
+\xout default
+\uuline default
+\uwave default
+\noun default
+\color inherit
 .
 \end_layout
 
@@ -1266,7 +1363,7 @@ Varying damping
 \end_layout
 
 \begin_layout Standard
-ψs = [0:0.2:1;] 
+ψs = [0:0.2:0.8;] 
 \begin_inset Formula $\cup$
 \end_inset
 
@@ -1438,121 +1535,6 @@ MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
 \end_layout
 
 \begin_layout Subsubsection
-Varying initial weights
-\end_layout
-
-\begin_layout Standard
-ϵinits = [0., 1e-3, 1e-2, 1e-1, 5e-1, 1e0]
-\end_layout
-
-\begin_layout Standard
-\align center
-\begin_inset Float figure
-wide false
-sideways false
-status collapsed
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted19.png
-	scale 20
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/pasted/pasted24.png
-	scale 20
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted20.png
-	scale 20
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/pasted/pasted21.png
-	scale 20
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted22.png
-	scale 20
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/pasted/pasted23.png
-	scale 20
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Caption Standard
-
-\begin_layout Plain Layout
-MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
- Fashion-MNIST dataset.
- We vary the parameter 
-\begin_inset Formula $\epsilon$
-\end_inset
-
-
-\family roman
-\series medium
-\shape up
-\size normal
-\emph off
-\bar no
-\strikeout off
-\xout off
-\uuline off
-\uwave off
-\noun off
-\color none
-init
-\family default
-\series default
-\shape default
-\size default
-\emph default
-\bar default
-\strikeout default
-\xout default
-\uuline default
-\uwave default
-\noun default
-\color inherit
-.
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Subsubsection
 Varying dataset size
 \end_layout
 
@@ -1577,7 +1559,7 @@ We fix the ratio
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -1740,7 +1722,7 @@ rs = [0:0.2:1.2;] (for maxiters=10).
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
