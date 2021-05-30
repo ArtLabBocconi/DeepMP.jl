@@ -174,7 +174,7 @@ function initrand!(layer::L) where {L <: Union{BPLayer}}
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{BPLayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPLayer}}
     @extract layer: K N M 
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @assert size(x) == size(x̂)

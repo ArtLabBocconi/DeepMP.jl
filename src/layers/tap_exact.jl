@@ -284,7 +284,7 @@ function fixW!(layer::L, w=1.) where {L <: Union{TapExactLayer}}
     end
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{TapExactLayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{TapExactLayer}}
     @extract layer K N M allm allmy allmh B Bup
 
     for a=1:M, i=1:N

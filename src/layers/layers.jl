@@ -15,6 +15,7 @@ include("tap_exact.jl")
 include("bpi.jl")
 include("bp_real.jl")
 include("mf.jl")
+include("argmax.jl")
 
 isfrozen(layer::AbstractLayer) = layer.isfrozen
 freeze!(layer::AbstractLayer) = layer.isfrozen = true

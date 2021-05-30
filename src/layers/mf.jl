@@ -122,7 +122,7 @@ function initrand!(layer::MeanFieldLayer)
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fixY!(layer::L, x::AbstractMatrix) where {L <: Union{MeanFieldLayer}}
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{MeanFieldLayer}}
     @extract layer: K N M 
     @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)

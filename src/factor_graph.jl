@@ -34,6 +34,9 @@ mutable struct FactorGraph
             if  layertype[l] == :mf
                 push!(layers, MeanFieldLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created MeanFieldLayer\t $(K[l])")
+            elseif  layertype[l] == :argmax
+                push!(layers, ArgmaxLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
+                verbose > 0 && println("Created ArgmaxLayer\t $(K[l])")
             elseif  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created TapLayer\t $(K[l])")
@@ -197,13 +200,13 @@ function initrand!(g::FactorGraph)
     for lay in layers[2:end-1]
         initrand!(lay)
     end
-    fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
+    fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
 end
 
 function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
-    fixY!(g.layers[2], g.layers[1].x) # fix input to first layer
+    fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
     
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]

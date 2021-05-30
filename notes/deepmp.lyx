@@ -712,7 +712,7 @@ This gives, for
 \begin{equation}
 \partial_{\omega_{k}}\tilde{\phi}_{k^{*}}=\begin{cases}
 -\frac{1}{\sqrt{V_{k}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k}+V_{k^{*}}}}\right) & k\neq k^{*}\\
-\sum_{k'\neq k^{*}}\frac{1}{\sqrt{V_{k'}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k}}{\sqrt{V_{k'}+V_{k^{*}}}}\right) & k=k^{*}
+\sum_{k'\neq k^{*}}\frac{1}{\sqrt{V_{k'}+V_{k^{*}}}}\,GH\left(-\frac{\omega_{k^{*}}-\omega_{k'}}{\sqrt{V_{k'}+V_{k^{*}}}}\right) & k=k^{*}
 \end{cases}
 \end{equation}
 
