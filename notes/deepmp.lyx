@@ -748,8 +748,8 @@ Numerical results
 \begin_layout Standard
 In this section we study multi-layer perceptrons (MLPs) on a binary classificati
 on task on the Fashion-MNIST dataset (divided arbitrarily in two classes:
- the first/last 5 classes in the original dataset respectively represent
- the first/second class in the binary classification task).
+ the even/odd classes in the original dataset respectively represent the
+ first/second class in the binary classification task).
  We perform experiments on the whole dataset and with a MLP with two hidden
  layers of size 
 \begin_inset Formula $101$
@@ -760,7 +760,7 @@ on task on the Fashion-MNIST dataset (divided arbitrarily in two classes:
 \end_layout
 
 \begin_layout Standard
-NB: in all figures the title reports 
+NB: if in the figures the title reports 
 \begin_inset Quotes eld
 \end_inset
 
@@ -768,7 +768,7 @@ MNIST
 \begin_inset Quotes erd
 \end_inset
 
- while it should be 
+, it should be 
 \begin_inset Quotes eld
 \end_inset
 
@@ -1128,7 +1128,7 @@ For
 \begin_inset Float figure
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \align center
@@ -1405,31 +1405,14 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted9.png
+	filename figures/pasted_new/pasted17.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted10.png
-	scale 20
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted11.png
-	scale 20
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/pasted/pasted12.png
+	filename figures/pasted_new/pasted18.png
 	scale 20
 
 \end_inset
@@ -1439,61 +1422,14 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted13.png
+	filename figures/pasted_new/pasted19.png
 	scale 20
 
 \end_inset
 
 
 \begin_inset Graphics
-	filename figures/pasted/pasted14.png
-	scale 20
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Plain Layout
-\begin_inset Caption Standard
-
-\begin_layout Plain Layout
-MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
- Fashion-MNIST dataset.
- We vary the parameter 
-\begin_inset Formula $\psi$
-\end_inset
-
-.
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\align center
-\begin_inset Float figure
-wide false
-sideways false
-status collapsed
-
-\begin_layout Plain Layout
-\begin_inset Graphics
-	filename figures/pasted/pasted15.png
-	scale 20
-
-\end_inset
-
-
-\begin_inset Graphics
-	filename figures/pasted/pasted16.png
+	filename figures/pasted_new/pasted20.png
 	scale 20
 
 \end_inset
@@ -1503,7 +1439,31 @@ status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
-	filename figures/pasted/pasted17.png
+	filename figures/pasted_new/pasted21.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted22.png
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted23.png
+	scale 20
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename figures/pasted_new/pasted24.png
 	scale 20
 
 \end_inset
@@ -1961,6 +1921,10 @@ MLP with 3 hidden layers with 101/501/1001 hidden units each, batch-size=128
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+Experiments on MNIST, 10 classes
 \end_layout
 
 \begin_layout Subsection
