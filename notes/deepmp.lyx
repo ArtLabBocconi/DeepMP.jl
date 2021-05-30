@@ -999,7 +999,7 @@ For
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
@@ -1027,9 +1027,6 @@ status collapsed
 \end_inset
 
 
-\end_layout
-
-\begin_layout Plain Layout
 \begin_inset Graphics
 	filename figures/pasted_new/pasted12.png
 	scale 20
@@ -1037,6 +1034,9 @@ status collapsed
 \end_inset
 
 
+\end_layout
+
+\begin_layout Plain Layout
 \begin_inset Graphics
 	filename figures/pasted_new/pasted13.png
 	scale 20
@@ -1063,6 +1063,7 @@ status collapsed
 
 \begin_inset Graphics
 	filename figures/pasted_new/pasted16.png
+	scale 20
 
 \end_inset
 
