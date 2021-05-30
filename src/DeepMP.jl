@@ -137,7 +137,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
                 maxiters = 100,
                 ϵ = 1e-4,                      # convergence criterion
-                r = 0., rstep = 0.001,         # reinforcement parameters for W vars
+                r = 0., rstep = 0.,            # reinforcement parameters for W vars
                 ψ = 0.,                        # damping coefficient
                 yy = -1.,                      # focusing BP parameter
                 h0 = nothing,                  # external field
@@ -154,8 +154,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 epochs = 100,
                 ϵinit = 0.,
                 plotinfo = 0,
-                verbose = 2,
-                usecuda = false,
+                verbose = 1,
+                usecuda = true,
                 gpu_id = -1,
                 saveres = false,
                 )
