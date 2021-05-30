@@ -62,11 +62,37 @@ function compute_g_argmax(y, ω, V)
     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
     yc = reshape(yc, 1, :)
     Vtot = .√(V .+ V[yc])
-    dω = ω[yc] .- ω 
+    dω = ω[yc] .- ω
     g = @. -GH(-dω / Vtot) / Vtot 
-    g[yc] .= .- sum(g, dims=1) .+ g[yc]  
+    g[yc] .= .- sum(g, dims=1) .+ g[yc]
+
     return g
 end
+
+# # version 2 with sampling
+# function compute_g_argmax(y, ω, V, nsamples=10)
+#     # transform y (vector of integers) to 2d array of CartesianIndex
+#     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
+#     yc = reshape(yc, 1, :)
+#     V = .√V
+#     # @assert size(ω) == (10, 128) 
+#     ωc = ω[yc]
+#     Vc = V[yc]
+#     # @assert size(ωc) == (1, 128)
+#     dω = ωc .- ω
+#     # @assert size(dω) == (10, 128)
+#     g = fill!(similar(ω), 0)
+#     # @assert size(g) == (10, 128)
+#     for _ in 1:nsamples
+#         z = Vc .* randn!(similar(ωc))
+#         # @assert size(z) == (1, 128)
+#         g .+= @. -GH(-(dω + z) / V) / V 
+#     end
+
+#     g[yc] .= .- sum(g, dims=1) .+ g[yc]
+#     g ./= nsamples
+#     return g
+# end
 
 function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
@@ -85,11 +111,11 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
         
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
         V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
     end
     if mode == :back || mode == :both
         ytrue = top_layer.y
         @assert size(ytrue) == (M,)
+        # @tuillo ωcav[k,i,a] := ω[k,a]- m[k,i] * x̂[i,a]
         g = compute_g_argmax(ytrue, ω, V)
         # @tullio gcav[k,i,a] := g[k,a]
         # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a]- m[k,i] * x̂[i,a], V[k,a])  avx=false

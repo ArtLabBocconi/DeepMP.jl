@@ -667,6 +667,20 @@ The derivative
 .
 \end_layout
 
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\partial_{\omega_{k}}\tilde{\phi}_{k^{*}}=\begin{cases}
+-\frac{1}{\sqrt{V_{k}}}\mathbb{E}_{\epsilon\sim\mathcal{N}(0,1)}\,GH\left(-\frac{\omega_{k^{*}}+\epsilon\sqrt{V_{k^{*}}}-\omega_{k}}{\sqrt{V_{k}}}\right) & k\neq k^{*}\\
+\sum_{k'\neq k^{*}}\frac{1}{\sqrt{V_{k'}}}\mathbb{E}_{\epsilon\sim\mathcal{N}(0,1)}\,GH\left(-\frac{\omega_{k^{*}}+\epsilon\sqrt{V_{k^{*}}}-\omega_{k'}}{\sqrt{V_{k'}}}\right) & k=k^{*}
+\end{cases}
+\end{equation}
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Subsection
 Approach 2: Jensen again
 \end_layout

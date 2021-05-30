@@ -133,11 +133,11 @@ end
 
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
-                maxiters = 10000,
+                K::Vector{Int},                # List of widths for each layer, e.g. [28*28, 101, 101, 1]
+                layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
+                maxiters = 100,
                 ϵ = 1e-4,                      # convergence criterion
-                K::Vector{Int} = [101, 3, 1],
-                layers = [:tap, :tapex, :tapex],
-                r = 0., rstep = 0.001,         # reinforcement parameters for W vars
+                r = 0., rstep = 0.,            # reinforcement parameters for W vars
                 ψ = 0.,                        # damping coefficient
                 yy = -1.,                      # focusing BP parameter
                 h0 = nothing,                  # external field
@@ -148,14 +148,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 altsolv::Bool = true,
                 altconv::Bool = false,
                 seed::Int = -1, 
-                plotinfo = 0,
                 β = Inf,
                 density = 1f0,                  # density of fully connected layer
                 batchsize = -1,                 # only supported by some algorithms
                 epochs = 100,
                 ϵinit = 0.,
-                verbose = 2,
-                usecuda = false,
+                plotinfo = 0,
+                verbose = 1,
+                usecuda = true,
                 gpu_id = -1,
                 saveres = false,
                 )
