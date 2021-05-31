@@ -5,8 +5,8 @@ usecuda = true
 if length(ARGS) ≠ 0
     gpu_id = parse(Int, ARGS[1])
 end
-#lays = [:mf, :bp]; gpu_id = 1
-lays = [:bpi, :tap]; gpu_id = 2
+lays = [:mf, :bp]; gpu_id = 1
+#lays = [:bpi, :tap]; gpu_id = 2
 #lays = [:mf, :tap]; gpu_id = 1
 #lays = [:bpi]; gpu_id = 2
 epochs = 100
