@@ -131,9 +131,11 @@ function set_external_fields!(g::FactorGraph, h0; ρ=1.0, rbatch=0)
     end
 end
 
-# set eternal field ffrom posterior
+# set eternal field from posterior
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
+        # xxx
+        #ρl = g.layers[l] ≠ :mf ? ρ : 0.1ρ
         set_Hext_from_H!(g.layers[l], ρ, rbatch)
     end
 end
@@ -234,11 +236,19 @@ function update!(g::FactorGraph, reinfpar)
     Δ = 0.
 
     for l = 2:g.L+1
+        # xxx
+        reinfpar.ψ = l==2 ? 0.95 :
+                 l==3 ? 0.95 :
+                 l==4 ? 0.99 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
 
     for l = (g.L+1):-1:2
+        # xxx
+        reinfpar.ψ = l==2 ? 0.7 :
+                 l==3 ? 0.925 :
+                 l==4 ? 0.99 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end

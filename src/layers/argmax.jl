@@ -57,42 +57,41 @@ function ArgmaxLayer(K::Int, N::Int, M::Int, ϵinit;
             weight_mask, isfrozen)
 end
 
-function compute_g_argmax(y, ω, V)
-    # transform y (vector of integers) to 2d array of CartesianIndex
-    yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
-    yc = reshape(yc, 1, :)
-    Vtot = .√(V .+ V[yc])
-    dω = ω[yc] .- ω
-    g = @. -GH(-dω / Vtot) / Vtot 
-    g[yc] .= .- sum(g, dims=1) .+ g[yc]
+#function compute_g_argmax(y, ω, V)
+#    # transform y (vector of integers) to 2d array of CartesianIndex
+#    yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
+#    yc = reshape(yc, 1, :)
+#    Vtot = .√(V .+ V[yc])
+#    dω = ω[yc] .- ω
+#    g = @. -GH(-dω / Vtot) / Vtot 
+#    g[yc] .= .- sum(g, dims=1) .+ g[yc]
+#
+#    return g
+#end
 
-    return g
-end
-
-# # version 2 with sampling
-# function compute_g_argmax(y, ω, V, nsamples=10)
-#     # transform y (vector of integers) to 2d array of CartesianIndex
-#     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
-#     yc = reshape(yc, 1, :)
-#     V = .√V
-#     # @assert size(ω) == (10, 128) 
-#     ωc = ω[yc]
-#     Vc = V[yc]
-#     # @assert size(ωc) == (1, 128)
-#     dω = ωc .- ω
-#     # @assert size(dω) == (10, 128)
-#     g = fill!(similar(ω), 0)
-#     # @assert size(g) == (10, 128)
-#     for _ in 1:nsamples
-#         z = Vc .* randn!(similar(ωc))
-#         # @assert size(z) == (1, 128)
-#         g .+= @. -GH(-(dω + z) / V) / V 
-#     end
-
-#     g[yc] .= .- sum(g, dims=1) .+ g[yc]
-#     g ./= nsamples
-#     return g
-# end
+ # version 2 with sampling
+ function compute_g_argmax(y, ω, V, nsamples=10)
+     # transform y (vector of integers) to 2d array of CartesianIndex
+     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
+     yc = reshape(yc, 1, :)
+     V = .√V
+     # @assert size(ω) == (10, 128) 
+     ωc = ω[yc]
+     Vc = V[yc]
+     # @assert size(ωc) == (1, 128)
+     dω = ωc .- ω
+     # @assert size(dω) == (10, 128)
+     g = fill!(similar(ω), 0)
+     # @assert size(g) == (10, 128)
+     for _ in 1:nsamples
+         z = Vc .* randn!(similar(ωc))
+         # @assert size(z) == (1, 128)
+         g .+= @. -GH(-(dω + z) / V) / V 
+     end
+     g[yc] .= .- sum(g, dims=1) .+ g[yc]
+     g ./= nsamples
+     return g
+ end
 
 function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
@@ -101,6 +100,9 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ
     Δm = 0.
+
+    # xxx
+    ψargm = 0.995
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -139,7 +141,7 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
                 # reinforcement 
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-            H .= ψ .* H .+ (1-ψ) .* Hnew
+            H .= ψargm .* H .+ (1-ψargm) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
