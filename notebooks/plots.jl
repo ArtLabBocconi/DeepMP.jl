@@ -11,12 +11,26 @@ rd(x, n) = round(x, sigdigits=n)
 # for different file names
 #lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
+lays = [:bpi]
 lrsgd = 1e0
 plot_sgd = true
 
 final_params = false
+multiclass = true
 bs = 0
-if !final_params
+
+if multiclass
+    K = [28*28, 101, 101, 10]
+    lrsgd = 0.5
+    ρ1 = 0.
+    ρs = [ρ1, ρ1, ρ1] .+ 1.
+    ϵinit = 2.
+    ψ = 0.9
+    maxiters = 1
+    r = 0.
+    P = 6e4
+    batchsize = 128
+elseif !final_params
     K = [28*28, 101, 101, 1] # [[28*28, 1/5/10-01, (1/5/10-01), (1/5/10-01), 1]]
     ρs = [-1e-1, -1e-5, 0., 1e-6, 1e-5, 1e-4, 1e-3, 1e-2] # saveres=false, ψ=0.5
     ρ1 = 1e-5
@@ -64,18 +78,27 @@ elseif final_params && bs == 0 # for varying architecture, saveres=true
     ρs = [ρ1 for _=1:length(lays)] .+ 1.
 end
 
-density = 1
-
-fig, ax1 = plt.subplots(1)
-ax2 = ax1.inset_axes([0.27, 0.575, 0.35, 0.4])
-ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
+density = 1.
 
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 
+# FIGURE 1
+fig, ax1 = plt.subplots(1)
+ax2 = ax1.inset_axes([0.27, 0.63, 0.32, 0.35])
+if !multiclass
+    ax3 = ax1.inset_axes([0.525, 0.2, 0.35, 0.275])
+else
+    ax3 = ax1.inset_axes([0., 0., 0.35, 0.275])
+end
+
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
-    layers = [lay for i in 1:(length(K)-1)]
+    if !multiclass
+        layers = [lay for i in 1:(length(K)-1)]
+    else
+        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
+    end
     
     resfile = "../scripts/results/res_"
     resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
@@ -103,8 +126,9 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
 end
 
 Ksgd = K[2:end-1]
-#file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse_lr$(lrsgd)_bs$(batchsize).dat"
-file = "../../representations/knet/results/res_datasetfashion_classesAny[]_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
+classes = multiclass ? nothing : []
+#file = "../../representations/knet/results/res_datasetfashion_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse_lr$(lrsgd)_bs$(batchsize).dat"
+file = "../../representations/knet/results/res_datasetfashion_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
 (P > 0 && (P≠60000 && bs≠600) ) && (file *= "_P$(Int(P))")
 file *= "_lr$(lrsgd)_bs$(batchsize)"
 file *= ".dat"
@@ -137,8 +161,9 @@ ax3.legend(loc="best", frameon=false, fontsize=8)
 
 #plt.grid(false)
 
+classt = multiclass ? "10class" : "2class"
 Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
-fig.suptitle("FashionMNIST 2class P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
+fig.suptitle("FashionMNIST $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
 #fig.tight_layout()
 
 #fig.savefig("deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
@@ -146,14 +171,36 @@ fig.savefig("figure_deepMP.png")
 
 plt.close()
 
+# FIGURE 2
+nlays = length(K)-1
+fig, ax = plt.subplots(nlays,2)
 
+for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
+        
+    if !multiclass
+        layers = [lay for i in 1:(length(K)-1)]
+    else
+        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
+    end
+    
+    resfile = "../scripts/results/res_"
+    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+    resfile *= "_density$(density)"
+    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+    resfile *= ".dat"
+    
+    @show resfile
 
-#if batchsize == 1000
-#    ρs = [1.00001, 1.00001, 1.00001]
-#elseif batchsize == 100
-#    ρs = [1.00001, 1.00001, 1.00001]
-#elseif batchsize == 10
-#    ρs = [1.00001, 1.000001, 1.00001]
-#elseif batchsize == 1
-#    ρs = [1.000001, 1.000001, 1.000001]
-#end
+    dati = readdlm(resfile)
+
+    ax[1].plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
+    ax[1+nlays].plot(dati[:,1], dati[:,5], ls="-", label="qab lay1 $lay", c=algo_color[lay])
+
+end
+
+ax[1].legend(loc="best", frameon=false, fontsize=10)
+ax[1+nlays].legend(loc="best", frameon=false, fontsize=10)
+
+fig.savefig("figure_deepMP2.png")
+
+plt.close()

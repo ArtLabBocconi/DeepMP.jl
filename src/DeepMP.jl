@@ -36,14 +36,14 @@ include("factor_graph.jl")
 include("reinforcement.jl")
 
 function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
-                                 altsolv=false, 
-                                 altconv=false, 
-                                 plotinfo=0,
-                                 teacher=nothing,
-                                 reinfpar,
-                                 verbose=1, 
-                                 xtest=nothing,
-                                 ytest=nothing)
+                                    altsolv=false, 
+                                    altconv=false, 
+                                    plotinfo=0,
+                                    teacher=nothing,
+                                    reinfpar,
+                                    verbose=1, 
+                                    xtest=nothing,
+                                    ytest=nothing)
 
     for it = 1:maxiters
         

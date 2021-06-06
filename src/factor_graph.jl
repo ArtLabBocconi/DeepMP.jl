@@ -135,8 +135,15 @@ end
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
         # xxx
-        #ρl = g.layers[l] ≠ :mf ? ρ : 0.1ρ
-        set_Hext_from_H!(g.layers[l], ρ, rbatch)
+        # first version of argmax
+        #ρl = l==2 ? 0.9995 :
+        #     l==3 ? 0.999 :
+        #     l==4 ? 0. : ρ
+        # second version of argmax
+        ρl = l==2 ? 0.9999 :
+             l==3 ? 0.997 :
+             l==4 ? 0. : ρ
+        set_Hext_from_H!(g.layers[l], ρl, rbatch)
     end
 end
 
@@ -235,20 +242,25 @@ end
 function update!(g::FactorGraph, reinfpar)
     Δ = 0.
 
+    # xxx
+    ψ1 = 0.8
+    ψ2 = 0.9
+    ψ3 = 0.9
+
     for l = 2:g.L+1
         # xxx
-        reinfpar.ψ = l==2 ? 0.95 :
-                 l==3 ? 0.95 :
-                 l==4 ? 0.99 : reinfpar.ψ
+        reinfpar.ψ = l==2 ? ψ1 :
+                     l==3 ? ψ2 :
+                     l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
 
     for l = (g.L+1):-1:2
         # xxx
-        reinfpar.ψ = l==2 ? 0.7 :
-                 l==3 ? 0.925 :
-                 l==4 ? 0.99 : reinfpar.ψ
+        reinfpar.ψ = l==2 ? ψ1 :
+                     l==3 ? ψ2 :
+                     l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end
