@@ -189,11 +189,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
+        ispath("./results") || mkpath("./results")
         resfile = "results/res_"
-        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+        infolayers = string([string(layers[i], K[i+1], "_") for i = 1:length(layers)]...)
+        resfile *= "$(K[1])_" * infolayers
+        resfile *= "bs$(batchsize)_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-        resfile *= ".dat"
+        resfile *= "_seed$(seed).dat"
         fres = open(resfile, "w")
     end
 
