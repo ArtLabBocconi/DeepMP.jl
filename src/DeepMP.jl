@@ -159,6 +159,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 usecuda = true,
                 gpu_id = -1,
                 saveres = false,
+                exp_folder = ""
                 )
 
     usecuda = CUDA.functional() && usecuda
@@ -189,15 +190,17 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        ispath("./results") || mkpath("./results")
-        resfile = "results/res_"
+        res_folder = "results/" * exp_folder * "/"
+        ispath(res_folder) || mkpath(res_folder)
+        # ispath("./results") || mkpath("./results")
+        # resfile = "results/res_"
         infolayers = string([string(layers[i], K[i+1], "_") for i = 1:length(layers)]...)
-        resfile *= "$(K[1])_" * infolayers
+        resfile =  "res_$(K[1])_" * infolayers
         resfile *= "bs$(batchsize)_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
-        resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+        resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxit$(maxiters)_ep$(epochs)"
         resfile *= "_seed$(seed).dat"
-        fres = open(resfile, "w")
+        fres = open(res_folder * resfile, "w")
     end
 
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
