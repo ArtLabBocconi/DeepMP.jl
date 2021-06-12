@@ -71,6 +71,10 @@ end
 function run_experiment(; M=-1, dataset=:fashion, multiclass=false, kws...)
     xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, multiclass)
     g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, kws...)
+
+    GC.gc()
+    CUDA.reclaim()
+
 end
 
 ## Multiclass Experiment

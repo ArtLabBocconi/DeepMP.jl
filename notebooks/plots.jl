@@ -12,7 +12,7 @@ rd(x, n) = round(x, sigdigits=n)
 #lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 lays = [:bpi]
-lrsgd = 1e0
+lrsgd = 0.5
 plot_sgd = true
 
 final_params = false
@@ -134,6 +134,7 @@ file *= "_lr$(lrsgd)_bs$(batchsize)"
 file *= ".dat"
 
 if plot_sgd
+    @show file
     dati_sgd = readdlm(file)
     ax1.plot(dati_sgd[:,1], dati_sgd[:,2].*100., ls="-", label="train bin-sgd bs=$batchsize, lr=$lrsgd", c=algo_color[:sgd])
     ax1.plot(dati_sgd[:,1], dati_sgd[:,3].*100., ls="--", ms=1, label="test bin-sgd bs=$batchsize, lr=$lrsgd", c=algo_color[:sgd])
