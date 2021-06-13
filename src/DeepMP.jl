@@ -133,6 +133,7 @@ end
 
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
+                dataset = :fashion,
                 K::Vector{Int},                # List of widths for each layer, e.g. [28*28, 101, 101, 1]
                 layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
                 maxiters = 100,
@@ -183,7 +184,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        resfile = "results/res_"
+        resfile = "results/res_dataset$(dataset)_"
         resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"

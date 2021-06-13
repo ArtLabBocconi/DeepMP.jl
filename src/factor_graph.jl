@@ -135,6 +135,7 @@ end
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
         # xxx
+        # fashion, mnist, cifar10, 101-101
         # first version of argmax
         #ρl = l==2 ? 0.9995 :
         #     l==3 ? 0.999 :
@@ -142,7 +143,13 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
         # second version of argmax
         ρl = l==2 ? 0.9999 :
              l==3 ? 0.997 :
-             l==4 ? 0. : ρ
+             l==4 ? 0.0 : ρ
+
+        # fashion, mnist, cifar10, 1001-1001
+        ρl = l==2 ? 1.0 :
+             l==3 ? 1.0 :
+             l==4 ? 0.0 : ρ
+
         set_Hext_from_H!(g.layers[l], ρl, rbatch)
     end
 end
@@ -243,6 +250,8 @@ function update!(g::FactorGraph, reinfpar)
     Δ = 0.
 
     # xxx
+
+    # fashion-mnist, mnist, cifar10, 101-101
     ψ1 = 0.8
     ψ2 = 0.9
     ψ3 = 0.9

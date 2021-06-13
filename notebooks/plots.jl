@@ -100,7 +100,7 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
     end
     
-    resfile = "../scripts/results/res_"
+    resfile = "results/res_dataset$(dataset)_"
     resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
     resfile *= "_density$(density)"
     resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
