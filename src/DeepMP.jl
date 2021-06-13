@@ -188,6 +188,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+        seed ≠ -1 && (resfile *= "_seed$(seed)")
         resfile *= ".dat"
         fres = open(resfile, "w")
     end
