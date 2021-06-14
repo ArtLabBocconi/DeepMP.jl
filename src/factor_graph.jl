@@ -146,9 +146,15 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
              l==4 ? 0.0 : ρ
 
         # fashion, mnist, cifar10, 1001-1001
-        ρl = l==2 ? ρ :
-             l==3 ? ρ :
+        ρl = l==2 ? 1.0 :
+             l==3 ? 1.0 :
              l==4 ? 0.0 : ρ
+
+        # batchsize = 1 ; fashion, mnist, cifar10, 101-101
+        ρl = l==2 ? 1.0 :
+             l==3 ? 1.0 :
+             l==4 ? 0.999 : ρ
+
 
         set_Hext_from_H!(g.layers[l], ρl, rbatch)
     end

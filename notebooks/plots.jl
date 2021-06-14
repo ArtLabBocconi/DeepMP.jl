@@ -9,36 +9,44 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 rd(x, n) = round(x, sigdigits=n)
 
 dataset = :cifar10
+batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 1001, 1001, 10]
+K = [Nin, 101, 101, 10]
+plot_sgd = true
+lrsgd = 0.5
 
 # for different file names
 #lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 lays = [:bpi]
-lrsgd = 0.5
-plot_sgd = true
 
 final_params = false
 multiclass = true
 bs = 0
 
 if multiclass
-    lrsgd = 0.5
-    ρ1 = 0.
+    if batchsize == 128 && K[2] == 1001
+        ρ1 = 1e-3
+    else
+        ρ1 = 0.
+    end
     ρs = [ρ1, ρ1, ρ1] .+ 1.
-    ϵinit = 2.
     ψ = 0.9
     maxiters = 1
     r = 0.
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
-    batchsize = 128
     if K[2]==101
         seed = 2
     else
         seed = -1
     end
-    seed_sgd = [2, 5, 11]
+    if batchsize == 128
+        ϵinit = 2.
+        seed_sgd = [2, 5, 11]
+    else
+        ϵinit = 0.5
+        seed_sgd = [5]
+    end
 elseif !final_params
     K = [28*28, 101, 101, 1] # [[28*28, 1/5/10-01, (1/5/10-01), (1/5/10-01), 1]]
     ρs = [-1e-1, -1e-5, 0., 1e-6, 1e-5, 1e-4, 1e-3, 1e-2] # saveres=false, ψ=0.5
@@ -89,7 +97,7 @@ end
 
 density = 1.
 
-algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
+algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:red", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 
 # FIGURE 1
@@ -98,7 +106,7 @@ ax2 = ax1.inset_axes([0.18, 0.68, 0.35, 0.3])
 if !multiclass || dataset == :mnist
     ax3 = ax1.inset_axes([0.64, 0.33, 0.35, 0.275])
 else
-    ax3 = ax1.inset_axes([0., 0., 0.35, 0.275])
+    ax3 = ax1.inset_axes([0.1, 0.08, 0.35, 0.275])
 end
 
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
