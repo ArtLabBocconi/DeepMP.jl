@@ -8,7 +8,7 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-dataset = :cifar10
+dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 10]
@@ -37,6 +37,7 @@ if multiclass
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     if K[2]==101
         seed = 2
+        seed_bp = [2,5,11]
     else
         seed = -1
     end
@@ -99,6 +100,7 @@ density = 1.
 
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:red", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
+errev = 10
 
 # FIGURE 1
 fig, ax1 = plt.subplots(1)
@@ -117,21 +119,44 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
     end
     
-    resfile = "../scripts/results/res_dataset$(dataset)_"
-    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
-    resfile *= "_density$(density)"
-    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-    seed ≠ -1 && (resfile *= "_seed$(seed)")
-    resfile *= ".dat"
-    
-    @show resfile
+    epoche_bp, train_bp, test_bp = [],[], []
+    q0lay1, qablay1 = [], []
 
-    dati = readdlm(resfile)
+    for seed in seed_bp
+        resfile = "../scripts/results/res_dataset$(dataset)_"
+        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+        resfile *= "_density$(density)"
+        resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+        seed ≠ -1 && (resfile *= "_seed$(seed)")
+        resfile *= ".dat"
+        @show resfile
+
+        dati = readdlm(resfile)
+
+        push!(epoche_bp, dati[:, 1])
+        push!(train_bp, dati[:, 2])
+        push!(test_bp, dati[:, 3])
+        push!(q0lay1, dati[:, 4])
+        push!(qablay1, dati[:, 5])
+
+    end
+
+    μ_train_bp = mean(train_bp)
+    σ_train_bp = std(train_bp)
+    μ_test_bp = mean(test_bp)
+    σ_test_bp = std(test_bp)
+
+    μ_q0lay1 = mean(q0lay1)
+    σ_q0lay1 = std(q0lay1)
+    μ_qablay1 = mean(qablay1)
+    σ_qablay1 = std(qablay1)
 
     pars = "ρ=$(rd(ρ-1,1))"
 
-    ax1.plot(dati[:,1], dati[:,2], ls="-", label="train $lay $pars", c=algo_color[lay])
-    ax1.plot(dati[:,1], dati[:,3], ls="--", label="test $lay $pars", c=algo_color[lay])
+    ax1.errorbar(epoche_bp[1], μ_train_bp, σ_train_bp, ls="-", errorevery=errev,
+                 label="train $lay $pars", c=algo_color[lay])
+    ax1.errorbar(epoche_bp[1], μ_test_bp, σ_test_bp, ls="--", errorevery=errev,
+                 label="test $lay $pars", c=algo_color[lay])
 
     #ax1.set_xlabel("epochs", fontsize=12)
     ax1.set_ylabel("error (%)", fontsize=12)
@@ -141,8 +166,10 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         ax1.set_ylim(20,90)
     end
 
-    ax2.plot(dati[:,1], dati[:,4], ls="-", label="$lay lay1 $pars", c=algo_color[lay])
-    ax3.plot(dati[:,1], dati[:,5], ls="-", label="$lay lay1 $pars", c=algo_color[lay])
+    ax2.errorbar(epoche_bp[1], μ_q0lay1, σ_q0lay1, ls="-", errorevery=errev,
+                 label="$lay lay1 $pars", c=algo_color[lay])
+    ax3.errorbar(epoche_bp[1], μ_qablay1, σ_qablay1, ls="-", errorevery=errev,
+                 label="$lay lay1 $pars", c=algo_color[lay])
     #ax3.plot(dati[:,1], dati[:,5], label="qab (first layer)", color="orange")
     
 end
@@ -174,9 +201,9 @@ if plot_sgd
     μ_test = mean(test_sgd) .* 100.
     σ_test = std(test_sgd) .* 100.
 
-    ax1.errorbar(epoche[1], μ_train, σ_train, ls="-", c=algo_color[:sgd],
+    ax1.errorbar(epoche[1], μ_train, σ_train, ls="-", c=algo_color[:sgd], errorevery=errev,
                  capsize=0, label="train bin-sgd bs=$batchsize, lr=$lrsgd")
-    ax1.errorbar(epoche[1], μ_test, σ_test, ls="--", ms=1, c=algo_color[:sgd], 
+    ax1.errorbar(epoche[1], μ_test, σ_test, ls="--", ms=1, c=algo_color[:sgd], errorevery=errev,
                  capsize=0, label="test bin-sgd bs=$batchsize, lr=$lrsgd")
 end
 
