@@ -1946,20 +1946,19 @@ Experiments on MNIST, FashionMNIST, CIFAR10 (10 classes)
 \begin_inset Float figure
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename figures/pasted_new/pasted25.png
+	scale 20
 
 \end_inset
 
 
-\end_layout
-
-\begin_layout Plain Layout
 \begin_inset Graphics
 	filename figures/pasted_new/pasted26.png
+	scale 20
 
 \end_inset
 
