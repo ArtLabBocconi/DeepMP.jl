@@ -1938,7 +1938,88 @@ MLP with 3 hidden layers with 101/501/1001 hidden units each, batch-size=128
 \end_layout
 
 \begin_layout Subsection
-Experiments on MNIST, 10 classes
+Experiments on MNIST, FashionMNIST, CIFAR10 (10 classes)
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted25.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename figures/pasted_new/pasted26.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MLP with 2 hidden layers with 101 hidden units each, batch-size=128 on the
+ Fashion-MNIST dataset.
+ (Left) argmax first version; (right) argmax second version.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Cosa sto provando:
+\end_layout
+
+\begin_layout Itemize
+2 layer da 101; 2 layer da 1001 (per fittare di più il train) -> dovrei
+ fare anche una prova con 3 layer da 1001
+\end_layout
+
+\begin_layout Itemize
+batchsize 128 e 1
+\end_layout
+
+\begin_layout Itemize
+per SGD, lr=0.1,0.5,1
+\end_layout
+
+\begin_layout Itemize
+capire come scalano i tempi con la taglia degli hidden layer / la profondità
+ -> sembra che non scalino bene con la taglia dell'hidden layer, capire
+ il motivo
+\end_layout
+
+\begin_layout Itemize
+effettivamente 
+\begin_inset Formula $\rho$
+\end_inset
+
+ va fine-tunato sulla rete (cioé cambiando l'architettura bisogna cambaire
+ rho) -> però prova a trovare il 
+\begin_inset Formula $\rho$
+\end_inset
+
+ giusto sulla rete da 1001-1001 e poi vedi se funziona pure su quella da
+ 101-101
 \end_layout
 
 \begin_layout Subsection
