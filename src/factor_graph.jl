@@ -114,39 +114,26 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
-function set_external_fields!(layer::AbstractLayer, h0; ρ=1., rbatch=0)
-    if hasproperty(layer, :allhext)
-        for k = 1:layer.K
-            layer.allhext[k] .= ρ .* h0[k] .+ rbatch .* layer.allhext[k]
-        end
-    else
-        layer.Hext .= ρ .* h0 .+ rbatch .* layer.Hext
-    end
+function set_external_fields!(layer::AbstractLayer, h0; ρ=1.)
+    layer.Hext .= ρ .* h0
 end
 
-function set_external_fields!(g::FactorGraph, h0; ρ=1.0, rbatch=0)
+function set_external_fields!(g::FactorGraph, h0; ρ=1.0)
     @assert length(h0) == g.L
     for l = 2:g.L+1
-        set_external_fields!(g.layers[l], h0[l-1]; ρ, rbatch)
+        set_external_fields!(g.layers[l], h0[l-1]; ρ)
     end
 end
 
 # set eternal field ffrom posterior
-function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
+function set_Hext_from_H!(g::FactorGraph, ρ)
     for l = 2:g.L+1
-        set_Hext_from_H!(g.layers[l], ρ, rbatch)
+        set_Hext_from_H!(g.layers[l], ρ)
     end
 end
 
-function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
-    if hasproperty(lay, :allh) # TODO deprecate
-        @assert hasproperty(lay, :allhext)
-        for k in 1:lay.K
-            lay.allhext[k] .= ρ .* lay.allh[k] .+ rbatch .* lay.allhext[k]
-        end
-    else
-        lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
-    end
+function set_Hext_from_H!(lay::AbstractLayer, ρ)
+    lay.Hext .= ρ .* lay.H
 end
 
 function copy_mags!(lay1::AbstractLayer, lay2::AbstractLayer)

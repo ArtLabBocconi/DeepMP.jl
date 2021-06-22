@@ -1,301 +1,202 @@
-#############################################################
-#   BPRealLayer
-##############################################################
 
-mutable struct BPRealLayer <: AbstractLayer
+mutable struct BPRealLayer{A2,A3,M} <: AbstractLayer
     l::Int
     K::Int
     N::Int
     M::Int
+    ϵinit
 
-    allm::VecVec
-    allmy::VecVec
-    allmh::VecVec
+    x̂::A2
+    x̂cav::A3 
+    Δ::A2
 
-    allmcav::VecVecVec
-    allρcav::VecVecVec
+    m::A2
+    mcav::A3 
+    σ::A2
 
-    allmycav::VecVecVec
+    Bup::A2
+    B::A2 
+    Bcav::A3 
+    A::A2
 
-    allmhcavtoy::VecVecVec
+    H::A2
+    Hext::A2
+    Hcav::A3
 
-    allmhcavtow::VecVecVec
-    allρhcavtow::VecVecVec
-
-    allh1::VecVec # for W reinforcement
-    allh2::VecVec # for W reinforcement
-
-    allhy::VecVec # for Y reinforcement
-
-    Bup # field from fact ↑ to y
-    B # field from y ↓ to fact
+    ω::A2
+    ωcav::A3 
+    V::A2
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
 
-    istree::Bool
+    weight_mask::M
+    isfrozen::Bool
 end
 
-
-function BPRealLayer(K::Int, N::Int, M::Int)
-    # for variables W
-    allm = [zeros(F, N) for i=1:K]
-    allh1 = [zeros(F, N) for i=1:K]
-    allh2 = [zeros(F, N) for i=1:K]
+@functor BPRealLayer
 
 
-    allmcav = [[zeros(F, N) for i=1:M] for i=1:K]
-    allρcav = [[zeros(F, N) for i=1:M] for i=1:K]
-
-    allmycav = [[zeros(F, N) for i=1:K] for i=1:M]
-    allmhcavtoy = [[zeros(F, K) for i=1:N] for i=1:M]
-
-    allmhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
-    allρhcavtow = [[zeros(F, M) for i=1:N] for i=1:K]
-
-    # for variables Y
-    allmy = [zeros(F, N) for a=1:M]
-    allhy = [zeros(F, N) for a=1:M]
-
-    # for Facts
-    allmh = [zeros(F, M) for k=1:K]
-
+function BPRealLayer(K::Int, N::Int, M::Int, ϵinit; 
+                 density=1., isfrozen=false)
+    x̂ = zeros(F, N, M)
+    x̂cav = zeros(F, K, N, M)
+    Δ = zeros(F, N, M)
+    
+    m = zeros(F, K, N)
+    mcav = zeros(F, K, N, M)
+    σ = zeros(F, K, N)
+    
     Bup = zeros(F, K, M)
     B = zeros(F, N, M)
+    Bcav = zeros(F, K, N, M)
+    A = zeros(F, N, M)
+    
+    H = zeros(F, K, N)
+    Hext = zeros(F, K, N)
+    Hcav = zeros(F, K, N, M)
+    
+    ω = zeros(F, K, M)
+    ωcav = zeros(F, K, N, M)
+    V = zeros(F, K, M)
+    
+    weight_mask = rand(K, N) .< density
 
-    return BPRealLayer(-1, K, N, M, allm, allmy, allmh
-        , allmcav, allρcav, allmycav, allmhcavtoy
-        , allmhcavtow, allρhcavtow
-        , allh1, allh2, allhy, Bup, B
-        , DummyLayer(), DummyLayer(), false)
+    return BPRealLayer(-1, K, N, M, ϵinit,
+            x̂, x̂cav, Δ, m, mcav, σ,
+            Bup, B, Bcav, A, 
+            H, Hext, Hcav,
+            ω, ωcav, V,
+            DummyLayer(), DummyLayer(),
+            weight_mask, isfrozen)
 end
 
+function update!(layer::BPRealLayer, reinfpar; mode=:both)
+    @extract layer: K N M weight_mask
+    @extract layer: x̂ x̂cav Δ m mcav σ 
+    @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
+    @extract layer: bottom_layer top_layer
+    @extract reinfpar: r y ψ
+    Δm = 0.
 
-function updateFact!(layer::BPRealLayer, k::Int)
-    @extract layer: K N M allm allρcav allmy allmh B Bup
-    @extract layer: allmcav allmycav allmhcavtow allρhcavtow allmhcavtoy
-    @extract layer: top_layer bottom_layer
-
-    mh = allmh[k]
-    pd = top_layer.B[k,:]
-    for a=1:M
-        my = allmycav[a][k]
-        m = allmcav[k][a]
-        ρ = allρcav[k][a]
-        mhw = allmhcavtow[k]
-        ρhw = allρhcavtow[k]
-
-        mhy = allmhcavtoy[a]
-        Mhtot = 0.
-        Chtot = 0.
+    if mode == :forw || mode == :both
         if !isbottomlayer(layer)
-            @assert false
-            for i=1:N
-                Mhtot += my[i]*m[i]
-                Chtot += 1 - my[i]^2*m[i]^2
-            end
-        else
-            for i=1:N
-                Mhtot += my[i]*m[i]
-                Chtot += my[i]^2*ρ[i]
-            end
+            bottBup = bottom_layer.Bup # issue https://github.com/mcabbott/Tullio.jl/issues/96
+            @tullio x̂cav[k,i,a] = tanh(bottBup[i,a] + Bcav[k,i,a])
+            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
+            # @tullio x̂cavnew[k,i,a] := tanh(bottBup[i,a] + Bcav[k,i,a])
+            # @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
+            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
+            # x̂cav .= ψ .* x̂cav .+ (1-ψ) .* x̂cavnew   
+            Δ .= 1 .- x̂.^2
         end
+        # @assert all(isfinite, x̂)
+        # @assert all(isfinite, x̂cav)
 
-        Chtot <= 0. && (print("*"); Chtot =1f-5)
+        
+        @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
+        @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
+        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
+        # @assert all(isfinite, ω)
+        # @assert all(isfinite, V)
+        # @assert all(isfinite, ωcav)
+        # @assert all(isfinite, Bup)
+    end
 
-        # println("Mhtot $a= $Mhtot pd=$(pd[a])")
-        @assert isfinite(pd[a]) "$(pd)"
-        # if pd[a]*Hp + (1-pd[a])*Hm <= 0.
-        #     pd[a] -= 1f-8
-        # end
-        mh[a] = 1/√Chtot * GH2(pd[a], -Mhtot / √Chtot)
-        # @assert isfinite(mh[a]) "isfinite(mh[a]) pd[a]= $(pd[a]) Mhtot=$Mhtot √Chtot=$(√Chtot)"
+    if mode == :back || mode == :both
+        ## BACKWARD 
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        # @assert all(isfinite, Btop)
+
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+        @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        # @assert all(isfinite, g)
+        # @assert all(isfinite, gcav)
+        
         if !isbottomlayer(layer)
-            @assert false
-            # for i=1:N
-            #     Mcav = Mhtot - my[i]*m[i]
-            #     Ccav = sqrt(Chtot - (1-my[i]^2 * m[i]^2))
-            #     # mhw[i][a] = my[i]/Ccav * GH2(pd[a],-Mcav / Ccav)
-            #     mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
-            # end
-        else
-            for i=1:N
-                Mcav = Mhtot - my[i]*m[i]
-                Ccav = Chtot - my[i]^2*ρ[i]^2
-                Ccav <= 0. && (Ccav=1f-5)       #print("*"); )
-                x = Mcav / Ccav
-                gh = GH2(pd[a], -x)
-                @assert isfinite(gh)
-                mhw[i][a] = my[i]/√Ccav * gh
-                ρhw[i][a] = my[i]^2/Ccav *(x*gh + gh^2) # -∂^2 log ν(W)
+            # A .= (m.^2 + σ)' * Γ - σ' * g.^2
+            @tullio B[i,a] = mcav[k,i,a] * gcav[k,i,a]
+            @tullio Bcav[k,i,a] = B[i,a] - mcav[k,i,a] * gcav[k,i,a]
+            # @assert all(isfinite, B)
+            # @assert all(isfinite, Bcav)
+        end
 
-                # mhw[i][a] = myatanh(my[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
-                # mhw[i][a] = DH(pd[a], Mcav, my[i], Ccav)
-                # t = DH(pd[a], Mcav, my[i], Ccav)
-                # @assert abs(t-mhw[i][a]) < 1f-1 "pd=$(pd[a]) DH=$t atanh=$(mhw[i][a]) Mcav=$Mcav, my=$(my[i])"
+        if !isfrozen(layer)
+            @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
+            if y > 0 # focusing
+                tγ = tanh(r)
+                @tullio mjs[k,i] := tanh(Hin[k,i])
+                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
+                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
+                @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i]
+            else
+                # reinforcement
+                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
+            @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
+            H .= ψ .* H .+ (1 - ψ) .* Hnew 
+            Hcav .= ψ .* Hcav .+ (1 - ψ) .* Hcavnew 
+            # H .= Hnew 
+            # Hcav .= Hcavnew 
+            
+            @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            # mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
+            mcav .= mcavnew
+            
+            # @assert all(isfinite, H)
+            # @assert all(isfinite, Hcav)
+
+
+            mnew = tanh.(H) .* weight_mask
+            Δm = mean(abs.(m .- mnew))
+            # m .= ψ .* m .+ (1-ψ) .* mnew
+            m .= mnew
+            σ .= (1 .- m.^2) .* weight_mask    
+            @assert all(isfinite, m)
         end
-
-        if !isbottomlayer(layer)
-            @assert false
-            # for i=1:N
-            #     # mhy[i][k] = mhw[i][k]* m[i] / my[i]
-            #     mhy[i][k] = myatanh(m[i]/Ccav * GH2(pd[a],-Mcav / Ccav))
-            # end
-        end
-
-        Bup[k,a] = atanh2Hm1(-Mhtot / √Chtot)
-    end
-end
-
-function updateVarW!(layer::BPRealLayer, k::Int, r=0)
-    @extract layer: K N M allm allmy allmh B Bup allh1 allh2
-    @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
-
-    m = allm[k]
-    h1 = allh1[k]
-    h2 = allh2[k]
-    Δ = 0.
-    # println("ranfeW $k, ",rangeW(layer,k))
-    # println("m $k, " ,m)
-
-    for i in rangeW(layer,k)
-        mhw = allmhcavtow[k][i]
-        ρhw = allρhcavtow[k][i]
-        mcav = allmcav[k]
-        ρcav = allρcav[k]
-        h1[i] = sum(mhw) + r*h1[i]
-        h2[i] = 1. + sum(ρhw) + r*h2[i]
-        # @assert h2[i] > 0.
-        h2[i]<0 && (print("![]!"); continue)
-        # h2[i]<0 && (print("![]!"); h2[i] = 1f-8)
-        oldm = m[i]
-        m[i] = h1[i] / h2[i]
-        for a=1:M
-            h1cav =  h1[i] - mhw[a]
-            h2cav =  h2[i] - ρhw[a]
-            # h2cav<0 && (print("!"); h2cav = 1f-5)
-            h2cav<0 && (h2cav = 1f-8)
-
-            mcav[a][i] = h1cav / h2cav
-            ρcav[a][i] = 1 / h2cav
-        end
-        Δ = max(Δ, abs(m[i] - oldm))
-    end
-    return Δ
-end
-
-function updateVarY!(layer::BPRealLayer, a::Int)
-    @extract layer K N M allm allmy allmh B Bup allhy
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    @assert !isbottomlayer(layer)
-
-    # @assert false
-    my = allmy[a]
-    hy = allhy[a]
-    for i=1:N
-        mhy = allmhcavtoy[a][i]
-        mycav = allmycav[a]
-
-        hy[i] = sum(mhy)
-        @assert isfinite(hy[i]) "isfinite(hy[i]) mhy=$mhy"
-        B[i,a] = hy[i]
-
-        pu = bottom_layer.Bup[i,a];
-        hy[i] += pu
-        my[i] = tanh(hy[i])
-        @assert isfinite(my[i]) "isfinite(my[i]) pu=$pu"
-        for k=1:K
-            mycav[k][i] = tanh(hy[i]-mhy[k])
-        end
-    end
-end
-
-function update!(layer::BPRealLayer, r)
-    @extract layer K N M allm allmy allmh B Bup allhy
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    # println("m=$(allm[1])")
-    # println("mcav=$(allmcav[1][1])")
-    for k=1:K
-        updateFact!(layer, k)
-    end
-    # println("mhcavw=$(allmhcavtow[1][1])")
-    Δ = 0.
-    if !isfrozen(layer)
-        # println("Updating W")
-        for k=1:K
-            δ = updateVarW!(layer, k, r)
-            Δ = max(δ, Δ)
-        end
-    end
-    if !isbottomlayer(layer)
-        for a=1:M
-            updateVarY!(layer, a)
-        end
-    end
-    return Δ
-end
-
-
-function initrand!(layer::BPRealLayer)
-    @extract layer: K N M allm allmy allmh B Bup
-    @extract layer: allmcav allρcav allmycav allmhcavtow allρhcavtow allmhcavtoy
-
-    for m in allm
-        m .= 2*rand(F,N) .- 1
-    end
-    for my in allmy
-        my .= 2*rand(F, N) .- 1
-    end
-    for mh in allmh
-        mh .= 2*rand(F, M) .- 1
+        
     end
     
-    # if!isbottomlayer
-    for k=1:K,a=1:M,i=1:N
-        allmcav[k][a][i] = allm[k][i]
-        allρcav[k][a][i] = 1f-1
-
-        allmycav[a][k][i] = allmy[a][i]
-        allmhcavtow[k][i][a] = allmh[k][a]*allmy[a][i]
-        allρhcavtow[k][i][a] = 1f-1
-        allmhcavtoy[a][i][k] = allmh[k][a]*allm[k][i]
-    end
-
+    return Δm
 end
 
-function fixW!(layer::BPRealLayer, w=1.)
-    @extract layer K N M allm allmy allmh B Bup
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    for k=1:K,i=1:N
-        allm[k][i] = w
-    end
-    for k=1:K, a=1:M, i=1:N
-        allmcav[k][a][i] = allm[k][i]
-    end
+function initrand!(layer::L) where {L <: Union{BPRealLayer}}
+    @extract layer: K N M weight_mask ϵinit
+    @extract layer: x̂ x̂cav Δ m mcav σ Hext
+    @extract layer: B Bcav A ω H Hcav ωcav V
+    # TODO reset all variables
+    H .= ϵinit .* randn!(similar(Hext)) + Hext
+    m .= tanh.(H) .* weight_mask
+    mcav .= m .* weight_mask 
+    σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fix_input!(layer::BPRealLayer, x::Matrix)
-    @extract layer K N M allm allmy allmh B Bup
-    @extract layer allmcav allmycav allmhcavtow allmhcavtoy
-
-    for a=1:M,i=1:N
-        allmy[a][i] = x[i,a]
-    end
-    for a=1:M, k=1:K, i=1:N
-        allmycav[a][k][i] = allmy[a][i]
-    end
+function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPRealLayer}}
+    @extract layer: K N M 
+    @extract layer: x̂ x̂cav Δ m mcav σ 
+    @assert size(x) == size(x̂)
+    x̂ .= x
+    x̂cav .= reshape(x, 1, N, M)
+    Δ .= 0
 end
 
-function rangeW(layer::BPRealLayer, k)
-    @extract layer: N K istree
-    if istree
-        n = div(N,K)
-        return (k-1)*n+1:k*n
-    else
-        return 1:N
-    end
+function getW(layer::L) where L <: Union{BPRealLayer}
+    return sign.(layer.m) .* layer.weight_mask
+end
+
+function forward(layer::L, x) where L <: Union{BPRealLayer}
+    @extract layer: N K
+    @assert size(x, 1) == N
+    W = getW(layer)
+    return sign.(W*x .+ 1f-10)
+end
+
+function fixW!(layer::L, w=1.) where {L <: Union{BPRealLayer}}
+    @extract layer: K N M m σ mcav weight_mask
+    m .= w .* weight_mask
+    mcav .= m .* weight_mask
+    σ .= 0
 end
