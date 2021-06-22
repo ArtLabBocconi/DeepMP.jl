@@ -1,5 +1,6 @@
 module DeepMP
 
+using Tullio: insert_forward_gradient
 using ExtractMacro
 using SpecialFunctions
 using Printf
@@ -13,6 +14,8 @@ using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
 using Functors
 import Cassette
+using Zygote
+
 CUDA.allowscalar(false)
 
 # using PyPlot

@@ -22,6 +22,8 @@ mutable struct BPRealLayer{A2,A3,M} <: AbstractLayer
     H::A2
     Hext::A2
     Hcav::A3
+    Ω::A2
+    Ωext::A2
 
     ω::A2
     ωcav::A3 
@@ -55,6 +57,9 @@ function BPRealLayer(K::Int, N::Int, M::Int, ϵinit;
     H = zeros(F, K, N)
     Hext = zeros(F, K, N)
     Hcav = zeros(F, K, N, M)
+    Ω = zeros(F, K, N)
+    Ωext = zeros(F, K, N)
+
     
     ω = zeros(F, K, M)
     ωcav = zeros(F, K, N, M)
@@ -65,7 +70,7 @@ function BPRealLayer(K::Int, N::Int, M::Int, ϵinit;
     return BPRealLayer(-1, K, N, M, ϵinit,
             x̂, x̂cav, Δ, m, mcav, σ,
             Bup, B, Bcav, A, 
-            H, Hext, Hcav,
+            H, Hext, Hcav, Ω, Ωext,
             ω, ωcav, V,
             DummyLayer(), DummyLayer(),
             weight_mask, isfrozen)
@@ -74,7 +79,7 @@ end
 function update!(layer::BPRealLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
-    @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
+    @extract layer: Bup B Bcav A H Hext Hcav Ω Ωext ω ωcav V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ
     Δm = 0.
@@ -113,6 +118,9 @@ function update!(layer::BPRealLayer, reinfpar; mode=:both)
         @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        grad_g(B, ω, V)::F = gradient(ω -> compute_g(B, ω, V)::F, ω)[1]
+        Γ = grad_g.(B, ω, V)
+
         # @assert all(isfinite, g)
         # @assert all(isfinite, gcav)
         
@@ -126,7 +134,9 @@ function update!(layer::BPRealLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := gcav[k,i,a] * x̂cav[k,i,a] 
+            @tullio Ωin[k,i] := (x̂[i,a]^2 + Δ[i,a]) * Γ[k,a] - Δ[i,a] * g[k,a]^2
             if y > 0 # focusing
+                @assert false "focusing not fully supported"
                 tγ = tanh(r)
                 @tullio mjs[k,i] := tanh(Hin[k,i])
                 @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
@@ -135,14 +145,16 @@ function update!(layer::BPRealLayer, reinfpar; mode=:both)
             else
                 # reinforcement
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio Ωnew[k,i] := Ωin[k,i] + r*Ω[k,i] + Ωext[k,i]
             end
             @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             H .= ψ .* H .+ (1 - ψ) .* Hnew 
+            Ω .= ψ .* Ω .+ (1 - ψ) .* Ωnew 
             Hcav .= ψ .* Hcav .+ (1 - ψ) .* Hcavnew 
             # H .= Hnew 
             # Hcav .= Hcavnew 
             
-            @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
+            @tullio mcavnew[k,i,a] := (Hcav[k,i,a] / Ω[k,i]) * weight_mask[k,i]
             # mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
             mcav .= mcavnew
             
@@ -150,12 +162,12 @@ function update!(layer::BPRealLayer, reinfpar; mode=:both)
             # @assert all(isfinite, Hcav)
 
 
-            mnew = tanh.(H) .* weight_mask
+            mnew = (H ./ Ω) .* weight_mask
             Δm = mean(abs.(m .- mnew))
-            # m .= ψ .* m .+ (1-ψ) .* mnew
             m .= mnew
-            σ .= (1 .- m.^2) .* weight_mask    
+            σ .= (1 ./ Ω) .* weight_mask    
             @assert all(isfinite, m)
+            @assert all(isfinite, σ)
         end
         
     end
@@ -165,13 +177,15 @@ end
 
 function initrand!(layer::L) where {L <: Union{BPRealLayer}}
     @extract layer: K N M weight_mask ϵinit
-    @extract layer: x̂ x̂cav Δ m mcav σ Hext
-    @extract layer: B Bcav A ω H Hcav ωcav V
+    @extract layer: x̂ x̂cav Δ m mcav σ 
+    @extract layer: B Bcav A ω H Hcav Hext Ω Ωext ωcav V
     # TODO reset all variables
     H .= ϵinit .* randn!(similar(Hext)) + Hext
-    m .= tanh.(H) .* weight_mask
+    Ω .= 1 .+ Ωext
+    
+    m .= H ./ Ω .* weight_mask
     mcav .= m .* weight_mask 
-    σ .= (1 .- m.^2) .* weight_mask
+    σ .= 1 ./ Ω .* weight_mask
 end
 
 function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPRealLayer}}
@@ -184,7 +198,7 @@ function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{BPRealLayer}}
 end
 
 function getW(layer::L) where L <: Union{BPRealLayer}
-    return sign.(layer.m) .* layer.weight_mask
+    return layer.m .* layer.weight_mask
 end
 
 function forward(layer::L, x) where L <: Union{BPRealLayer}

@@ -71,6 +71,7 @@ function BPLayer(K::Int, N::Int, M::Int, ϵinit;
             weight_mask, isfrozen)
 end
 
+
 function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
@@ -113,7 +114,9 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
         @tullio gcav[k,i,a] := compute_g(Btop[k,a], ωcav[k,i,a], V[k,a])  avx=false
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
         # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        
         # @assert all(isfinite, g)
+        @assert all(isfinite, Γ)
         # @assert all(isfinite, gcav)
         
         if !isbottomlayer(layer)

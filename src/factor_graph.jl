@@ -57,8 +57,8 @@ mutable struct FactorGraph
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
-                @assert l == 1
-                push!(layers, BPRealLayer(K[l+1], K[l], M))
+                # @assert l == 1
+                push!(layers, BPRealLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created BPRealLayer\t $(K[l])")
             else
                 error("Wrong Layer Symbol")
