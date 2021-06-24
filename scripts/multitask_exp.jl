@@ -29,7 +29,7 @@ function deepmp_scenario1(; M=-1, bsize=100,
 
     # needed to initaliaze g
     g, wb, wt, E, it = DeepMP.solve(xM, yM;
-                 K=[size(x, 1), H..., 10], layers=layers,
+                 K=[size(xM, 1), H..., 10], layers=layers,
                  xtest=xMt, ytest=yMt, ϵinit=ϵinit,
                  ρ=ρ, r=r, rstep=rstep, yy=0.0,
                  seed=seed, epochs=1, maxiters=maxiters,
@@ -49,7 +49,7 @@ function deepmp_scenario1(; M=-1, bsize=100,
     # MNIST training
     for ep = 1:(div(epochs-1, 2))
         g, wb, wt, E, it = DeepMP.solve(xM, yM; g0=g,
-                     K=[size(x, 1), H..., 10], layers=layers,
+                     K=[size(xM, 1), H..., 10], layers=layers,
                      xtest=nothing, ytest=nothing, ϵinit=ϵinit,
                      ρ=ρ, r=r, rstep=rstep, yy=0.0,
                      seed=seed, epochs=2, maxiters=maxiters,
@@ -70,7 +70,7 @@ function deepmp_scenario1(; M=-1, bsize=100,
     # FASHION training
     for ep = 1:(div(epochs-1, 2))
         g, wb, wt, E, it = DeepMP.solve(xF, yF; g0=g,
-                     K=[size(x, 1), H..., 10], layers=layers,
+                     K=[size(xM, 1), H..., 10], layers=layers,
                      xtest=nothing, ytest=nothing, ϵinit=ϵinit,
                      ρ=ρ, r=r, rstep=rstep, yy=0.0,
                      seed=seed, epochs=2, maxiters=maxiters,
