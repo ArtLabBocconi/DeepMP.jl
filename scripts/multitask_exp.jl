@@ -36,8 +36,8 @@ function deepmp_scenario1(; M=-1, bsize=100,
                  ψ=ψ, density=1, batchsize=bsize,
                  ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                  freezetop=false,
-                 usecusa=usecuda, gpu_id=gpu_id,
-                 infotime=1, verbose=1);
+                 usecuda=usecuda, gpu_id=gpu_id,
+                 verbose=1);
 
 
     train_err_mnist = error_bp(g, xM, yM)
@@ -56,8 +56,8 @@ function deepmp_scenario1(; M=-1, bsize=100,
                      ψ=ψ, density=1, batchsize=bsize,
                      ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                      freezetop=false,
-                     usecusa=usecuda, gpu_id=gpu_id,
-                     infotime=1, verbose=1);
+                     usecuda=usecuda, gpu_id=gpu_id,
+                     verbose=1);
 
         println("ep=$ep")
         train_err_mnist = error_bp(g, xM, yM)
@@ -77,8 +77,8 @@ function deepmp_scenario1(; M=-1, bsize=100,
                      ψ=ψ, density=1, batchsize=bsize,
                      ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                      freezetop=false,
-                     usecusa=usecuda, gpu_id=gpu_id,
-                     infotime=1, verbose=1);
+                     usecuda=usecuda, gpu_id=gpu_id,
+                     verbose=1);
 
         println("ep=$ep")
         train_err_mnist = error_bp(g, xM, yM)
@@ -119,8 +119,8 @@ function deepmp_scenario2(; M=-1,  bsize=100,
                     ψ=ψ, density=1, batchsize=bsize,
                     ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                     freezetop=false,
-                    usecusa=usecuda, gpu_id=gpu_id,
-                    infotime=1, verbose=1);
+                    usecuda=usecuda, gpu_id=gpu_id,
+                    verbose=1);
 
 
     for n = 1:num_tasks
@@ -135,8 +135,8 @@ function deepmp_scenario2(; M=-1,  bsize=100,
                             ψ=ψ, density=1, batchsize=bsize,
                             ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                             freezetop=false,
-                            usecusa=usecuda, gpu_id=gpu_id,
-                            infotime=1, verbose=1);
+                            usecuda=usecuda, gpu_id=gpu_id,
+                            verbose=1);
             out = @sprintf("%i", it*2)
             for k = 1:num_tasks
                 out *= @sprintf(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], y))
