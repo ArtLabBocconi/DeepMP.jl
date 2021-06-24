@@ -25,7 +25,7 @@ function deepmp_scenario1(; M=-1, bsize=100,
     f = open(outfile, "w")
 
     xM, yM, xMt, yMt = get_dataset(M; multiclass=true, dataset=:mnist)
-    xF, yF, xFt, yFt = get_dataset(M; multiclass=true, dataset=:mnist)
+    xF, yF, xFt, yFt = get_dataset(M; multiclass=true, dataset=:fashion)
 
     # needed to initaliaze g
     g, wb, wt, E, it = DeepMP.solve(xM, yM;
@@ -139,7 +139,7 @@ function deepmp_scenario2(; M=-1,  bsize=100,
                             verbose=1);
             out = @sprintf("%i", it*2)
             for k = 1:num_tasks
-                out *= @sprintf(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], y))
+                out *= @sprintf(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], yt))
             end
             println(f, out)
         end
