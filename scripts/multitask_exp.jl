@@ -2,7 +2,7 @@
 
 module runexp
 
-using Statistics, Random, LinearAlgebra, DelimitedFiles
+using Statistics, Random, LinearAlgebra, DelimitedFiles, Printf
 
 include("real_data_experiments.jl")
 
