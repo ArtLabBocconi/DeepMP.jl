@@ -14,7 +14,7 @@ function error_bp(g, x, y)
 end
 
 # MNIST + FASHION MNIST [SCENARIO 1]
-function deepmp_scenario1(;
+function deepmp_scenario1(; M=-1, bsize=100,
                           H::Vector{Int}=[101, 101], epochs=10,
                           layers=[:tap, :tap, :argmax], maxiters=1,
                           ρ=1.0, r=0.0, rstep=0.0, ψ=0.0, ϵinit=1.0,
@@ -24,8 +24,8 @@ function deepmp_scenario1(;
 
     f = open(outfile, "w")
 
-    xM, yM, xMt, yMt = get_dataset(multiclass=true, dataset=:mnist)
-    xF, yF, xFt, yFt = get_dataset(multiclass=true, dataset=:mnist)
+    xM, yM, xMt, yMt = get_dataset(M=M, multiclass=true, dataset=:mnist)
+    xF, yF, xFt, yFt = get_dataset(M=M, multiclass=true, dataset=:mnist)
 
     # needed to initaliaze g
     g, wb, wt, E, it = DeepMP.solve(xM, yM;
@@ -33,7 +33,7 @@ function deepmp_scenario1(;
                  xtest=xMt, ytest=yMt, ϵinit=ϵinit,
                  ρ=ρ, r=r, rstep=rstep, yy=0.0,
                  seed=seed, epochs=1, maxiters=maxiters,
-                 ψ=ψ, density=density, batchsize=1,
+                 ψ=ψ, density=density, batchsize=bsize,
                  ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                  freezetop=false,
                  usecusa=usecuda, gpu_id=gpu_id,
@@ -53,7 +53,7 @@ function deepmp_scenario1(;
                      xtest=nothing, ytest=nothing, ϵinit=ϵinit,
                      ρ=ρ, r=r, rstep=rstep, yy=0.0,
                      seed=seed, epochs=2, maxiters=maxiters,
-                     ψ=ψ, density=density, batchsize=1,
+                     ψ=ψ, density=density, batchsize=bsize,
                      ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                      freezetop=false,
                      usecusa=usecuda, gpu_id=gpu_id,
@@ -74,7 +74,7 @@ function deepmp_scenario1(;
                      xtest=nothing, ytest=nothing, ϵinit=ϵinit,
                      ρ=ρ, r=r, rstep=rstep, yy=0.0,
                      seed=seed, epochs=2, maxiters=maxiters,
-                     ψ=ψ, density=density, batchsize=1,
+                     ψ=ψ, density=density, batchsize=bsize,
                      ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                      freezetop=false,
                      usecusa=usecuda, gpu_id=gpu_id,
@@ -92,7 +92,8 @@ function deepmp_scenario1(;
 end # scenario1
 
 # Permuted MNIST [SCENARIO 2]
-function deepmp_scenario2(; num_tasks=5,
+function deepmp_scenario2(; M=-1,  bsize=100,
+                          num_tasks=5,
                           H::Vector{Int}=[101, 101], epochs=10,
                           layers=[:tap, :tap, :argmax], maxiters=1,
                           ρ=1.0, r=0.0, rstep=0.0, ψ=0.0, ϵinit=1.0,
@@ -102,7 +103,7 @@ function deepmp_scenario2(; num_tasks=5,
 
     f = open(outfile, "w")
 
-    x, y, xt, yt = get_dataset(multiclass=true, dataset=:mnist)
+    x, y, xt, yt = get_dataset(M=M, multiclass=true, dataset=:mnist)
 
     N = size(x, 1)
     perms = [randperm(N) for _ = 1:num_tasks]
@@ -115,7 +116,7 @@ function deepmp_scenario2(; num_tasks=5,
                     xtest=xt[perms[1],:], ytest=yt, ϵinit=ϵinit,
                     ρ=ρ, r=r, rstep=rstep, yy=0.0,
                     seed=seed, epochs=1, maxiters=maxiters,
-                    ψ=ψ, density=density, batchsize=1,
+                    ψ=ψ, density=density, batchsize=bsize,
                     ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                     freezetop=false,
                     usecusa=usecuda, gpu_id=gpu_id,
@@ -131,7 +132,7 @@ function deepmp_scenario2(; num_tasks=5,
                             xtest=xt[perms[n],:], ytest=yt, ϵinit=ϵinit,
                             ρ=ρ, r=r, rstep=rstep, yy=0.0,
                             seed=seed, epochs=2, maxiters=maxiters,
-                            ψ=ψ, density=density, batchsize=1,
+                            ψ=ψ, density=density, batchsize=bsize,
                             ϵ=1e-4, altsolv=altsolv, altconv=altconv,
                             freezetop=false,
                             usecusa=usecuda, gpu_id=gpu_id,
