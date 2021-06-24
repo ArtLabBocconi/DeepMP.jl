@@ -15,7 +15,7 @@ function error_bp(g, x, y)
     return mean(vec(DeepMP.forward(g, x)) .!= y)
 end
 
-# MNIST + FASHION MNIST
+# MNIST + FASHION MNIST [SCENARIO 1]
 function deepmp_scenario1(;
                           H::Vector{Int}=[101, 101], epochs=10,
                           layers=[:tap, :tap, :argmax], maxiters=1,
@@ -92,5 +92,61 @@ function deepmp_scenario1(;
 
     close(f)
 end # scenario1
+
+# Permuted MNIST [SCENARIO 2]
+function deepmp_scenario2(; num_tasks=5,
+                          H::Vector{Int}=[101, 101], epochs=10,
+                          layers=[:tap, :tap, :argmax], maxiters=1,
+                          ρ=1.0, r=0.0, rstep=0.0, ψ=0.0, ϵinit=1.0,
+                          altsolv=true, altconv=true,
+                          usecuda=false, gpu_id=1,
+                          outfile="tmp.dat", seed=23)
+
+    f = open(outfile, "w")
+
+    x, y, xt, yt = get_dataset(multiclass=true, dataset=:mnist)
+
+    N = size(x, 1)
+    perms = [randperm(N) for _ = 1:num_tasks]
+    train_errs = [1.0 for _ = 1:num_tasks]
+    test_errs  = [1.0 for _ = 1:num_tasks]
+
+    # 1st task, 1 epoch, needed to initaliaze g
+    g, wb, wt, E, it = DeepMP.solve(x[perms[1],:], y;
+                    K=[size(x, 1), H..., 10], layers=layers,
+                    xtest=xt[perms[1],:], ytest=yt, ϵinit=ϵinit,
+                    ρ=ρ, r=r, rstep=rstep, yy=0.0,
+                    seed=seed, epochs=1, maxiters=maxiters,
+                    ψ=ψ, density=density, batchsize=1,
+                    ϵ=1e-4, altsolv=altsolv, altconv=altconv,
+                    freezetop=false,
+                    usecusa=usecuda, gpu_id=gpu_id,
+                    infotime=1, verbose=1);
+
+
+    for n = 1:num_tasks
+        for it = 1:div(epochs, 2)
+            # solve
+            g, wb, wt, E, it = DeepMP.solve(x[perms[n],:], y;
+                            g0 = g,
+                            K=[size(x, 1), H..., 10], layers=layers,
+                            xtest=xt[perms[n],:], ytest=yt, ϵinit=ϵinit,
+                            ρ=ρ, r=r, rstep=rstep, yy=0.0,
+                            seed=seed, epochs=2, maxiters=maxiters,
+                            ψ=ψ, density=density, batchsize=1,
+                            ϵ=1e-4, altsolv=altsolv, altconv=altconv,
+                            freezetop=false,
+                            usecusa=usecuda, gpu_id=gpu_id,
+                            infotime=1, verbose=1);
+            out = @sprintf("%i", it*2)
+            for k = 1:num_tasks
+                out *= @sprint(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], y))
+            end
+            println(f, out)
+        end
+    end
+
+    close(f)
+end # scenario 2
 
 end # module
