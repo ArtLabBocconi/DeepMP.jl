@@ -6,6 +6,16 @@ using Statistics, Random, LinearAlgebra, DelimitedFiles, Printf
 
 include("real_data_experiments.jl")
 
+using CUDA, KernelAbstractions, CUDAKernels
+using Functors
+
+cpu(x) = fmap(x -> adapt(Array, x), x)
+
+gpu(x) = fmap(CUDA.cu, x)
+# CUDA.cu(x::Integer) = x
+CUDA.cu(x::Float64) = Float32(x)
+CUDA.cu(x::Array{Int64}) = convert(CuArray{Int32}, x)
+
 function error_sgd(w, x, y)
     return mean(vec(sign.(DeepBinaryNets.forward(w, x))) .!= y)
 end
