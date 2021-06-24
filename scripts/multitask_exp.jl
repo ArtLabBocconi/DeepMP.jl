@@ -138,7 +138,7 @@ function deepmp_scenario2(; num_tasks=5,
                             infotime=1, verbose=1);
             out = @sprintf("%i", it*2)
             for k = 1:num_tasks
-                out *= @sprint(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], y))
+                out *= @sprintf(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], y))
             end
             println(f, out)
         end
