@@ -4,7 +4,7 @@ module runexp
 
 using Statistics, Random, LinearAlgebra, DelimitedFiles
 
-include("../../src/DeepMP.jl")
+# include("../../src/DeepMP.jl")
 # include("../../../DeepBinaryNets/src/DeepBinaryNets.jl")
 include("../../scripts/real_data_experiments.jl")
 
