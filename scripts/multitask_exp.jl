@@ -24,8 +24,8 @@ function deepmp_scenario1(; M=-1, bsize=100,
 
     f = open(outfile, "w")
 
-    xM, yM, xMt, yMt = get_dataset(M=M, multiclass=true, dataset=:mnist)
-    xF, yF, xFt, yFt = get_dataset(M=M, multiclass=true, dataset=:mnist)
+    xM, yM, xMt, yMt = get_dataset(M; multiclass=true, dataset=:mnist)
+    xF, yF, xFt, yFt = get_dataset(M; multiclass=true, dataset=:mnist)
 
     # needed to initaliaze g
     g, wb, wt, E, it = DeepMP.solve(xM, yM;
@@ -103,7 +103,7 @@ function deepmp_scenario2(; M=-1,  bsize=100,
 
     f = open(outfile, "w")
 
-    x, y, xt, yt = get_dataset(M=M, multiclass=true, dataset=:mnist)
+    x, y, xt, yt = get_dataset(M; multiclass=true, dataset=:mnist)
 
     N = size(x, 1)
     perms = [randperm(N) for _ = 1:num_tasks]
