@@ -32,10 +32,17 @@ function deepmp_scenario1(; M=-1, bsize=100,
                           usecuda=false, gpu_id=1,
                           outfile="tmp.dat", seed=23)
 
+    usecuda = CUDA.functional() && usecuda
+    device = usecuda ? gpu : cpu
+    usecuda && gpu_id >= 0 && device!(gpu_id)
+
     f = open(outfile, "w")
 
     xM, yM, xMt, yMt = get_dataset(M; multiclass=true, dataset=:mnist)
     xF, yF, xFt, yFt = get_dataset(M; multiclass=true, dataset=:fashion)
+
+    xM, yM, xMt, yMt = device(xM), device(yM), device(xMt), device(yMt)
+    xF, yF, xFt, yFt = device(xF), device(yF), device(xFt), device(yFt)
 
     # needed to initaliaze g
     g, wb, wt, E, it = DeepMP.solve(xM, yM;
@@ -111,9 +118,15 @@ function deepmp_scenario2(; M=-1,  bsize=100,
                           usecuda=false, gpu_id=1,
                           outfile="tmp.dat", seed=23)
 
+    usecuda = CUDA.functional() && usecuda
+    device = usecuda ? gpu : cpu
+    usecuda && gpu_id >= 0 && device!(gpu_id)
+
     f = open(outfile, "w")
 
     x, y, xt, yt = get_dataset(M; multiclass=true, dataset=:mnist)
+
+    x, y, xt, yt = device(x), device(y), device(xt), device(yt)
 
     N = size(x, 1)
     perms = [randperm(N) for _ = 1:num_tasks]
