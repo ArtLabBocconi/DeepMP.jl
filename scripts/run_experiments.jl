@@ -5,10 +5,15 @@ usecuda = true
 if length(ARGS) ≠ 0
     gpu_id = parse(Int, ARGS[1])
 end
-lays = [:mf, :bp]; gpu_id = 1
+#lays = [:mf, :bp]; gpu_id = 1
 #lays = [:bpi, :tap]; gpu_id = 2
 #lays = [:mf, :tap]; gpu_id = 1
 #lays = [:bpi]; gpu_id = 2
+
+lays = [:bpi]; gpu_id = 2
+#lays = [:bpi]; gpu_id = 2
+
+
 epochs = 100
 
 dataset = :fashion
@@ -21,7 +26,7 @@ Ks = [[28*28, 101, 101, 1]]
 ρs = [1e-5] .+ 1.
 ϵinits = [1e0]
 ψs = [0.8]
-maxiterss = [1]
+maxiterss = [2]
 rs = [0.]
 
 Ms = [Int(6e4)]
@@ -29,7 +34,7 @@ bs = [128]
 
 #ρs = [-1e-1, -1e-5, 0., 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] .+ 1.
 #ψs = [[0:0.2:0.8;]..., 0.9, 0.99, 0.999, 0.9999]
-bs = [1, 16, 128, 1024]; Ms = [Int(6e4) for _=1:length(bs)]
+#bs = [1, 16, 128, 1024]; Ms = [Int(6e4) for _=1:length(bs)]
 #Ms = [Int(1e2), Int(1e3), Int(1e4), Int(6e4)]; bs = [Int(1e0), Int(1e1), Int(1e2), Int(6e2)]
 #maxiterss = [1, 10, 50, 100]
 #rs = [0.2:0.2:1.2;]
@@ -69,9 +74,9 @@ else
     include("real_data_experiments.jl")
     for p in params
         try
-            run_experiment(9; usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
+            run_experiment(; dataset, multiclass=false, usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
             batchsize=p[5], ρ=p[2], ψ=p[3], M=p[4], maxiters=p[6], r=p[7], 
-            ϵinit=p[8], K=p[9], altsolv, altconv, dataset)
+            ϵinit=p[8], K=p[9], altsolv, altconv)
         catch
             println("a process has been interrupted")
         end
