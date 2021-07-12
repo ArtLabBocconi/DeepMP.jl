@@ -170,7 +170,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
     
     L = length(K) - 1
-    ψ = process_damping(ψ, L)
+    ψ = num_to_vec(ψ, L)
+    ρ = num_to_vec(ρ, L)
 
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
@@ -204,7 +205,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
         end
             
-        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%g  t=%g (layers=%s, bs=%d)\n",
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
@@ -233,7 +234,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             t = @timed for (b, (x, y)) in enumerate(dtrain)
-                ρ > 0 && set_Hext_from_H!(g, ρ, rbatch)
+                all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
