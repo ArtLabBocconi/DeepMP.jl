@@ -210,11 +210,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
             
-        plot_info(g, 0; verbose)
+        q0s, qWαβs = plot_info(g, 0; verbose)
 
         if saveres
-            q0, qWαβ, _ = compute_overlaps(g.layers[2])
-            outf = @sprintf("%d %g %g %g %g %g", epoch, Etrain, Etest, mean(q0), mean(qWαβ), t.time)
+            outf = @sprintf("%d %g %g", epoch, Etrain, Etest)
+            for (q0, qWαβ) in zip(q0s, qWαβs)
+                outf *= @sprintf(" %g %g", mean(q0), mean(qWαβ))
+            end
+            outf *= @sprintf(" %g", t.time)
             println(fres, outf); flush(fres)
         end
         return Etrain

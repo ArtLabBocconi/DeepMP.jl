@@ -143,7 +143,7 @@ end
 # set eternal field from posterior
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
-        
+
         # xxx
         # fashion, mnist, cifar10, 101-101
         # first version of argmax
@@ -310,9 +310,12 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     @assert length(layers) == L
     width = info
     info > 0 && clf()
+    q0s, qWαβs = [], []
     for l=1:L
-        wt = teacher != nothing ? teacher[l] : nothing
+        wt = !isnothing(teacher) ? teacher[l] : nothing
         q0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
+        push!(q0s, q0)
+        push!(qWαβs, qWαβ)
 
         verbose > 0 && printvec(q0, "layer $l q0=")
         verbose > 0 && printvec(qWαβ, "layer $l qWαβ=")
@@ -373,4 +376,5 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
         tight_layout()
 
     end
+    return q0s, qWαβs
 end
