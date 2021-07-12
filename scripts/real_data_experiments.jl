@@ -1,5 +1,5 @@
 using Pkg
- Pkg.activate("../")
+Pkg.activate("../")
 #Pkg.activate("./")
 Pkg.instantiate()
 
