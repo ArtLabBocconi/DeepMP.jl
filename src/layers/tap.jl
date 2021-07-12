@@ -70,7 +70,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
     @extract layer: x̂ Δ m σ 
     @extract layer: Bup B  A H Hext ω  V g
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r ψ
+    @extract reinfpar: r ψ l
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -111,7 +111,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             @tullio Hnew[k,i] := Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
             @tullio Hnew[k,i] += -Δ[i,a] * Γ[k,a]
 
-            H .= ψ .* H .+ (1-ψ) .* Hnew
+            H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))

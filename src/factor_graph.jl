@@ -90,6 +90,15 @@ function process_density(density, L)
     return density
 end
 
+# Turn ψ into a vector (a value for each layer)
+function process_damping(ψ, L)
+    if isa(ψ, Number)
+        ψ = fill(ψ, L)
+    end
+    @assert length(ψ) == L
+    return ψ
+end
+
 function has_same_size(g::FactorGraph, W::Vector{<:AbstractMatrix})
     length(g.K) == length(W) + 1 || return false
     for i in 1:length(g.K)-1
@@ -256,26 +265,19 @@ function update!(g::FactorGraph, reinfpar)
     Δ = 0.
 
     # xxx
-
     # fashion-mnist, mnist, cifar10, 101-101
     #ψ1 = 0.8
     #ψ2 = 0.9
     #ψ3 = 0.9
 
     for l = 2:g.L+1
-        # xxx
-        #reinfpar.ψ = l==2 ? ψ1 :
-        #             l==3 ? ψ2 :
-        #             l==4 ? ψ3 : reinfpar.ψ
+        reinfpar.l = l-1
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
 
     for l = (g.L+1):-1:2
-        # xxx
-        #reinfpar.ψ = l==2 ? ψ1 :
-        #             l==3 ? ψ2 :
-        #             l==4 ? ψ3 : reinfpar.ψ
+        reinfpar.l = l-1
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end
