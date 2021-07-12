@@ -90,13 +90,13 @@ function process_density(density, L)
     return density
 end
 
-# Turn ψ into a vector (a value for each layer)
-function process_damping(ψ, L)
-    if isa(ψ, Number)
-        ψ = fill(ψ, L)
+# Turn a number into a vector (a value for each layer)
+function num_to_vec(v, L)
+    if isa(v, Number)
+        v = fill(v, L)
     end
-    @assert length(ψ) == L
-    return ψ
+    @assert length(v) == L
+    return v
 end
 
 function has_same_size(g::FactorGraph, W::Vector{<:AbstractMatrix})
@@ -143,6 +143,7 @@ end
 # set eternal field from posterior
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
+        
         # xxx
         # fashion, mnist, cifar10, 101-101
         # first version of argmax
@@ -164,8 +165,7 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
         #     l==3 ? 1.0 :
         #     l==4 ? 0.999 : ρ
 
-
-        set_Hext_from_H!(g.layers[l], ρ, rbatch)
+        set_Hext_from_H!(g.layers[l], ρ[l-1], rbatch)
     end
 end
 
