@@ -76,7 +76,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: x̂ x̂cav Δ m mcav σ 
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r y ψ
+    @extract reinfpar: r y ψ l
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -86,8 +86,8 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             # @tullio x̂cavnew[k,i,a] := tanh(bottBup[i,a] + Bcav[k,i,a])
             # @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
-            # x̂ .= ψ .* x̂ .+ (1-ψ) .* x̂new
-            # x̂cav .= ψ .* x̂cav .+ (1-ψ) .* x̂cavnew   
+            # x̂ .= ψ[l] .* x̂ .+ (1-ψ[l]) .* x̂new
+            # x̂cav .= ψ[l] .* x̂cav .+ (1-ψ[l]) .* x̂cavnew   
             Δ .= 1 .- x̂.^2
         end
         # @assert all(isfinite, x̂)
@@ -137,13 +137,13 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-            H .= ψ .* H .+ (1 - ψ) .* Hnew 
-            Hcav .= ψ .* Hcav .+ (1 - ψ) .* Hcavnew 
+            H .= ψ[l] .* H .+ (1 - ψ[l]) .* Hnew 
+            Hcav .= ψ[l] .* Hcav .+ (1 - ψ[l]) .* Hcavnew 
             # H .= Hnew 
             # Hcav .= Hcavnew 
             
             @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
-            # mcav .= ψ .* mcav .+ (1 - ψ) .* mcavnew
+            # mcav .= ψ[l] .* mcav .+ (1 - ψ[l]) .* mcavnew
             mcav .= mcavnew
             
             # @assert all(isfinite, H)
@@ -152,7 +152,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
-            # m .= ψ .* m .+ (1-ψ) .* mnew
+            # m .= ψ[l] .* m .+ (1-ψ[l]) .* mnew
             m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)

@@ -62,7 +62,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
     @extract layer: bottom_layer top_layer
-    @extract reinfpar: r y ψ
+    @extract reinfpar: r y ψ l
     Δm = 0.
 
     if mode == :forw || mode == :both
@@ -99,7 +99,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
                 # reinforcement 
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-            H .= ψ .* H .+ (1-ψ) .* Hnew
+            H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))

@@ -1,12 +1,13 @@
 mutable struct ReinfParams
-    r::Float32         # reinforcement (γ for focusing) for W variables
+    r::Float32                           # reinforcement (γ for focusing) for W variables
     rstep::Float32
-    y::Float32          # parameter for FocusingBP
-    ψ::Float32          # damping parameter
+    y::Float32                           # parameter for FocusingBP
+    ψ::Union{Float32, Vector{Float64}}   # damping parameter
     wait_count::Int
+    l::Int
 end
 
-ReinfParams(r=0., rstep=0., y=0, ψ=0.) = ReinfParams(r, rstep, y, ψ, 0)
+ReinfParams(r=0., rstep=0., y=0, ψ=0.) = ReinfParams(r, rstep, y, ψ, 0, 0)
 
 
 function update_reinforcement!(reinfpar::ReinfParams)

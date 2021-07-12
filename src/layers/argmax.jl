@@ -100,9 +100,6 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract reinfpar: r y ψ
     Δm = 0.
 
-    # xxx
-    #ψargm = 0.9
-
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
@@ -140,8 +137,7 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
                 # reinforcement 
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-            #H .= ψargm .* H .+ (1-ψargm) .* Hnew
-            H .= ψ .* H .+ (1-ψ) .* Hnew
+            H .= ψ[end] .* H .+ (1-ψ[end]) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))

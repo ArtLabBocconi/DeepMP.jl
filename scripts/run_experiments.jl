@@ -26,7 +26,7 @@ Ks = [[28*28, 101, 101, 1]]
 ρs = [1e-5] .+ 1.
 ϵinits = [1e0]
 ψs = [0.8]
-maxiterss = [2]
+maxiterss = [1]
 rs = [0.]
 
 Ms = [Int(6e4)]

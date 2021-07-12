@@ -169,6 +169,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         usecuda && CUDA.seed!(seed)
     end
     
+    L = length(K) - 1
+    ψ = process_damping(ψ, L)
+
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
