@@ -131,9 +131,31 @@ function set_external_fields!(g::FactorGraph, h0; ρ=1.0, rbatch=0)
     end
 end
 
-# set eternal field ffrom posterior
+# set eternal field from posterior
 function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     for l = 2:g.L+1
+        # xxx
+        # fashion, mnist, cifar10, 101-101
+        # first version of argmax
+        #ρl = l==2 ? 1.0 :
+        #     l==3 ? 1.0 :
+        #     l==4 ? 0. : ρ
+        # second version of argmax
+        #ρl = l==2 ? 0.9999 :
+        #     l==3 ? 0.997 :
+        #     l==4 ? 0.0 : ρ
+
+        # fashion, mnist, cifar10, 1001-1001
+        #ρl = l==2 ? 1.0 :
+        #     l==3 ? 1.0 :
+        #     l==4 ? 0.0 : ρ
+
+        # batchsize = 1 ; fashion, mnist, cifar10, 101-101
+        #ρl = l==2 ? 1.0 :
+        #     l==3 ? 1.0 :
+        #     l==4 ? 0.999 : ρ
+
+
         set_Hext_from_H!(g.layers[l], ρ, rbatch)
     end
 end
@@ -233,12 +255,27 @@ end
 function update!(g::FactorGraph, reinfpar)
     Δ = 0.
 
+    # xxx
+
+    # fashion-mnist, mnist, cifar10, 101-101
+    #ψ1 = 0.8
+    #ψ2 = 0.9
+    #ψ3 = 0.9
+
     for l = 2:g.L+1
+        # xxx
+        #reinfpar.ψ = l==2 ? ψ1 :
+        #             l==3 ? ψ2 :
+        #             l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
 
     for l = (g.L+1):-1:2
+        # xxx
+        #reinfpar.ψ = l==2 ? ψ1 :
+        #             l==3 ? ψ2 :
+        #             l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end

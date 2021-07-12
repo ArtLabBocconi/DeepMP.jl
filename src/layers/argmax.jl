@@ -65,7 +65,6 @@ function compute_g_argmax(y, ω, V)
     dω = ω[yc] .- ω
     g = @. -GH(-dω / Vtot) / Vtot 
     g[yc] .= .- sum(g, dims=1) .+ g[yc]
-
     return g
 end
 
@@ -88,7 +87,6 @@ end
 #         # @assert size(z) == (1, 128)
 #         g .+= @. -GH(-(dω + z) / V) / V 
 #     end
-
 #     g[yc] .= .- sum(g, dims=1) .+ g[yc]
 #     g ./= nsamples
 #     return g
@@ -101,6 +99,9 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ
     Δm = 0.
+
+    # xxx
+    #ψargm = 0.9
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -139,6 +140,7 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
                 # reinforcement 
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
+            #H .= ψargm .* H .+ (1-ψargm) .* Hnew
             H .= ψ .* H .+ (1-ψ) .* Hnew
 
             mnew = tanh.(H) .* weight_mask
