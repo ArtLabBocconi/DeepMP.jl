@@ -141,22 +141,22 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
         #     l==3 ? 1.0 :
         #     l==4 ? 0. : ρ
         # second version of argmax
-        ρl = l==2 ? 0.9999 :
-             l==3 ? 0.997 :
-             l==4 ? 0.0 : ρ
+        #ρl = l==2 ? 0.9999 :
+        #     l==3 ? 0.997 :
+        #     l==4 ? 0.0 : ρ
 
         # fashion, mnist, cifar10, 1001-1001
-        ρl = l==2 ? 1.0 :
-             l==3 ? 1.0 :
-             l==4 ? 0.0 : ρ
+        #ρl = l==2 ? 1.0 :
+        #     l==3 ? 1.0 :
+        #     l==4 ? 0.0 : ρ
 
         # batchsize = 1 ; fashion, mnist, cifar10, 101-101
-        ρl = l==2 ? 1.0 :
-             l==3 ? 1.0 :
-             l==4 ? 0.999 : ρ
+        #ρl = l==2 ? 1.0 :
+        #     l==3 ? 1.0 :
+        #     l==4 ? 0.999 : ρ
 
 
-        set_Hext_from_H!(g.layers[l], ρl, rbatch)
+        set_Hext_from_H!(g.layers[l], ρ, rbatch)
     end
 end
 
@@ -258,24 +258,24 @@ function update!(g::FactorGraph, reinfpar)
     # xxx
 
     # fashion-mnist, mnist, cifar10, 101-101
-    ψ1 = 0.8
-    ψ2 = 0.9
-    ψ3 = 0.9
+    #ψ1 = 0.8
+    #ψ2 = 0.9
+    #ψ3 = 0.9
 
     for l = 2:g.L+1
         # xxx
-        reinfpar.ψ = l==2 ? ψ1 :
-                     l==3 ? ψ2 :
-                     l==4 ? ψ3 : reinfpar.ψ
+        #reinfpar.ψ = l==2 ? ψ1 :
+        #             l==3 ? ψ2 :
+        #             l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:forw)
         Δ = max(δ, Δ)
     end
 
     for l = (g.L+1):-1:2
         # xxx
-        reinfpar.ψ = l==2 ? ψ1 :
-                     l==3 ? ψ2 :
-                     l==4 ? ψ3 : reinfpar.ψ
+        #reinfpar.ψ = l==2 ? ψ1 :
+        #             l==3 ? ψ2 :
+        #             l==4 ? ψ3 : reinfpar.ψ
         δ = update!(g.layers[l], reinfpar; mode=:back)
         Δ = max(δ, Δ)
     end
