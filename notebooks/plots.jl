@@ -11,7 +11,8 @@ rd(x, n) = round(x, sigdigits=n)
 dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 101, 101, 10]
+K = [Nin, 101, 101, 1]
+L = length(K)-1
 plot_sgd = true
 lrsgd = 1.0
 
@@ -26,13 +27,14 @@ multiclass = false
 if !multiclass
     if batchsize == 128
         seed_bp = [2]
-        ρ1 = 1e-5       
-        ψ = 0.8         
+        seed_sgd = [2]
+        ρ1 = [1e-5, 1e-5, -1e-3]  
+        ψ = [0.8, 0.8, 0.8]         
         P = 6e4         
         maxiters = 1   
         r = 0.        
         ϵinit = 1e0
-        ρs = [ρ1 for _=1:length(lays)] .+ 1.    
+        ρs = [ρ1.+1. for _=1:length(lays)]    
     end
 else
 end
@@ -92,7 +94,7 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
     μ_qablay1 = mean(qablay1)
     σ_qablay1 = std(qablay1)
 
-    pars = "ρ=$(rd(ρ-1,1))"
+    pars = "ρ=$([rd(ρ[l]-1,1) for l=1:L])"
 
     ax1.errorbar(epoche_bp[1], μ_train_bp, σ_train_bp, ls="-", errorevery=errev,
                  label="train $lay $pars", c=algo_color[lay])
@@ -178,42 +180,42 @@ dset_tit = dataset == :mnist ? "MNIST" :
 fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
 #fig.tight_layout()
 
-#fig.savefig("deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figure_deepMP.png")
+#fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
+fig.savefig("figures/figure_deepMP.png")
 
 plt.close()
 
-# FIGURE 2
-nlays = length(K)-1
-fig, ax = plt.subplots(nlays,2)
-
-for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
-        
-    if !multiclass
-        layers = [lay for i in 1:(length(K)-1)]
-    else
-        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
-    end
-    
-    resfile = "../scripts/results/res_dataset$(dataset)_"
-    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
-    resfile *= "_density$(density)"
-    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-    seed ≠ -1 && (resfile *= "_seed$(seed)")
-    resfile *= ".dat"
-    
-    @show resfile
-
-    dati = readdlm(resfile)
-
-    ax[1].plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
-    ax[1+nlays].plot(dati[:,1], dati[:,5], ls="-", label="qab lay1 $lay", c=algo_color[lay])
-
-end
-
-ax[1].legend(loc="best", frameon=false, fontsize=10)
-ax[1+nlays].legend(loc="best", frameon=false, fontsize=10)
-
-fig.savefig("figure_deepMP2.png")
-
-plt.close()
+## FIGURE 2
+#nlays = length(K)-1
+#fig, ax = plt.subplots(nlays,2)
+#
+#for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
+#    
+#    if !multiclass
+#        layers = [lay for i in 1:(length(K)-1)]
+#    else
+#        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
+#    end
+#    
+#    resfile = "../scripts/results/res_dataset$(dataset)_"
+#    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+#    resfile *= "_density$(density)"
+#    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+#    seed ≠ -1 && (resfile *= "_seed$(seed)")
+#    resfile *= ".dat"
+#    
+#    @show resfile
+#
+#    dati = readdlm(resfile)
+#
+#    ax[1].plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
+#    ax[1+nlays].plot(dati[:,1], dati[:,5], ls="-", label="qab lay1 $lay", c=algo_color[lay])
+#
+#end
+#
+#ax[1].legend(loc="best", frameon=false, fontsize=10)
+#ax[1+nlays].legend(loc="best", frameon=false, fontsize=10)
+#
+#fig.savefig("figures/figure_deepMP2.png")
+#
+#plt.close()
