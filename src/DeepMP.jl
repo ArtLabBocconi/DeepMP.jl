@@ -253,8 +253,10 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             #Etrain == 0 && break
         end
     end
-    saveres && close(fres)
-    println(resfile)
+    if saveres 
+        close(fres)
+        println("outfile: $resfile")
+    end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, Etrain, it

@@ -76,7 +76,7 @@ else
             multiclass = p[9][end] == 1 ? false : true
             run_experiment(; dataset, multiclass, usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
             batchsize=p[5], ρ=p[2], ψ=p[3], M=p[4], maxiters=p[6], r=p[7], 
-            ϵinit=p[8], K=p[9], altsolv, altconv, seed)
+            ϵinit=p[8], K=p[9], altsolv, altconv, seed, saveres=true)
         catch
             println("a process has been interrupted")
         end
