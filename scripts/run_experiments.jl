@@ -10,27 +10,26 @@ end
 #lays = [:mf, :tap]; gpu_id = 1
 #lays = [:bpi]; gpu_id = 2
 
-lays = [:bpi]; gpu_id = 2
-#lays = [:bpi]; gpu_id = 2
+lays = [:bpi]
+
+dataset = :fashion
+Ks = [[28*28, 101, 101, 1]]
+bs = [128]
+seed = 2
+
+ρs = [[1e-5, 1e-5, 0.0].+ 1.0] 
+ϵinits = [1e0]
+ψs = [0.8]
+
+gpu_id = 2
 
 
 epochs = 100
-
-dataset = :fashion
-
 altsolv = true
 altconv = true
-
-# parametri selezionati
-Ks = [[28*28, 101, 101, 1]]
-ρs = [1e-5] .+ 1.
-ϵinits = [1e0]
-ψs = [0.8]
+Ms = [Int(6e4)]
 maxiterss = [1]
 rs = [0.]
-
-Ms = [Int(6e4)]
-bs = [128]
 
 #ρs = [-1e-1, -1e-5, 0., 1e-7, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] .+ 1.
 #ψs = [[0:0.2:0.8;]..., 0.9, 0.99, 0.999, 0.9999]
@@ -66,17 +65,18 @@ if distributed
     addprocs(procs_to_open)
             
     @everywhere include("real_data_experiments.jl")
-    pmap(p -> run_experiment(9; usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
-              batchsize=p[5], ρ=p[2], ψ=p[3], M=p[4], maxiters=p[6], r=p[7], ϵinit=p[8], 
-              K=p[9], altsolv, altconv, dataset), 
-              params; on_error=x->0)
+    #pmap(p -> run_experiment(9; usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
+    #          batchsize=p[5], ρ=p[2], ψ=p[3], M=p[4], maxiters=p[6], r=p[7], ϵinit=p[8], 
+    #          K=p[9], altsolv, altconv, dataset), 
+    #          params; on_error=x->0)
 else
     include("real_data_experiments.jl")
     for p in params
         try
-            run_experiment(; dataset, multiclass=false, usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
+            multiclass = p[9][end] == 1 ? false : true
+            run_experiment(; dataset, multiclass, usecuda, gpu_id, epochs, layers=[p[1] for _=1:length(p[9])-1], 
             batchsize=p[5], ρ=p[2], ψ=p[3], M=p[4], maxiters=p[6], r=p[7], 
-            ϵinit=p[8], K=p[9], altsolv, altconv)
+            ϵinit=p[8], K=p[9], altsolv, altconv, seed)
         catch
             println("a process has been interrupted")
         end

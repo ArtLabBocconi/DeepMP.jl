@@ -254,7 +254,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         end
     end
     saveres && close(fres)
-    
+    println(resfile)
+
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, Etrain, it
 end
