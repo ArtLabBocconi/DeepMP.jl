@@ -1,5 +1,6 @@
 using DelimitedFiles, Statistics
 using PyPlot
+using PyCall
 using Printf
 
 plt.style.use("default")
@@ -26,9 +27,9 @@ multiclass = false
 
 if !multiclass
     if batchsize == 128
-        seed_bp = [2]
+        seed_bp = [-1]
         seed_sgd = [2]
-        ρ1 = [1e-5, 1e-5, -1e-3]  
+        ρ1 = [1e-4, 1e-4, 1e-4]  
         ψ = [0.8, 0.8, 0.8]         
         P = 6e4         
         maxiters = 1   
@@ -46,13 +47,15 @@ algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 errev = 10
 
 # FIGURE 1
-fig, ax1 = plt.subplots(1)
-ax2 = ax1.inset_axes([0.18, 0.68, 0.35, 0.3])
-if !multiclass || dataset == :mnist
-    ax3 = ax1.inset_axes([0.64, 0.33, 0.35, 0.275])
-else
-    ax3 = ax1.inset_axes([0.1, 0.08, 0.35, 0.275])
-end
+fig = plt.figure(constrained_layout=true, figsize=(6.4*1.7,4.8*1.1))
+gs = fig.add_gridspec(3, 4)
+ax1 = fig.add_subplot(py"$(gs)[:, 0:2]")
+ax2 = fig.add_subplot(py"$(gs)[0, 2]")
+ax3 = fig.add_subplot(py"$(gs)[0, 3]")
+ax4 = fig.add_subplot(py"$(gs)[1, 2]")
+ax5 = fig.add_subplot(py"$(gs)[1, 3]")
+ax6 = fig.add_subplot(py"$(gs)[2, 2]")
+ax7 = fig.add_subplot(py"$(gs)[2, 3]")
 
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
@@ -64,6 +67,8 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
     
     epoche_bp, train_bp, test_bp = [],[], []
     q0lay1, qablay1 = [], []
+    q0lay2, qablay2 = [], []
+    q0lay3, qablay3 = [], []
 
     for seed in seed_bp
         resfile = "../scripts/results/res_dataset$(dataset)_"
@@ -81,18 +86,22 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         push!(test_bp, dati[:, 3])
         push!(q0lay1, dati[:, 4])
         push!(qablay1, dati[:, 5])
+        push!(q0lay2, dati[:, 6])
+        push!(qablay2, dati[:, 7])
+        push!(q0lay3, dati[:, 8])
+        push!(qablay3, dati[:, 9])
 
     end
 
-    μ_train_bp = mean(train_bp)
-    σ_train_bp = std(train_bp)
-    μ_test_bp = mean(test_bp)
-    σ_test_bp = std(test_bp)
+    μ_train_bp, σ_train_bp = mean(train_bp), std(train_bp)
+    μ_test_bp, σ_test_bp = mean(test_bp), std(test_bp)
 
-    μ_q0lay1 = mean(q0lay1)
-    σ_q0lay1 = std(q0lay1)
-    μ_qablay1 = mean(qablay1)
-    σ_qablay1 = std(qablay1)
+    μ_q0lay1, σ_q0lay1 = mean(q0lay1), std(q0lay1)
+    μ_qablay1, σ_qablay1 = mean(qablay1), std(qablay1)
+    μ_q0lay2, σ_q0lay2 = mean(q0lay2), std(q0lay2)
+    μ_qablay2, σ_qablay2 = mean(qablay2), std(qablay2)
+    μ_q0lay3, σ_q0lay3 = mean(q0lay3), std(q0lay3)
+    μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
 
     pars = "ρ=$([rd(ρ[l]-1,1) for l=1:L])"
 
@@ -110,11 +119,18 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
     end
 
     ax2.errorbar(epoche_bp[1], μ_q0lay1, σ_q0lay1, ls="-", errorevery=errev,
-                 label="$lay lay1 $pars", c=algo_color[lay])
+                 label="$lay lay1", c=algo_color[lay])
     ax3.errorbar(epoche_bp[1], μ_qablay1, σ_qablay1, ls="-", errorevery=errev,
-                 label="$lay lay1 $pars", c=algo_color[lay])
-    #ax3.plot(dati[:,1], dati[:,5], label="qab (first layer)", color="orange")
-    
+                 label="$lay lay1", c=algo_color[lay])
+    ax4.errorbar(epoche_bp[1], μ_q0lay2, σ_q0lay2, ls="-", errorevery=errev,
+                 label="$lay lay2", c=algo_color[lay])
+    ax5.errorbar(epoche_bp[1], μ_qablay2, σ_qablay2, ls="-", errorevery=errev,
+                 label="$lay lay2", c=algo_color[lay])
+    ax6.errorbar(epoche_bp[1], μ_q0lay3, σ_q0lay3, ls="-", errorevery=errev,
+                 label="$lay lay3", c=algo_color[lay])
+    ax7.errorbar(epoche_bp[1], μ_qablay3, σ_qablay3, ls="-", errorevery=errev,
+                 label="$lay lay3", c=algo_color[lay])
+
 end
 
 Ksgd = K[2:end-1]
@@ -139,10 +155,8 @@ if plot_sgd
 
     end
 
-    μ_train = mean(train_sgd) .* 100.
-    σ_train = std(train_sgd) .* 100.
-    μ_test = mean(test_sgd) .* 100.
-    σ_test = std(test_sgd) .* 100.
+    μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
+    μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
 
     ax1.errorbar(epoche[1], μ_train, σ_train, ls="-", c=algo_color[:sgd], errorevery=errev,
                  capsize=0, label="train bin-sgd bs=$batchsize, lr=$lrsgd")
@@ -151,26 +165,34 @@ if plot_sgd
 end
 
 ax1.set_xlabel("epochs", fontsize=12)
-ax2.set_ylabel("q0", fontsize=10)#, color=colorb)
+
+ax2.set_ylabel("q0", fontsize=10)
 ax2.set_xlabel("epochs", fontsize=10)
+ax3.set_xlabel("epochs", fontsize=10)
+ax3.set_ylabel("qab", fontsize=10)
+ax4.set_ylabel("q0", fontsize=10)
+ax4.set_xlabel("epochs", fontsize=10)
+ax5.set_xlabel("epochs", fontsize=10)
+ax5.set_ylabel("qab", fontsize=10)
+ax6.set_ylabel("q0", fontsize=10)
+ax6.set_xlabel("epochs", fontsize=10)
+ax7.set_xlabel("epochs", fontsize=10)
+ax7.set_ylabel("qab", fontsize=10)
 
-ax2.tick_params(labelsize=7)
+#ax3.tick_params(labelsize=7)
+#ax2.set_ylim(0,1)
 
-ax3.set_xlabel("epochs", fontsize=8)
-ax3.set_ylabel("qab", fontsize=8)#, color=colorb)
-ax3.tick_params(labelsize=7)
-
-#ax2.set_ylabel("q0", fontsize=12, color=colorb)
-#ax3.set_ylabel("qab", fontsize=12, color="orange")
-
-ax2.set_ylim(0,1)
-#ax3.set_ylim(0,1)
-
-ax1.legend(loc="upper right", frameon=false, fontsize=9)
-ax2.legend(loc="best", frameon=false, fontsize=8)
-ax3.legend(loc="best", frameon=false, fontsize=8)
+ax1.legend(loc="upper right", frameon=false, fontsize=12)
+ax2.legend(loc="best", frameon=false, fontsize=10)
+ax3.legend(loc="best", frameon=false, fontsize=10)
+ax4.legend(loc="best", frameon=false, fontsize=10)
+ax5.legend(loc="best", frameon=false, fontsize=10)
+ax6.legend(loc="best", frameon=false, fontsize=10)
+ax7.legend(loc="best", frameon=false, fontsize=10)
 
 #plt.grid(false)
+
+#plt.subplots_adjust(hspace=0.2, wspace=0.4)
 
 classt = multiclass ? "10class" : "2class"
 Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
@@ -208,12 +230,12 @@ plt.close()
 #
 #    dati = readdlm(resfile)
 #
-#    ax[1].plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
+#    ax1.plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
 #    ax[1+nlays].plot(dati[:,1], dati[:,5], ls="-", label="qab lay1 $lay", c=algo_color[lay])
 #
 #end
 #
-#ax[1].legend(loc="best", frameon=false, fontsize=10)
+#ax1.legend(loc="best", frameon=false, fontsize=10)
 #ax[1+nlays].legend(loc="best", frameon=false, fontsize=10)
 #
 #fig.savefig("figures/figure_deepMP2.png")
