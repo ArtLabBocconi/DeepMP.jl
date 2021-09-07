@@ -110,7 +110,7 @@ end # scenario1
 
 # Permuted MNIST [SCENARIO 2]
 function deepmp_scenario2(; M=-1,  bsize=100,
-                          num_tasks=5,
+                          num_tasks=6,
                           H::Vector{Int}=[101, 101], epochs=10,
                           layers=[:tap, :tap, :argmax], maxiters=1,
                           ρ=1.0, r=0.0, rstep=0.0, ψ=0.0, ϵinit=1.0,
@@ -147,7 +147,7 @@ function deepmp_scenario2(; M=-1,  bsize=100,
 
 
     for n = 1:num_tasks
-        for it = 1:div(epochs, 2)
+        for t = 1:div(epochs, 2)
             # solve
             g, wb, wt, E, it = DeepMP.solve(x[perms[n],:], y;
                             g0 = g,
@@ -160,7 +160,7 @@ function deepmp_scenario2(; M=-1,  bsize=100,
                             freezetop=false,
                             usecuda=usecuda, gpu_id=gpu_id,
                             verbose=1);
-            out = @sprintf("%i", it*2)
+            out = @sprintf("%i", t*2)
             for k = 1:num_tasks
                 out *= @sprintf(" %g %g", error_bp(g, x[perms[k],:], y), error_bp(g, xt[perms[k],:], yt))
             end
