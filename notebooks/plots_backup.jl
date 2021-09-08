@@ -11,7 +11,7 @@ rd(x, n) = round(x, sigdigits=n)
 dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 101, 101, 10]
+K = [Nin, 101, 101, 1]
 plot_sgd = true
 lrsgd = 1.0
 
@@ -52,7 +52,7 @@ elseif !final_params
     K = [28*28, 101, 101, 1] # [[28*28, 1/5/10-01, (1/5/10-01), (1/5/10-01), 1]]
     ρs = [-1e-1, -1e-5, 0., 1e-6, 1e-5, 1e-4, 1e-3, 1e-2] # saveres=false, ψ=0.5
     ρ1 = 1e-5
-    ρs = [ρ1 for _=1:length(lays)] .+ 1.
+    ρs = [ρ1 for _=1:length(K)-1] .+ 1.
     ρs = [ρ1, ρ1, ρ1] .+ 1.
     ϵinits = [0., 0.01, 0.1, 0.5, 1., 1.5, 2., 3.]
     ϵinit = 1.
@@ -73,27 +73,27 @@ elseif final_params && bs == 1 # parameters for batchsize=1
     r = 0.        
     ϵinit = 1e0   
     K = [28*28, 501, 501, 501, 1] 
-    ρs = [ρ1 for _=1:length(lays)] .+ 1.
+    ρs = [ρ1 for _=1:length(K)-1] .+ 1.
 elseif final_params && bs == 128 # for beautiful final figure with bs=128
     seed_bp = [2]
     batchsize = 128
-    ρ1 = 1e-5       
-    ψ = 0.8         
+    ρ1 = 1e-4       
+    ψ = [0.8 for _=1:length(K)-1]         
     P = 6e4         
     maxiters = 1   
     r = 0.        
     ϵinit = 1e0
-    ρs = [ρ1 for _=1:length(lays)] .+ 1.
+    ρs = [ρ1 for _=1:length(K)-1] .+ 1.
 elseif final_params && bs == 0 # for varying architecture, saveres=true
     batchsize = 128
     ρ1 = 1e-4 
-    ψ = 0.8         
+    ψ = [0.8 for _=1:length(K)-1]         
     P = 6e4         
     maxiters = 1   
     r = 0.        
     ϵinit = 0.5
     K = [28*28, 1001, 1001, 1001, 1]
-    ρs = [ρ1 for _=1:length(lays)] .+ 1.
+    ρs = [ρ1 for _=1:length(K)-1] .+ 1.
 end
 
 density = 1.
@@ -111,7 +111,7 @@ else
     ax3 = ax1.inset_axes([0.1, 0.08, 0.35, 0.275])
 end
 
-for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
+for (i,(lay, ρ)) in enumerate(zip(lays, [ρs]))
         
     if !multiclass
         layers = [lay for i in 1:(length(K)-1)]

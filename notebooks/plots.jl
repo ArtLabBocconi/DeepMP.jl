@@ -27,7 +27,7 @@ multiclass = false
 
 if !multiclass
     if batchsize == 128
-        seed_bp = [-1]
+        seed_bp = [2]
         seed_sgd = [2]
         ρ1 = [1e-4, 1e-4, 1e-4]  
         ψ = [0.8, 0.8, 0.8]         
