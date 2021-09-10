@@ -23,21 +23,33 @@ lrsgd = 1.0
 lays = [:bpi]
 
 final_params = true
-multiclass = false
+multiclass = true
 
 if !multiclass
     if batchsize == 128
         seed_bp = [2]
         seed_sgd = [2]
         ρ1 = [1e-4, 1e-4, 1e-4]  
-        ψ = [0.8, 0.8, 0.8]         
         P = 6e4         
         maxiters = 1   
         r = 0.        
-        ϵinit = 1e0
-        ρs = [ρ1.+1. for _=1:length(lays)]    
+        #ρs = [ρ1.+1. for _=1:length(lays)]    
+        ϵinit = 2.0
+        ψ = [0.8, 0.8, 0.8]         
+        ρs = [[0.0, 0.0, 0.0].+1.0]    
     end
 else
+    K[end] = 10
+    if batchsize == 128
+        seed_bp = [2]
+        seed_sgd = [2]
+        P = 6e4         
+        maxiters = 1   
+        r = 0.        
+        ϵinit = 2.0
+        ψ = [0.8, 0.9, 0.9]         
+        ρs = [[0.9999, 0.997, 0.0]]    
+    end
 end
 
 density = 1.
