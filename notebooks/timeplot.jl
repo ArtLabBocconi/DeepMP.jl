@@ -20,22 +20,25 @@ fig, ax1 = plt.subplots(1)
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue")
 algo_mark = Dict(:sgd=>"x", :bp=>"o", :tap=>"^", :bpi=>"s")
 
-times_cpu = Dict(:sgd=>[600, 107, 23, 11], 
-             :bp=>[4000, 540, 360, 93], 
-             :tap=>[3350, 376, 80, 11], 
-             :bpi=>[3700, 455, 92, 36])
+#for seed in seed_bp
+#    resfile = "../scripts/results/res_dataset$(dataset)_"
+#    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+#    resfile *= "_density$(density)"
+#    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+#    seed ≠ -1 && (resfile *= "_seed$(seed)")
+#    resfile *= ".dat"
+#    @show resfile
+#
+#    dati = readdlm(resfile)
+#
+#    push!(tempi_bp, dati[:, end])
+#end
+
 
 times_gpu = Dict(:sgd=>[48, 3, 0.45, 0.2], 
              :bp=>[118, 7.5, 2.5, 2.5], 
              :tap=>[104, 6.5, 0.8, 0.3], 
              :bpi=>[91, 6.3, 1.2, 0.8])
-
-# almeno per SGD mi sa che c'è un memory leakage (non ha senso che bs minore occupa di più oltretutto)
-memory_gpu = Dict(:sgd=>[6e3, 4e3, 4e3, NaN], 
-             :bp=>[15e3, 22.5e3, 21e3, 22e3], 
-             :tap=>[8e3, 8e3, 8e3, 22e3], 
-             :bpi=>[14e3, 22e3, 21e3, 21e3])
-
 
 for lay in [lays..., :sgd]
     device = lay == :sgd ? "GPU" : "GPU"
@@ -56,3 +59,15 @@ fig.suptitle("MNIST even vs odd, P=$P, K=$K")
 #fig.tight_layout()
 fig.savefig("deepMP_times_K$(K).png")
 #plt.close()
+
+
+## almeno per SGD mi sa che c'è un memory leakage (non ha senso che bs minore occupa di più oltretutto)
+#memory_gpu = Dict(:sgd=>[6e3, 4e3, 4e3, NaN], 
+#             :bp=>[15e3, 22.5e3, 21e3, 22e3], 
+#             :tap=>[8e3, 8e3, 8e3, 22e3], 
+#             :bpi=>[14e3, 22e3, 21e3, 21e3])
+#
+#times_cpu = Dict(:sgd=>[600, 107, 23, 11], 
+#             :bp=>[4000, 540, 360, 93], 
+#             :tap=>[3350, 376, 80, 11], 
+#             :bpi=>[3700, 455, 92, 36])

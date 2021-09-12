@@ -1,7 +1,7 @@
 using Pkg
-Pkg.activate("../")
+# Pkg.activate("../")
 #Pkg.activate("./")
-Pkg.instantiate()
+# Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
@@ -72,8 +72,8 @@ function run_experiment(; M=-1, dataset=:fashion, multiclass=false, kws...)
     xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, multiclass)
     g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, kws...)
 
-    GC.gc()
-    CUDA.reclaim()
+    #GC.gc()
+    #CUDA.reclaim()
 
 end
 
