@@ -1,7 +1,7 @@
 using Pkg
-# Pkg.activate("../")
-#Pkg.activate("./")
-# Pkg.instantiate()
+#Pkg.activate("../")
+Pkg.activate("./")
+Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
