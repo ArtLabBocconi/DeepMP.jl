@@ -144,7 +144,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 h0 = nothing,                  # external field
                 ρ = 1.,                        # coefficient for external field from mini-batch posterior
                 rbatch = 0.,                   # reinforcement parameter for external field
-                freezetop = false,              # freeze top-layer's weights to 1
+                freezetop = false,             # freeze top-layer's weights to 1
                 teacher = nothing,
                 altsolv::Bool = true,
                 altconv::Bool = false,
@@ -253,8 +253,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             #Etrain == 0 && break
         end
     end
-    saveres && close(fres)
-    
+    if saveres 
+        close(fres)
+        println("outfile: $resfile")
+    end
+
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
     return g, getW(g), teacher, Etrain, it
 end
