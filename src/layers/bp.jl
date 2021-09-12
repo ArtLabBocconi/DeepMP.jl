@@ -137,22 +137,22 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
             @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
-            H .= ψ[l] .* H .+ (1 - ψ[l]) .* Hnew 
-            Hcav .= ψ[l] .* Hcav .+ (1 - ψ[l]) .* Hcavnew 
-            # H .= Hnew 
-            # Hcav .= Hcavnew 
+            # H .= ψ[l] .* H .+ (1 - ψ[l]) .* Hnew 
+            # Hcav .= ψ[l] .* Hcav .+ (1 - ψ[l]) .* Hcavnew 
+            H .= Hnew 
+            Hcav .= Hcavnew 
             
             @tullio mcavnew[k,i,a] := tanh(Hcav[k,i,a]) * weight_mask[k,i]
-            # mcav .= ψ[l] .* mcav .+ (1 - ψ[l]) .* mcavnew
-            mcav .= mcavnew
+            mcav .= ψ[l] .* mcav .+ (1 - ψ[l]) .* mcavnew
+            # mcav .= mcavnew
             
             # @assert all(isfinite, H)
             # @assert all(isfinite, Hcav)
 
 
-            mnew = tanh.(H) .* weight_mask
+            mnew = ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H) .* weight_mask
+            # mnew .= tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
-            # m .= ψ[l] .* m .+ (1-ψ[l]) .* mnew
             m .= mnew
             σ .= (1 .- m.^2) .* weight_mask    
             @assert all(isfinite, m)
