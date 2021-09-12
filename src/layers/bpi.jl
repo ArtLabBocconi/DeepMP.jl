@@ -99,9 +99,11 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
                 # reinforcement 
                 @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
             end
-            H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
+            # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
+            H .= Hnew
 
-            mnew = tanh.(H) .* weight_mask
+            mnew = ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H) .* weight_mask
+            # mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= mnew
             σ .= (1 .- m.^2) .* weight_mask

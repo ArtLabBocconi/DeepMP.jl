@@ -101,8 +101,11 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
             @tullio Hnew[k,i] := Hin[k,i]  + r*H[k,i] + Hext[k,i]
             
-            H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
-            mnew = tanh.(H) .* weight_mask
+            H .= Hnew
+            # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
+            
+            mnew = ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H) .* weight_mask
+            # mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= mnew
             σ .= (1 .- m.^2) .* weight_mask
