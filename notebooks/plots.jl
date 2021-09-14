@@ -20,6 +20,7 @@ lrsgd = 1.0
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
 
+plot_overlaps = true
 final_params = true
 multiclass = false
 
@@ -55,7 +56,6 @@ algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 errev = 10
 
 # FIGURE 1
-plot_overlaps = true
 if plot_overlaps
     fig = plt.figure(constrained_layout=true, figsize=(6.4*1.7,4.8*1.1))
     gs = fig.add_gridspec(3, 4)
@@ -253,7 +253,7 @@ fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_deepMP.png")
 multc = multiclass ? "multiclass" : "2class"
-fig.savefig("figures/figBP_$dataset.$multc.png")
+fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
 
 plt.close()
 
