@@ -12,6 +12,7 @@ using LoopVectorization
 using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
 using Functors
+using JLD2
 import Cassette
 CUDA.allowscalar(false)
 
@@ -256,6 +257,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if saveres 
         close(fres)
         println("outfile: $resfile")
+        save("results/graph$(resfile[12:end-4]).jld2", Dict("graph" => g))
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)

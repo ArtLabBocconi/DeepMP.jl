@@ -18,56 +18,59 @@ plot_sgd = true
 lrsgd = 1.0
 
 # for different file names
-#lays = [:bp, :bpi, :tap, :mf]
-#lays = [:bpi, :tap, :mf]
-lays = [:bpi]
+lays = [:bp, :bpi, :tap, :mf]
 
 final_params = true
-multiclass = true
+multiclass = false
 
-if !multiclass
-    if batchsize == 128
-        seed_bp = [2]
-        seed_sgd = [2]
-        ρ1 = [1e-4, 1e-4, 1e-4]  
-        P = 6e4         
-        maxiters = 1   
-        r = 0.        
-        #ρs = [ρ1.+1. for _=1:length(lays)]    
-        ϵinit = 2.0
-        ψ = [0.8, 0.8, 0.8]         
-        ρs = [[0.0, 0.0, 0.0].+1.0]    
-    end
-else
+if multiclass
     K[end] = 10
     if batchsize == 128
-        seed_bp = [2]
-        seed_sgd = [2]
-        P = 6e4         
+        seed_bp = [2] # [2, 7, 11]
+        seed_sgd = [2, 7, 11] # [2, 7, 11]
+        P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1   
         r = 0.        
-        ϵinit = 2.0
-        ψ = [0.8, 0.9, 0.9]         
-        ρs = [[0.9999, 0.997, 0.0]]    
+        ϵinit = 1.0
+        ψ = [0.8, 0.8, 0.8]         
+        ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+    end
+else
+    if batchsize == 128
+        seed_bp = [2] # [2, 7, 11]
+        seed_sgd = [2, 7] # [2, 7, 11]
+        P = dataset ≠ :cifar10 ? 6e4 : 5e4
+        maxiters = 1   
+        r = 0.        
+        ϵinit = 1.0
+        ψ = [0.8, 0.8, 0.8]         
+        ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0].+1e-4]    
     end
 end
 
 density = 1.
 
-algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:red", :mf=>"tab:orange")
+algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 errev = 10
 
 # FIGURE 1
-fig = plt.figure(constrained_layout=true, figsize=(6.4*1.7,4.8*1.1))
-gs = fig.add_gridspec(3, 4)
-ax1 = fig.add_subplot(py"$(gs)[:, 0:2]")
-ax2 = fig.add_subplot(py"$(gs)[0, 2]")
-ax3 = fig.add_subplot(py"$(gs)[0, 3]")
-ax4 = fig.add_subplot(py"$(gs)[1, 2]")
-ax5 = fig.add_subplot(py"$(gs)[1, 3]")
-ax6 = fig.add_subplot(py"$(gs)[2, 2]")
-ax7 = fig.add_subplot(py"$(gs)[2, 3]")
+plot_overlaps = true
+if plot_overlaps
+    fig = plt.figure(constrained_layout=true, figsize=(6.4*1.7,4.8*1.1))
+    gs = fig.add_gridspec(3, 4)
+    ax1 = fig.add_subplot(py"$(gs)[:, 0:2]")
+    ax2 = fig.add_subplot(py"$(gs)[0, 2]")
+    ax3 = fig.add_subplot(py"$(gs)[0, 3]")
+    ax4 = fig.add_subplot(py"$(gs)[1, 2]")
+    ax5 = fig.add_subplot(py"$(gs)[1, 3]")
+    ax6 = fig.add_subplot(py"$(gs)[2, 2]")
+    ax7 = fig.add_subplot(py"$(gs)[2, 3]")
+else
+    fig = plt.figure(constrained_layout=true, figsize=(6.4,4.8))
+    gs = fig.add_gridspec(1, 1)
+    ax1 = fig.add_subplot(py"$(gs)[:]")
+end
 
 for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         
@@ -117,10 +120,15 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
 
     pars = "ρ=$([rd(ρ[l]-1,1) for l=1:L])"
 
-    ax1.errorbar(epoche_bp[1], μ_train_bp, σ_train_bp, ls="-", errorevery=errev,
-                 label="train $lay $pars", c=algo_color[lay])
-    ax1.errorbar(epoche_bp[1], μ_test_bp, σ_test_bp, ls="--", errorevery=errev,
-                 label="test $lay $pars", c=algo_color[lay])
+    ax1.plot(epoche_bp[1], μ_train_bp, ls="-",
+             label="train $lay $pars", color=algo_color[lay])
+    ax1.plot(epoche_bp[1], μ_test_bp, ls="--",
+                 label="test $lay $pars", color=algo_color[lay])
+
+    ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
+                     color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+    ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
+                     color=algo_color[lay], alpha=0.3, edgecolor=nothing)
 
     #ax1.set_xlabel("epochs", fontsize=12)
     ax1.set_ylabel("error (%)", fontsize=12)
@@ -130,18 +138,35 @@ for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
         ax1.set_ylim(20,90)
     end
 
-    ax2.errorbar(epoche_bp[1], μ_q0lay1, σ_q0lay1, ls="-", errorevery=errev,
-                 label="$lay lay1", c=algo_color[lay])
-    ax3.errorbar(epoche_bp[1], μ_qablay1, σ_qablay1, ls="-", errorevery=errev,
-                 label="$lay lay1", c=algo_color[lay])
-    ax4.errorbar(epoche_bp[1], μ_q0lay2, σ_q0lay2, ls="-", errorevery=errev,
-                 label="$lay lay2", c=algo_color[lay])
-    ax5.errorbar(epoche_bp[1], μ_qablay2, σ_qablay2, ls="-", errorevery=errev,
-                 label="$lay lay2", c=algo_color[lay])
-    ax6.errorbar(epoche_bp[1], μ_q0lay3, σ_q0lay3, ls="-", errorevery=errev,
-                 label="$lay lay3", c=algo_color[lay])
-    ax7.errorbar(epoche_bp[1], μ_qablay3, σ_qablay3, ls="-", errorevery=errev,
-                 label="$lay lay3", c=algo_color[lay])
+    if plot_overlaps
+
+        ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
+            label="$lay lay1", c=algo_color[lay])
+        ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
+            label="$lay lay1", c=algo_color[lay])
+        ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
+            label="$lay lay2", c=algo_color[lay])
+        ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
+            label="$lay lay2", c=algo_color[lay])
+        ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
+            label="$lay lay3", c=algo_color[lay])
+        ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
+            label="$lay lay3", c=algo_color[lay])
+
+        ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
+                    color=algo_color[lay], alpha=0.3)
+        ax3.fill_between(epoche_bp[1], μ_qablay1-σ_qablay1, μ_qablay1+σ_qablay1,
+                    color=algo_color[lay], alpha=0.3)
+        ax4.fill_between(epoche_bp[1], μ_q0lay2-σ_q0lay2, μ_q0lay2+σ_q0lay2,
+                    color=algo_color[lay], alpha=0.3)
+        ax5.fill_between(epoche_bp[1], μ_qablay2-σ_qablay2, μ_qablay2+σ_qablay2,
+                    color=algo_color[lay], alpha=0.3)
+        ax6.fill_between(epoche_bp[1], μ_q0lay3-σ_q0lay3, μ_q0lay3+σ_q0lay3,
+                    color=algo_color[lay], alpha=0.3)
+        ax7.fill_between(epoche_bp[1], μ_qablay3-σ_qablay3, μ_qablay3+σ_qablay3,
+                    color=algo_color[lay], alpha=0.3)
+    
+    end
 
 end
 
@@ -150,10 +175,10 @@ classes = multiclass ? nothing : []
 dset_sgd = dataset==:cifar10 ? :cifar : dataset
 
 if plot_sgd
-    epoche, train_sgd, test_sgd = [],[], []
+    epoche, train_sgd, test_sgd = [], [], []
     for seedgd in seed_sgd
         file = "../../representations/knet/results/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
-        (P > 0 && (P≠6e4 && bs≠600) && P≠5e4 ) && (file *= "_P$(Int(P))")
+        (P > 0 && (P≠6e4) && P≠5e4 ) && (file *= "_P$(Int(P))")
         file *= "_lr$(lrsgd)_bs$(batchsize)"
         seedgd ≠ 2 && (file *= "_seed$(seedgd)")
         file *= ".dat"
@@ -170,37 +195,48 @@ if plot_sgd
     μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
     μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
 
-    ax1.errorbar(epoche[1], μ_train, σ_train, ls="-", c=algo_color[:sgd], errorevery=errev,
-                 capsize=0, label="train bin-sgd bs=$batchsize, lr=$lrsgd")
-    ax1.errorbar(epoche[1], μ_test, σ_test, ls="--", ms=1, c=algo_color[:sgd], errorevery=errev,
-                 capsize=0, label="test bin-sgd bs=$batchsize, lr=$lrsgd")
+    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd],
+        label="train bin-sgd bs=$batchsize, lr=$lrsgd")
+    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd],
+        label="test bin-sgd bs=$batchsize, lr=$lrsgd")
+
+    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd],
+                 alpha=0.3)
+    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd],
+                     alpha=0.3)
+
 end
 
 ax1.set_xlabel("epochs", fontsize=12)
 
-ax2.set_ylabel("q0", fontsize=10)
-ax2.set_xlabel("epochs", fontsize=10)
-ax3.set_xlabel("epochs", fontsize=10)
-ax3.set_ylabel("qab", fontsize=10)
-ax4.set_ylabel("q0", fontsize=10)
-ax4.set_xlabel("epochs", fontsize=10)
-ax5.set_xlabel("epochs", fontsize=10)
-ax5.set_ylabel("qab", fontsize=10)
-ax6.set_ylabel("q0", fontsize=10)
-ax6.set_xlabel("epochs", fontsize=10)
-ax7.set_xlabel("epochs", fontsize=10)
-ax7.set_ylabel("qab", fontsize=10)
+if plot_overlaps
+    ax2.set_ylabel("q0", fontsize=10)
+    ax2.set_xlabel("epochs", fontsize=10)
+    ax3.set_xlabel("epochs", fontsize=10)
+    ax3.set_ylabel("qab", fontsize=10)
+    ax4.set_ylabel("q0", fontsize=10)
+    ax4.set_xlabel("epochs", fontsize=10)
+    ax5.set_xlabel("epochs", fontsize=10)
+    ax5.set_ylabel("qab", fontsize=10)
+    ax6.set_ylabel("q0", fontsize=10)
+    ax6.set_xlabel("epochs", fontsize=10)
+    ax7.set_xlabel("epochs", fontsize=10)
+    ax7.set_ylabel("qab", fontsize=10)
+end
 
 #ax3.tick_params(labelsize=7)
 #ax2.set_ylim(0,1)
 
 ax1.legend(loc="upper right", frameon=false, fontsize=12)
-ax2.legend(loc="best", frameon=false, fontsize=10)
-ax3.legend(loc="best", frameon=false, fontsize=10)
-ax4.legend(loc="best", frameon=false, fontsize=10)
-ax5.legend(loc="best", frameon=false, fontsize=10)
-ax6.legend(loc="best", frameon=false, fontsize=10)
-ax7.legend(loc="best", frameon=false, fontsize=10)
+
+if plot_overlaps
+    ax2.legend(loc="best", frameon=false, fontsize=10)
+    ax3.legend(loc="best", frameon=false, fontsize=10)
+    ax4.legend(loc="best", frameon=false, fontsize=10)
+    ax5.legend(loc="best", frameon=false, fontsize=10)
+    ax6.legend(loc="best", frameon=false, fontsize=10)
+    ax7.legend(loc="best", frameon=false, fontsize=10)
+end
 
 #plt.grid(false)
 
@@ -210,12 +246,14 @@ classt = multiclass ? "10class" : "2class"
 Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
 dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
-           dataset == :cifar ? "CIFAR10" : "?"
+           dataset == :cifar10 ? "CIFAR10" : "?"
 fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
 #fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_deepMP.png")
+multc = multiclass ? "multiclass" : "2class"
+fig.savefig("figures/figBP_$dataset.$multc.png")
 
 plt.close()
 
