@@ -414,6 +414,12 @@ git-tree-sha1 = "f76424439413893a832026ca355fe273e93bce94"
 uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
 version = "0.1.0"
 
+[[JLD2]]
+deps = ["DataStructures", "FileIO", "MacroTools", "Mmap", "Pkg", "Printf", "Reexport", "TranscodingStreams", "UUIDs"]
+git-tree-sha1 = "192934b3e2a94e897ce177423fd6cf7bdf464bce"
+uuid = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+version = "0.4.14"
+
 [[JLLWrappers]]
 deps = ["Preferences"]
 git-tree-sha1 = "642a199af8b68253517b80bd3bfd17eb4e84df6e"
