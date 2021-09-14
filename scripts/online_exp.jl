@@ -85,7 +85,7 @@ function run(Prange, seeds;
                                 epochs=1, B=1, lr=lr,
                                 classes=classes, lossv=lossv, earlystop=false,
                                 losstol=10.0, nrep=1,
-                                pdrop=0.0, opt="SGD", comp_loss=false);
+                                maxiters=maxiters, opt="SGD", comp_loss=false);
             # BP
             outnode = multiclass ? 1 : 10
             @show size(xp), size(yp), outnode
