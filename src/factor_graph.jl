@@ -53,7 +53,7 @@ mutable struct FactorGraph
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] == :bpi
-                push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
+                push!(layers, BPILayer(K[l+1], K[l], M, ϵinit,
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
@@ -141,7 +141,7 @@ function set_external_fields!(g::FactorGraph, h0; ρ=1.0, rbatch=0)
 end
 
 # set eternal field from posterior
-function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
+function set_Hext_from_H!(g::FactorGraph, ρ, rbatch; μ=μ)
     for l = 2:g.L+1
 
         # xxx
@@ -165,18 +165,24 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
         #     l==3 ? 1.0 :
         #     l==4 ? 0.999 : ρ
 
-        set_Hext_from_H!(g.layers[l], ρ[l-1], rbatch)
+        set_Hext_from_H!(g.layers[l], ρ[l-1], rbatch; μ=μ)
     end
 end
 
-function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
+function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch; μ=0.0)
     if hasproperty(lay, :allh) # TODO deprecate
         @assert hasproperty(lay, :allhext)
         for k in 1:lay.K
             lay.allhext[k] .= ρ .* lay.allh[k] .+ rbatch .* lay.allhext[k]
         end
     else
-        lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
+        # lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
+        Hpp = (lay.H .> lay.Hext) .* (lay.Hext .> 0)
+        Hmm = (lay.H .< lay.Hext) .* (lay.Hext .< 0)
+        Hpm = (lay.H .> lay.Hext) .* (lay.Hext .< 0)
+        Hmp = (lay.H .< lay.Hext) .* (lay.Hext .> 0)
+        # lay.Hext .=  ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-μ).*lay.H .+ μ .* lay.Hext)
+        lay.Hext .= ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-μ).*lay.H .+ μ .* lay.Hext)
     end
 end
 
@@ -238,10 +244,10 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
-    
+
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
-        lay.B .= 0  
+        lay.B .= 0
         if hasproperty(lay, :Bcav)
             lay.Bcav .= 0
         end
