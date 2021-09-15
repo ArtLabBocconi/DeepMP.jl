@@ -24,8 +24,12 @@ A typical experiment we run is
 ```julia
 include("scripts/real_data_experiments.jl")
 
-run_experiment(9; usecuda=true, gpu_id=0, epochs=10, lay=:tap, batchsize=128, 
-                ρ=1+1e-4, ψ=0.8, M=-1,dataset=:fashion, maxiters=1, r=0., ϵinit=1., 
-                K=[28*28,101,101,1], 
-                altsolv=true, altconv=true)
+run_experiment(; dataset=:fashion, multiclass=false,
+                 usecuda=true, gpu_id=0, epochs=100, 
+                 layers=[:bpi, :bpi, :bpi], 
+                 batchsize=128, 
+                 ρ=[1.0+1e-6, 1.0+1e-6, 0.0], 
+                 ψ=0.2, M=60000, 
+                 maxiters=1, r=0.0, 
+                 ϵinit=1.0, K=[28*28, 101, 101, 1], altsolv=false, altconv=true, seed=2, saveres=false)
 ```
