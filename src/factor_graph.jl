@@ -176,13 +176,12 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch; μ=0.0)
             lay.allhext[k] .= ρ .* lay.allh[k] .+ rbatch .* lay.allhext[k]
         end
     else
-        # lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
-        Hpp = (lay.H .> lay.Hext) .* (lay.Hext .> 0)
-        Hmm = (lay.H .< lay.Hext) .* (lay.Hext .< 0)
-        Hpm = (lay.H .> lay.Hext) .* (lay.Hext .< 0)
-        Hmp = (lay.H .< lay.Hext) .* (lay.Hext .> 0)
+        lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
+        # Hpp = (lay.H .> lay.Hext) .* (lay.Hext .> 0)
+        # Hmm = (lay.H .< lay.Hext) .* (lay.Hext .< 0)
+        # Hpm = (lay.H .> lay.Hext) .* (lay.Hext .< 0)
+        # Hmp = (lay.H .< lay.Hext) .* (lay.Hext .> 0)
         # lay.Hext .=  ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-μ).*lay.H .+ μ .* lay.Hext)
-        lay.Hext .= ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-μ).*lay.H .+ μ .* lay.Hext)
     end
 end
 
