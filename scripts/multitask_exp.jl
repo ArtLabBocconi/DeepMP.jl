@@ -6,6 +6,8 @@ using Statistics, Random, LinearAlgebra, DelimitedFiles, Printf
 
 include("real_data_experiments.jl")
 
+include("../../DeepBinaryNets/src/DeepBinaryNets.jl")
+
 using CUDA, KernelAbstractions, CUDAKernels
 using Functors
 
@@ -17,7 +19,8 @@ CUDA.cu(x::Float64) = Float32(x)
 CUDA.cu(x::Array{Int64}) = convert(CuArray{Int32}, x)
 
 function error_sgd(w, x, y)
-    return mean(vec(sign.(DeepBinaryNets.forward(w, x))) .!= y)
+    # return mean(vec(sign.(DeepBinaryNets.forward(w, x))) .!= y)
+    return 1.0 - DeepBinaryNets.accuracy(DeepBinaryNets.forward(w, x), y)
 end
 function error_bp(g, x, y)
     return mean(vec(DeepMP.forward(g, x)) .!= y)
@@ -170,5 +173,53 @@ function deepmp_scenario2(; M=-1,  bsize=100,
 
     close(f)
 end # scenario 2
+
+# Permuted MNIST [SCENARIO 2]
+function sgd_scenario2(; M=-1, bsize=100,
+                       num_tasks=6,
+                       H::Vector{Int}=[101, 101], epochs=10,
+                       lr=0.01, μ=0.0,
+                       outfile="tmp.dat", seed=23)
+
+    f = open(outfile, "w")
+
+    x, y, xt, yt = get_dataset(M; multiclass=true, dataset=:mnist)
+
+    N = size(x, 1)
+    perms = [randperm(N) for _ = 1:num_tasks]
+    train_errs = [1.0 for _ = 1:num_tasks]
+    test_errs  = [1.0 for _ = 1:num_tasks]
+
+    # 1st task, 1 epoch, needed to initaliaze wh
+    wb, w, _ = DeepBinaryNets.main(seed=19, seed_data=15,
+                xtrn=x[perms[1],:], ytrn=y, xtst=xt[perms[1],:], ytst=yt,
+                model="mlp", B=bsize, μ=μ,
+                epochs=1, h=H, w0=nothing,
+                lr=lr, opt="SGD",
+                lossv="xent", earlystop=false,
+                nrep=1, comp_loss=false, savew=false);
+
+    for n = 1:num_tasks
+        for t = 1:div(epochs, 2)
+            # solve
+            wb, w, _ = DeepBinaryNets.main(seed=19, seed_data=15,
+                        xtrn=x[perms[n],:], ytrn=y, xtst=xt[perms[n],:], ytst=yt,
+                        model="mlp", B=bsize, μ=μ,
+                        epochs=2, h=H, w0=w,
+                        lr=lr, opt="SGD",
+                        lossv="xent", earlystop=false,
+                        nrep=1, comp_loss=false, savew=false);
+
+            out = @sprintf("%i", t*2)
+            for k = 1:num_tasks
+                out *= @sprintf(" %g %g", error_sgd(wb, x[perms[k],:], y), error_sgd(wb, xt[perms[k],:], yt))
+            end
+            println(f, out)
+        end
+    end
+
+    close(f)
+end # scenario 2
+
 
 end # module
