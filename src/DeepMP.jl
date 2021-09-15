@@ -142,6 +142,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 ψ = 0.,                        # damping coefficient
                 yy = -1.,                      # focusing BP parameter
                 h0 = nothing,                  # external field
+                g0 = nothing,                  # factor graph init
                 ρ = 1.,                        # coefficient for external field from mini-batch posterior
                 rbatch = 0.,                   # reinforcement parameter for external field
                 freezetop = false,             # freeze top-layer's weights to 1
@@ -178,7 +179,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
 
-    g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
+    g0 !== nothing && @assert isa(g0, FactorGraph)
+    if isa(g0, FactorGraph)
+        g = deepcopy(g0)
+    else
+        g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
+    end
+    # g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
         teacher = device.(teacher)
