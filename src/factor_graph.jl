@@ -56,6 +56,10 @@ mutable struct FactorGraph
                 push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
+            elseif  layertype[l] == :cbpi
+                push!(layers, CBPILayer(K[l+1], K[l], M, ϵinit, 
+                        density=density[l], type=layertype[l]))
+                verbose > 0 && println("Created CBPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
                 @assert l == 1
                 push!(layers, BPRealLayer(K[l+1], K[l], M))
@@ -125,6 +129,7 @@ end
 
 function set_external_fields!(layer::AbstractLayer, h0; ρ=1., rbatch=0)
     if hasproperty(layer, :allhext)
+        # for deprecated tap_exact and bp_exact layers
         for k = 1:layer.K
             layer.allhext[k] .= ρ .* h0[k] .+ rbatch .* layer.allhext[k]
         end
@@ -177,6 +182,10 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
         end
     else
         lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
+        if hasproperty(lay, :Ωext)
+            # for continuous weights
+            lay.Ωext .= ρ .* lay.Ω .+ rbatch .* lay.Ωext        
+        end
     end
 end
 
@@ -310,14 +319,17 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     @assert length(layers) == L
     width = info
     info > 0 && clf()
-    q0s, qWαβs = [], []
+    Δ0s, q0s, qWαβs = [], [], []
     for l=1:L
         wt = !isnothing(teacher) ? teacher[l] : nothing
-        q0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
+        q0, Δ0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
+        
+        push!(Δ0s, Δ0)
         push!(q0s, q0)
-        push!(qWαβs, qWαβ)
+        push!(qWαβs, qWαβ) 
 
         verbose > 0 && printvec(q0, "layer $l q0=")
+        verbose > 0 && printvec(Δ0, "layer $l Δ0=")
         verbose > 0 && printvec(qWαβ, "layer $l qWαβ=")
         verbose > 0 && printvec(R, "layer $l R=")
 
