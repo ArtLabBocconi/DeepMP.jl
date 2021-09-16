@@ -13,6 +13,7 @@ dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
+K = [Nin, 101, 101, 101, 1]
 L = length(K)-1
 plot_sgd = true
 lrsgd = 1.0
@@ -27,15 +28,23 @@ multiclass = true
 if multiclass
     K[end] = 10
     if batchsize == 128
-        seed_bp = [2]
+        seed_bp = [2, 7, 11]
         seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1   
         r = 0.        
         ϵinit = 1.0
-        ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
-        #ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
-        ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+        if length(K) == 4
+                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+                #ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+                #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+                ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]] 
+        else
+            ψs = [[0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8]]
+            #ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+            #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+            ρs = [[1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 1.0+1e-4]] 
+        end
     end
 else
     if batchsize == 128
@@ -96,18 +105,21 @@ for (i,(lay, ρ, ψ)) in enumerate(zip(lays, ρs, ψs))
         resfile *= ".dat"
         @show resfile
 
-        dati = readdlm(resfile)
+        if isfile(resfile)
+            dati = readdlm(resfile)
 
-        push!(epoche_bp, dati[:, 1])
-        push!(train_bp, dati[:, 2])
-        push!(test_bp, dati[:, 3])
-        push!(q0lay1, dati[:, 4])
-        push!(qablay1, dati[:, 5])
-        push!(q0lay2, dati[:, 6])
-        push!(qablay2, dati[:, 7])
-        push!(q0lay3, dati[:, 8])
-        push!(qablay3, dati[:, 9])
-
+            push!(epoche_bp, dati[:, 1])
+            push!(train_bp, dati[:, 2])
+            push!(test_bp, dati[:, 3])
+            push!(q0lay1, dati[:, 4])
+            push!(qablay1, dati[:, 5])
+            push!(q0lay2, dati[:, 6])
+            push!(qablay2, dati[:, 7])
+            push!(q0lay3, dati[:, 8])
+            push!(qablay3, dati[:, 9])
+        else
+            println("* NOT FOUND: $resfile")
+        end
     end
 
     μ_train_bp, σ_train_bp = mean(train_bp), std(train_bp)
@@ -124,8 +136,8 @@ for (i,(lay, ρ, ψ)) in enumerate(zip(lays, ρs, ψs))
     train_legend = "$(μ_train_bp[end]) ± $(σ_train_bp[end])"
     test_legend = "$(μ_test_bp[end]) ± $(σ_test_bp[end])"
 
-    lbl_train = "$lay (train)"# $pars, $train_legend"
-    lbl_test = "$lay (test)"# $pars, $test_legend"
+    lbl_train = "$lay (train) $pars"#, $train_legend"
+    lbl_test = "$lay (test) $pars"#, $test_legend"
 
     ax1.plot(epoche_bp[1], μ_train_bp, ls="-",
              label=lbl_train, color=algo_color[lay])
@@ -137,14 +149,24 @@ for (i,(lay, ρ, ψ)) in enumerate(zip(lays, ρs, ψs))
     ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
                      color=algo_color[lay], alpha=0.3, edgecolor=nothing)
 
-    if dataset in [:mnist, :fashion] 
+    if dataset == :mnist
         if multiclass
-            ax1.set_ylim(5, 25)
+            ax1.set_ylim(0, 8)
+        else
+            ax1.set_ylim(0, 8)
+        end
+    elseif dataset == :fashion
+        if multiclass
+            ax1.set_ylim(0, 30)
         else
             ax1.set_ylim(0, 8)
         end
     elseif dataset == :cifar10
-        ax1.set_ylim(20,90)
+        if multiclass
+            ax1.set_ylim(0, 90)
+        else
+            ax1.set_ylim(0, 50)
+        end
     end
 
     if plot_overlaps
@@ -195,12 +217,15 @@ if plot_sgd
         file *= ".dat"
         @show file
 
-        dati_sgd = readdlm(file)
+        if isfile(file)
+            dati_sgd = readdlm(file)
 
-        push!(epoche, dati_sgd[:, 1])
-        push!(train_sgd, dati_sgd[:, 2])
-        push!(test_sgd, dati_sgd[:, 3])
-
+            push!(epoche, dati_sgd[:, 1])
+            push!(train_sgd, dati_sgd[:, 2])
+            push!(test_sgd, dati_sgd[:, 3])
+        else
+            println("* NOT FOUND: $file")
+        end
     end
 
     μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
@@ -263,7 +288,7 @@ Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
 dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
-fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
+fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$ϵinit, iters=$maxiters, r=$r")
 #fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
