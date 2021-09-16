@@ -191,7 +191,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         teacher = device.(teacher)
         has_same_size(g, teacher) && set_weight_mask!(g, teacher)
     end
-    initrand!(g)
+    g0 !== nothing || initrand!(g)
+    # initrand!(g)
     freezetop && freezetop!(g, 1)
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
