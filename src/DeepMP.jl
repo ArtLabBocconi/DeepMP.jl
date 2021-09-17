@@ -212,7 +212,10 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
-            
+        verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n",
+                                 bayesian_error(g, xtrain, ytrain) *100,
+                                 bayesian_error(g, xtest, ytest) *100)
+
         q0s, qWαβs = plot_info(g, 0; verbose)
 
         if saveres
@@ -222,7 +225,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             end
             outf *= @sprintf(" %g", t.time)
             println(fres, outf); flush(fres)
-        end
+        end>>>
         return Etrain
     end
 

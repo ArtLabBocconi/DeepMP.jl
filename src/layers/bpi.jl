@@ -152,7 +152,7 @@ function bayesian_forward(layer::BPILayer, x̂, Δ)
     
     @tullio ω[k,a] := m[k,i] * x̂[i,a]
     V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
-    @tullio p[k,a] = H(-ω[k,a] / V[k,a]) avx=false
+    @tullio p[k,a] := H(-ω[k,a] / V[k,a]) avx=false
     x̂new = 2p .- 1
     Δnew = 1 .- x̂new.^2 
     return x̂new, Δnew
