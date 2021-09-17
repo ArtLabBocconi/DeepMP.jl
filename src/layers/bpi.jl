@@ -143,6 +143,22 @@ function forward(layer::BPILayer, x)
     return sign.(W*x .+ 1f-10)
 end
 
+
+function bayesian_forward(layer::BPILayer, x̂, Δ)
+    @extract layer: K N M weight_mask
+    @extract layer: m  σ 
+    # @extract layer: Bup B A H Hext ω  V
+    @extract layer: bottom_layer top_layer
+    
+    @tullio ω[k,a] := m[k,i] * x̂[i,a]
+    V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+    @tullio p[k,a] = H(-ω[k,a] / V[k,a]) avx=false
+    x̂new = 2p .- 1
+    Δnew = 1 .- x̂new.^2 
+    return x̂new, Δnew
+end
+
+
 function fixW!(layer::BPILayer, w=1.)
     @extract layer: K N M m σ weight_mask
     m .= w .* weight_mask

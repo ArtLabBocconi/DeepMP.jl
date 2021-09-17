@@ -294,6 +294,9 @@ function update!(g::FactorGraph, reinfpar)
     return Δ
 end
 
+"""
+Forward pass with pointwise estimator.
+"""
 function forward(g::FactorGraph, x)
     @extract g: L layers
    for l=2:L+1
@@ -302,10 +305,39 @@ function forward(g::FactorGraph, x)
     return x
 end
 
+
+"""
+Forward pass with weight average.
+"""
+function bayesian_forward(g::FactorGraph, x)
+    @extract g: L layers
+    x̂ = x 
+    Δ = fill!(similar(y), 0)
+    for l=2:L+1
+        x̂, Δ = bayesian_forward(layers[l], x, Δ)
+    end
+    return x̂, Δ
+end
+
+function bayesian_forward(l::AbstractLayer, x̂, Δ)
+    ŷ = forward(l, sign.(x̂))
+    Δy = fill!(similar(y), 0)
+    return ŷ, Δy 
+end
+
 function energy(g::FactorGraph)
     x = g.layers[1].x
     y = g.layers[end].y
     ŷ = forward(g, x) |> vec
+    return sum(ŷ .!= y)
+end
+
+
+function bayesian_energy(g::FactorGraph)
+    x = g.layers[1].x
+    y = g.layers[end].y
+    ŷ, Δ = bayesian_forward(g, x) |> vec
+    ŷ = sign.(ŷ)
     return sum(ŷ .!= y)
 end
 
