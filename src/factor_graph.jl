@@ -319,11 +319,18 @@ function bayesian_forward(g::FactorGraph, x)
     return x̂, Δ
 end
 
-function bayesian_forward(l::AbstractLayer, x̂, Δ)
-    ŷ = forward(l, sign.(x̂))
-    Δy = fill!(similar(y), 0)
-    return ŷ, Δy 
+function bayesian_forward(layer::AbstractLayer, x̂, Δ)
+    # WARNING Valid only for sign activations
+    @extract layer: m  σ 
+    
+    @tullio ω[k,a] := m[k,i] * x̂[i,a]
+    V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+    @tullio p[k,a] := H(-ω[k,a] / V[k,a]) avx=false
+    x̂new = 2p .- 1
+    Δnew = 1 .- x̂new.^2 
+    return x̂new, Δnew
 end
+
 
 function energy(g::FactorGraph)
     x = g.layers[1].x
