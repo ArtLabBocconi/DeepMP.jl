@@ -225,7 +225,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             end
             outf *= @sprintf(" %g", t.time)
             println(fres, outf); flush(fres)
-        end>>>
+        end
         return Etrain
     end
 
