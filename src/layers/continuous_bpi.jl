@@ -150,7 +150,7 @@ function initrand!(layer::L) where {L <: Union{CBPILayer}}
     μ = 1
     stdev = ϵinit
     H .= (μ / stdev^2) .* randn!(similar(m)) .+ Hext
-    Ω .= 1 / stdev^2 .* fill!(similar(m), 1) + Ωext
+    Ω .= (1 / stdev^2) .* fill!(similar(m), 1) + Ωext
     m .= (H ./ Ω) .* weight_mask
     σ .= (1 ./ Ω) .* weight_mask
 end

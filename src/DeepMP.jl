@@ -16,6 +16,7 @@ using JLD2
 import Zygote
 import ForwardDiff
 import Cassette
+using Flux
 CUDA.allowscalar(false)
 
 # using PyPlot
@@ -241,7 +242,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         for epoch = 1:epochs
             converged = solved = meaniters = 0
             t = @timed for (b, (x, y)) in enumerate(dtrain)
-                all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
+                set_Hext_from_H!(g, ρ, rbatch)
                 set_input_output!(g, x, y)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 

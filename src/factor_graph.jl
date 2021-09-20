@@ -6,6 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
+    opt       # Optimizer for Hext update
 
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int}, ϵinit::F,
@@ -77,6 +78,7 @@ mutable struct FactorGraph
             chain!(layers[l], layers[l+1])
         end
 
+        opt = Flux.Optimise.ADAM()
         new(K, M, L, layers, density, device)
     end
 end
