@@ -12,40 +12,79 @@ rd(x, n) = round(x, sigdigits=n)
 dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 101, 101, 1]
+K = [Nin, 501, 501, 1]
+K = [Nin, 101, 101, 101, 1]
 L = length(K)-1
-plot_sgd = true
-lrsgd = 1.0
+lrsgd = 10.0
 
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
+lays = [:bpi, :tap, :mf]
 
-plot_overlaps = true
-final_params = true
-multiclass = false
+plot_sgd, plot_bp = true, true
+plot_overlaps = false
+multiclass = true
 
 if multiclass
     K[end] = 10
     if batchsize == 128
-        seed_bp = [2] # [2, 7, 11]
-        seed_sgd = [2, 7, 11] # [2, 7, 11]
+        seed_bp = [2, 7, 11]
+        seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
-        maxiters = 1   
-        r = 0.        
-        ϵinit = 1.0
-        ψ = [0.8, 0.8, 0.8]         
-        ρs = [[1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]    
+        maxiters = 1
+        r = 0.
+        ϵinits = [1.0, 1.0, 1.0]
+        if length(K) == 4
+                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+                if K[2] == 101    
+                    ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
+                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0, 1.0, 0.0].+1e-4]
+                elseif K[2] == 501
+                    ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                end
+
+        elseif length(K) == 5
+
+            if K[2] == 101
+                
+                ψs = [[0.95 for _=1:4], [0.8, 0.8, 0.8, 0.8], [0.95 for _=1:4]]
+                ρs = [[1.0, 1.0, 1.0, 0.0], [1.0, 1.0, 1.0, 0.0], [1.0+1e-3, 1.0+1e-3, 1.0+1e-3, 0.0]] 
+                
+                #ψs = [[0.95 for _=1:4], [0.95 for _=1:4], [0.95 for _=1:4]]
+                #ρs = [[1.0, 1.0, 1.0, 0.0], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-3, 1.0+1e-3, 1.0+1e-3, 0.0]] 
+            
+            elseif K[2] == 501
+                
+                ψs = [[0.95 for _=1:4], [0.95 for _=1:4], [0.95 for _=1:4]]
+                ρs = [[1.0, 1.0, 1.0, 0.5], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.0], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
+                
+                ψs = [[0.1, 0.1, 0.1, 0.9], [0.1, 0.1, 0.1, 0.9], [0.1, 0.1, 0.1, 0.9]]
+                ρs = [[1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
+            
+            end
+        end
     end
 else
     if batchsize == 128
-        seed_bp = [2] # [2, 7, 11]
-        seed_sgd = [2, 7] # [2, 7, 11]
+        seed_bp = [2, 7, 11]
+        seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1   
         r = 0.        
-        ϵinit = 1.0
-        ψ = [0.8, 0.8, 0.8]         
-        ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0].+1e-4]    
+        ϵinits = [1.0, 1.0, 1.0]
+        ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+        #ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]    
+        if K[2] == 101
+            ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]
+        elseif K[2] == 501
+            #ρs = [[1.0, 1.0, -1e-4].+1e-4, [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]
+            if dataset == :cifar10
+                ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+            else
+                ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99999], [0.8, 0.8, 0.8]]
+            end
+        end 
     end
 end
 
@@ -72,102 +111,133 @@ else
     ax1 = fig.add_subplot(py"$(gs)[:]")
 end
 
-for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
+if plot_bp 
+    for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
+            
+        #lay in [:bpi, :mf] && continue
+
+        if !multiclass
+            layers = [lay for i in 1:(length(K)-1)]
+        else
+            layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
+        end
         
-    if !multiclass
-        layers = [lay for i in 1:(length(K)-1)]
-    else
-        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
+        epoche_bp, train_bp, test_bp = [],[], []
+        q0lay1, qablay1 = [], []
+        q0lay2, qablay2 = [], []
+        q0lay3, qablay3 = [], []
+
+        for seed in seed_bp
+            resfile = "../scripts/results/res_dataset$(dataset)_"
+            resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+            resfile *= "_density$(density)"
+            resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+            seed ≠ -1 && (resfile *= "_seed$(seed)")
+            resfile *= ".dat"
+            @show resfile
+
+            if isfile(resfile) && filesize(resfile) ≠ 0
+                dati = readdlm(resfile)
+
+                push!(epoche_bp, dati[:, 1])
+                push!(train_bp, dati[:, 2])
+                push!(test_bp, dati[:, 3])
+                push!(q0lay1, dati[:, 4])
+                push!(qablay1, dati[:, 5])
+                push!(q0lay2, dati[:, 6])
+                push!(qablay2, dati[:, 7])
+                push!(q0lay3, dati[:, 8])
+                push!(qablay3, dati[:, 9])
+            else
+                println("* NOT FOUND: $resfile")
+            end
+        end
+
+        μ_train_bp, σ_train_bp = mean(train_bp), std(train_bp)
+        μ_test_bp, σ_test_bp = mean(test_bp), std(test_bp)
+
+        μ_q0lay1, σ_q0lay1 = mean(q0lay1), std(q0lay1)
+        μ_qablay1, σ_qablay1 = mean(qablay1), std(qablay1)
+        μ_q0lay2, σ_q0lay2 = mean(q0lay2), std(q0lay2)
+        μ_qablay2, σ_qablay2 = mean(qablay2), std(qablay2)
+        μ_q0lay3, σ_q0lay3 = mean(q0lay3), std(q0lay3)
+        μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
+
+        pars = "ρ=$([ρ[l] for l=1:L])"
+        train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
+        test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
+
+        if plot_overlaps
+            lbl_train = "$lay (train) $pars, $train_legend"
+            lbl_test = "$lay (test) $pars, $test_legend"
+        else
+            lbl_train = "$lay (train) $pars"
+            lbl_test = "$lay (test) $pars"
+        end
+
+        ax1.plot(epoche_bp[1], μ_train_bp, ls="-",
+                label=lbl_train, color=algo_color[lay])
+        ax1.plot(epoche_bp[1], μ_test_bp, ls="--",
+                    label=lbl_test, color=algo_color[lay])
+
+        ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
+                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+        ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
+                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+
+        if dataset == :mnist
+            if multiclass
+                ax1.set_ylim(0, 8)
+            else
+                ax1.set_ylim(0, 8)
+            end
+        elseif dataset == :fashion
+            if multiclass
+                ax1.set_ylim(0, 30)
+            else
+                ax1.set_ylim(0, 8)
+            end
+        elseif dataset == :cifar10
+            if multiclass
+                ax1.set_ylim(0, 90)
+            else
+                ax1.set_ylim(0, 50)
+            end
+        end
+
+        if plot_overlaps
+
+            ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
+                label="$lay lay1", c=algo_color[lay])
+            ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
+                label="$lay lay1", c=algo_color[lay])
+            ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
+                label="$lay lay2", c=algo_color[lay])
+            ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
+                label="$lay lay2", c=algo_color[lay])
+            ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
+                label="$lay lay3", c=algo_color[lay])
+            ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
+                label="$lay lay3", c=algo_color[lay])
+
+            ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
+                        color=algo_color[lay], alpha=0.3)
+            ax3.fill_between(epoche_bp[1], μ_qablay1-σ_qablay1, μ_qablay1+σ_qablay1,
+                        color=algo_color[lay], alpha=0.3)
+            ax4.fill_between(epoche_bp[1], μ_q0lay2-σ_q0lay2, μ_q0lay2+σ_q0lay2,
+                        color=algo_color[lay], alpha=0.3)
+            ax5.fill_between(epoche_bp[1], μ_qablay2-σ_qablay2, μ_qablay2+σ_qablay2,
+                        color=algo_color[lay], alpha=0.3)
+            ax6.fill_between(epoche_bp[1], μ_q0lay3-σ_q0lay3, μ_q0lay3+σ_q0lay3,
+                        color=algo_color[lay], alpha=0.3)
+            ax7.fill_between(epoche_bp[1], μ_qablay3-σ_qablay3, μ_qablay3+σ_qablay3,
+                        color=algo_color[lay], alpha=0.3)
+        
+        end
+
+        println("$lay: train: $(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3)); test: $(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))")
+
     end
-    
-    epoche_bp, train_bp, test_bp = [],[], []
-    q0lay1, qablay1 = [], []
-    q0lay2, qablay2 = [], []
-    q0lay3, qablay3 = [], []
-
-    for seed in seed_bp
-        resfile = "../scripts/results/res_dataset$(dataset)_"
-        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
-        resfile *= "_density$(density)"
-        resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-        seed ≠ -1 && (resfile *= "_seed$(seed)")
-        resfile *= ".dat"
-        @show resfile
-
-        dati = readdlm(resfile)
-
-        push!(epoche_bp, dati[:, 1])
-        push!(train_bp, dati[:, 2])
-        push!(test_bp, dati[:, 3])
-        push!(q0lay1, dati[:, 4])
-        push!(qablay1, dati[:, 5])
-        push!(q0lay2, dati[:, 6])
-        push!(qablay2, dati[:, 7])
-        push!(q0lay3, dati[:, 8])
-        push!(qablay3, dati[:, 9])
-
-    end
-
-    μ_train_bp, σ_train_bp = mean(train_bp), std(train_bp)
-    μ_test_bp, σ_test_bp = mean(test_bp), std(test_bp)
-
-    μ_q0lay1, σ_q0lay1 = mean(q0lay1), std(q0lay1)
-    μ_qablay1, σ_qablay1 = mean(qablay1), std(qablay1)
-    μ_q0lay2, σ_q0lay2 = mean(q0lay2), std(q0lay2)
-    μ_qablay2, σ_qablay2 = mean(qablay2), std(qablay2)
-    μ_q0lay3, σ_q0lay3 = mean(q0lay3), std(q0lay3)
-    μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
-
-    pars = "ρ=$([rd(ρ[l]-1,1) for l=1:L])"
-
-    ax1.plot(epoche_bp[1], μ_train_bp, ls="-",
-             label="train $lay $pars", color=algo_color[lay])
-    ax1.plot(epoche_bp[1], μ_test_bp, ls="--",
-                 label="test $lay $pars", color=algo_color[lay])
-
-    ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
-                     color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-    ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
-                     color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-
-    #ax1.set_xlabel("epochs", fontsize=12)
-    ax1.set_ylabel("error (%)", fontsize=12)
-    if dataset ≠ :cifar10
-        ax1.set_ylim(0,30)
-    else
-        ax1.set_ylim(20,90)
-    end
-
-    if plot_overlaps
-
-        ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
-            label="$lay lay1", c=algo_color[lay])
-        ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
-            label="$lay lay1", c=algo_color[lay])
-        ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
-            label="$lay lay2", c=algo_color[lay])
-        ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
-            label="$lay lay2", c=algo_color[lay])
-        ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
-            label="$lay lay3", c=algo_color[lay])
-        ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
-            label="$lay lay3", c=algo_color[lay])
-
-        ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
-                    color=algo_color[lay], alpha=0.3)
-        ax3.fill_between(epoche_bp[1], μ_qablay1-σ_qablay1, μ_qablay1+σ_qablay1,
-                    color=algo_color[lay], alpha=0.3)
-        ax4.fill_between(epoche_bp[1], μ_q0lay2-σ_q0lay2, μ_q0lay2+σ_q0lay2,
-                    color=algo_color[lay], alpha=0.3)
-        ax5.fill_between(epoche_bp[1], μ_qablay2-σ_qablay2, μ_qablay2+σ_qablay2,
-                    color=algo_color[lay], alpha=0.3)
-        ax6.fill_between(epoche_bp[1], μ_q0lay3-σ_q0lay3, μ_q0lay3+σ_q0lay3,
-                    color=algo_color[lay], alpha=0.3)
-        ax7.fill_between(epoche_bp[1], μ_qablay3-σ_qablay3, μ_qablay3+σ_qablay3,
-                    color=algo_color[lay], alpha=0.3)
-    
-    end
-
 end
 
 Ksgd = K[2:end-1]
@@ -178,36 +248,48 @@ if plot_sgd
     epoche, train_sgd, test_sgd = [], [], []
     for seedgd in seed_sgd
         file = "../../representations/knet/results/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
-        (P > 0 && (P≠6e4) && P≠5e4 ) && (file *= "_P$(Int(P))")
+        (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
         file *= "_lr$(lrsgd)_bs$(batchsize)"
         seedgd ≠ 2 && (file *= "_seed$(seedgd)")
         file *= ".dat"
         @show file
 
-        dati_sgd = readdlm(file)
-
-        push!(epoche, dati_sgd[:, 1])
-        push!(train_sgd, dati_sgd[:, 2])
-        push!(test_sgd, dati_sgd[:, 3])
-
+        if isfile(file)
+            dati_sgd = readdlm(file)
+            push!(epoche, dati_sgd[:, 1])
+            push!(train_sgd, dati_sgd[:, 2])
+            push!(test_sgd, dati_sgd[:, 3])
+        else
+            println("* NOT FOUND: $file")
+        end
     end
 
     μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
     μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
 
-    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd],
-        label="train bin-sgd bs=$batchsize, lr=$lrsgd")
-    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd],
-        label="test bin-sgd bs=$batchsize, lr=$lrsgd")
+    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
-    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd],
-                 alpha=0.3)
-    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd],
-                     alpha=0.3)
+    if plot_overlaps
+        lbl_train = "bin-sgd (train) bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "bin-sgd (test) bs=$batchsize, lr=$lrsgd, $test_legend"
+    else
+        lbl_train = "bin-sgd (train), lr=$lrsgd"
+        lbl_test = "bin-sgd (test), lr=$lrsgd"
+    end
+
+    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train)
+    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test)
+
+    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd], alpha=0.3)
+    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd], alpha=0.3)
+
+    println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
 
 end
 
-ax1.set_xlabel("epochs", fontsize=12)
+ax1.set_xlabel("epochs", fontsize=16)
+ax1.set_ylabel("error (%)", fontsize=16)
 
 if plot_overlaps
     ax2.set_ylabel("q0", fontsize=10)
@@ -247,13 +329,15 @@ Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
 dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
-fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$ψ, init=$ϵinit, iters=$maxiters, r=$r")
+fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
 #fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_deepMP.png")
 multc = multiclass ? "multiclass" : "2class"
 fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
+ovs = plot_overlaps ? ".ovs" : ""
+fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs.pdf")
 
 plt.close()
 

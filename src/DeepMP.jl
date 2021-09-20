@@ -13,6 +13,8 @@ using CUDA, KernelAbstractions, CUDAKernels
 using Adapt
 using Functors
 using JLD2
+import Zygote
+import ForwardDiff
 import Cassette
 CUDA.allowscalar(false)
 
@@ -226,6 +228,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
 
 
     if batchsize <= 0
+        ## FULL BATCH message passing
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
                             altsolv, altconv, plotinfo,
                             teacher, verbose,

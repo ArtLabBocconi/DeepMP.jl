@@ -13,7 +13,7 @@ include("bp_exact.jl")
 include("tap.jl")
 include("tap_exact.jl")
 include("bpi.jl")
-include("bp_real.jl")
+include("continuous_bpi.jl")
 include("mf.jl")
 include("argmax.jl")
 
@@ -103,9 +103,13 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     #     end
     # end
     m = layer.m
+    σ = layer.σ
+
     @tullio q0[k] := m[k,i] * m[k,i]
+    @tullio Δ0[k] := σ[k,i]
     @tullio qWαβ[k,p] := m[k,i] * m[p,i]
     q0 ./= N
+    Δ0 ./= N
     qWαβ ./= N
-    return q0, qWαβ, R
+    return q0, Δ0, qWαβ, R
 end

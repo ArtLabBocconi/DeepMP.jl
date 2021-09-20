@@ -55,9 +55,10 @@ ax1.set_yscale("log")
 
 ax1.legend(loc="best", frameon=false, fontsize=12)
 
-fig.suptitle("MNIST even vs odd, P=$P, K=$K")
+fig.suptitle("FashionMNIST 2 classes, P=$P, K=$K")
 #fig.tight_layout()
-fig.savefig("deepMP_times_K$(K).png")
+fig.savefig("figBP_times_K$(K[2:end-1]).fashion.2class.png")
+fig.savefig("figBP_times_K$(K[2:end-1]).fashion.2class.pdf")
 #plt.close()
 
 

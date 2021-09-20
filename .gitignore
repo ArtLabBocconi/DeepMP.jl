@@ -1,5 +1,8 @@
 *.dat
-.ipynb_checkpoints
+*.jld2
+*.png
+*.ipynb_checkpoints
 L_dBP.jl
+
 *~
 *#
