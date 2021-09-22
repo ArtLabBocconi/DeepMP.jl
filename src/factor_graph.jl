@@ -342,6 +342,7 @@ end
 function bayesian_error(g::FactorGraph, x, y)
     ŷ, Δ = bayesian_forward(g, x)
     ŷ = sign.(ŷ) |> vec
+    #@show size(ŷ) size(y)
     return mean(ŷ .!= y)
 end
 
