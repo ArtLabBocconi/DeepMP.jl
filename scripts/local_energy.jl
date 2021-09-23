@@ -16,24 +16,22 @@ include("/home/fabrizio/workspace/representations/knet/fashion-mnist.jl")
 include("/home/fabrizio/workspace/representations/knet/dataset.jl")
 include("/home/fabrizio/workspace/representations/knet/utils.jl")
 
-experiment = "sgd" # "sgd" or "bp
-
-ps = [0.01:0.01:0.05;]
-
-n_stat = 3
+experiment = "bp" # "sgd" or "bp
 
 dataset = "fashion"
 batchsize = 128
 classes = []
 Nin = dataset ≠ "cifar" ? 784 : 3072
-K = [Nin, 101, 101, 1]
+K = [Nin, 501, 501, 1]
 Ksgd = K[2:end-1]
 
 P = -1
-lrsgd = 0.31
-seedgd = 2
+lrsgd = 1.0
 
 if experiment == "sgd"
+
+    seedgd = 2
+
     file = "../../representations/knet/results/res_conf$(dataset)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
     (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
     file *= "_lr$(lrsgd)_bs$(batchsize)"
@@ -49,9 +47,9 @@ if experiment == "sgd"
 elseif experiment == "bp"
 
     P = dataset ≠ :cifar10 ? Int(6e4) : Int(5e4)
-    lay = :bpi
+    lay = :mf
     ψ = [0.8, 0.8, 0.8]
-    ρ = [1.0, 1.0, 0.9]
+    ρ = [1.0+1e-4, 1.0+1e-4, 0.9]
     r = 0.0
     density = 1.0
     ϵinit = 1.0
@@ -88,11 +86,13 @@ function predict(w, x; l=0)
         ν = √size(w[i], 2)
         x = w[i] * x
         if i < length(w)
-            x = sign.(x./ν)
+            #x = sign.(x./ν)
+            x = sign.(x)
         end
     end
     ν = √size(w[end], 2)
-    return x./ν
+    #return x./ν
+    return x
 end
 
 function binary_accuracy(dtrn, w)
@@ -117,6 +117,9 @@ println("p: 0.0, local_energy: $(rd(train_energy[1],3)) ± 0.0")
 
 seed = 2
 seed > 0 && Random.seed!(seed)
+
+ps = [0.01:0.02:0.25;]
+n_stat = 10
 
 for p in ps
 
