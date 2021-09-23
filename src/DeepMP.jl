@@ -51,9 +51,10 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     for it = 1:maxiters
         
         t = @timed Δ = update!(g, reinfpar)
-        E = energy(g)
+        #E = energy(g)
+        E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
+        verbose >= 1 && @printf("it=%d \t (r=%f) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
         if verbose >= 2
             Etest = 100.0
@@ -63,7 +64,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
-        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose  )
+        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
@@ -277,11 +278,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if saveres 
         close(fres)
         println("outfile: $resfile")
-        save("results/graph$(resfile[12:end-4]).jld2", Dict("graph" => g))
+        conf_file = "results/conf$(resfile[12:end-4]).jld2"
+        @show conf_file
+        #save(conf_file, Dict("weights" => getW(g)))
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
-    return g, getW(g), teacher, Etrain, it
+    return g, getW(g), teacher, Etrain, it, conf_file
+
 end
 
 end #module
