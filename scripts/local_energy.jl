@@ -7,6 +7,7 @@ using Knet
 using AutoGrad
 using Parameters: @with_kw, @unpack
 using CUDA
+device!(1)
 
 const Flt = Float32
 
@@ -26,7 +27,7 @@ K = [Nin, 501, 501, 1]
 Ksgd = K[2:end-1]
 
 P = -1
-lrsgd = 1.0
+lrsgd = 10.0
 
 if experiment == "sgd"
 
@@ -49,7 +50,11 @@ elseif experiment == "bp"
     P = dataset ≠ :cifar10 ? Int(6e4) : Int(5e4)
     lay = :mf
     ψ = [0.8, 0.8, 0.8]
-    ρ = [1.0+1e-4, 1.0+1e-4, 0.9]
+    if lay ≠ :mf
+        ρ = [1.0+1e-4, 1.0+1e-4, 0.9]
+    else
+        ρ = [1.0+1e-4, 1.0+1e-4, 0.]
+    end
     r = 0.0
     density = 1.0
     ϵinit = 1.0
@@ -118,39 +123,28 @@ println("p: 0.0, local_energy: $(rd(train_energy[1],3)) ± 0.0")
 seed = 2
 seed > 0 && Random.seed!(seed)
 
-ps = [0.01:0.02:0.25;]
+ps = [0.05:0.05:0.35;]
 n_stat = 10
 
 for p in ps
-
     errs = []
-
     #noise = [randn!(deepcopy(w[1])) for _=1:n_stat]
-
     for i in 1:n_stat
-
         wcopy = deepcopy(w)
-
         for l in 1:length(wcopy)
-            noise = rand(size(wcopy[l])[1],size(wcopy[l])[2]) .> p
+            noise = rand(size(wcopy[l])[1], size(wcopy[l])[2]) .> p
             #@show noise
             #error()
             noise = 2.0 .* noise .- 1.0
             wcopy[l] .*= noise
         end
-
         err = 1.0 - binary_accuracy(dtrn_acc, wcopy)
-
         push!(errs, err)
-
     end
-
     mean_err, std_err = mean(errs), std(errs)
     push!(train_energy, mean_err)
     push!(train_energy_std, std_err)
-
     println("p: $(p), local_energy: $(rd(mean_err,3)) ± $(rd(std_err,3))")
-
 end
 
 writedlm("results/localenergy_dataset$(dataset)_K$(Ksgd)_exp$(experiment).dat", [[0;ps] train_energy train_energy_std])
