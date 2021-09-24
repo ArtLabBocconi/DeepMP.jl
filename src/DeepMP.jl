@@ -51,9 +51,10 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     for it = 1:maxiters
         
         t = @timed Δ = update!(g, reinfpar)
-        E = energy(g)
+        #E = energy(g)
+        E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%f) E=%d \t Δ=%f \n",
+        verbose >= 1 && @printf("it=%d \t (r=%f) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
         if verbose >= 2
             Etest = 100.0
@@ -63,7 +64,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
-        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose  )
+        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose)
         update_reinforcement!(reinfpar)
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
@@ -202,19 +203,25 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
+        if layers[end] ≠ :argmax
+            Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
+        end
         num_batches = length(dtrain)
         Etest = 100.0
         if ytest !== nothing
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+            if layers[end] ≠ :argmax
+                Etest_bayes = bayesian_error(g, xtest, ytest) *100
+            end
         end
             
         verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
-        verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n",
-                                 bayesian_error(g, xtrain, ytrain) *100,
-                                 bayesian_error(g, xtest, ytest) *100)
+        if layers[end] ≠ :argmax
+            verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
+        end
 
         q0s, qWαβs = plot_info(g, 0; verbose)
 
@@ -224,6 +231,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 outf *= @sprintf(" %g %g", mean(q0), mean(qWαβ))
             end
             outf *= @sprintf(" %g", t.time)
+            if layers[end] ≠ :argmax
+                outf *= @sprintf(" %g %g", Etrain_bayes, Etest_bayes)
+            end
             println(fres, outf); flush(fres)
         end
         return Etrain
@@ -255,6 +265,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 meaniters += it
                 
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
+
+                #if epochs == 1 && b % 1000 == 0
+                #    Etrain = report(b; converged, solved, meaniters)
+                #end
+
             end
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
@@ -263,11 +278,14 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if saveres 
         close(fres)
         println("outfile: $resfile")
-        save("results/graph$(resfile[12:end-4]).jld2", Dict("graph" => g))
+        conf_file = "results/conf$(resfile[12:end-4]).jld2"
+        @show conf_file
+        #save(conf_file, Dict("weights" => getW(g)))
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
-    return g, getW(g), teacher, Etrain, it
+    return g, getW(g), teacher, Etrain, it, conf_file
+
 end
 
 end #module

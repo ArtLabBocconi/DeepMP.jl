@@ -1,7 +1,7 @@
 using Pkg
-# Pkg.activate("../")
+Pkg.activate("../")
 #Pkg.activate("./")
-# Pkg.instantiate()
+Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
@@ -12,7 +12,9 @@ using CUDA
 
 # Odd vs Even or 1 class vs another
 function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist, normalize=true)
+    
     seed > 0 && Random.seed!(seed)
+    
     namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
                                      dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
                                      dataset == :cifar10 ? ("CIFAR10", CIFAR10, (1,2,4)) :
