@@ -340,8 +340,17 @@ function energy(g::FactorGraph)
 end
 
 function bayesian_error(g::FactorGraph, x, y)
+    @extract g: K
+
     ŷ, Δ = bayesian_forward(g, x)
-    ŷ = sign.(ŷ) |> vec
+
+    if K[end] == 1
+        ŷ = sign.(ŷ) |> vec
+    else
+        ŷ = argmax(ŷ, dims=1)
+        ŷ = getindex.(ŷ, 1) |> vec    
+    end
+
     #@show size(ŷ) size(y)
     return mean(ŷ .!= y)
 end
