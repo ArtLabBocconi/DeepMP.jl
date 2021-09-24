@@ -203,25 +203,19 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
-        if layers[end] ≠ :argmax
-            Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
-        end
+        Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
         num_batches = length(dtrain)
         Etest = 100.0
         if ytest !== nothing
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
-            if layers[end] ≠ :argmax
-                Etest_bayes = bayesian_error(g, xtest, ytest) *100
-            end
+            Etest_bayes = bayesian_error(g, xtest, ytest) *100
         end
-            
+        
         verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
-        if layers[end] ≠ :argmax
-            verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
-        end
+        verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
 
         q0s, qWαβs = plot_info(g, 0; verbose)
 
@@ -231,9 +225,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 outf *= @sprintf(" %g %g", mean(q0), mean(qWαβ))
             end
             outf *= @sprintf(" %g", t.time)
-            if layers[end] ≠ :argmax
-                outf *= @sprintf(" %g %g", Etrain_bayes, Etest_bayes)
-            end
+            outf *= @sprintf(" %g %g", Etrain_bayes, Etest_bayes)
             println(fres, outf); flush(fres)
         end
         return Etrain
