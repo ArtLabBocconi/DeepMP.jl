@@ -14,7 +14,7 @@ using CUDA
 function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist, normalize=true)
     
     seed > 0 && Random.seed!(seed)
-    
+
     namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
                                      dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
                                      dataset == :cifar10 ? ("CIFAR10", CIFAR10, (1,2,4)) :
@@ -25,14 +25,17 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
     @assert all(isinteger.(ytest))
+
     if normalize
         mn = mean(xtrain, dims=reduce_dims)
         st = std(xtrain, dims=reduce_dims)
         xtrain = (xtrain .- mn) ./ (st .+ 1e-5)
         xtest = (xtest .- mn) ./ (st .+ 1e-5)
     end
+
     xtrain = reshape(xtrain, :, size(xtrain)[end])
     xtest = reshape(xtest, :, size(xtest)[end])
+
     if !isempty(classes)
         # ONE CLASS VS ANOTHER
         @assert length(classes) == 2
@@ -67,7 +70,9 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
     end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
+    
     return xtrain, ytrain, xtest, ytest
+
 end
 
 function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_type=:bpi, 

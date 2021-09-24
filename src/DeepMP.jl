@@ -182,7 +182,12 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-	
+    
+    #for (x,y) in dtrain
+    #    print(y, ",")
+    #end
+    #error()
+
     if !isnothing(xtrain2)
         xtrain2, ytrain2 = device(xtrain2), device(ytrain2)
         xtest2, ytest2 = device(xtest2), device(ytest2)
