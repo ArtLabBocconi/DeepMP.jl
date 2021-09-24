@@ -53,11 +53,11 @@ mutable struct FactorGraph
                 push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
                 verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] == :bpi
-                push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
+                push!(layers, BPILayer(K[l+1], K[l], M, ϵinit,
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :cbpi
-                push!(layers, CBPILayer(K[l+1], K[l], M, ϵinit, 
+                push!(layers, CBPILayer(K[l+1], K[l], M, ϵinit,
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created CBPILayer\t $(K[l])")
             elseif  layertype[l] == :bpreal
@@ -184,7 +184,7 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
         lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
         if hasproperty(lay, :Ωext)
             # for continuous weights
-            lay.Ωext .= ρ .* lay.Ω .+ rbatch .* lay.Ωext        
+            lay.Ωext .= ρ .* lay.Ω .+ rbatch .* lay.Ωext
         end
     end
 end
@@ -203,6 +203,14 @@ function copy_mags!(g1::FactorGraph, g2::FactorGraph)
     @assert g1.L == g2.L
     for l = 2:g1.L+1
         copy_mags!(g1.layers[l], g2.layers[l])
+    end
+end
+
+# g gets g0's layers
+function copy_layers!(g0::FactorGraph, g::FactorGraph)
+    @assert g0.L == g.L
+    for l = 2:g0.L+1
+        g.layers[l] = deepcopy(g0.layers[l])
     end
 end
 
@@ -247,10 +255,10 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
-    
+
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
-        lay.B .= 0  
+        lay.B .= 0
         if hasproperty(lay, :Bcav)
             lay.Bcav .= 0
         end
@@ -311,7 +319,7 @@ Forward pass with weight average.
 """
 function bayesian_forward(g::FactorGraph, x)
     @extract g: L layers
-    x̂ = x 
+    x̂ = x
     Δ = fill!(similar(x), 0)
     for l=2:L+1
         x̂, Δ = bayesian_forward(layers[l], x̂, Δ)
@@ -321,13 +329,13 @@ end
 
 function bayesian_forward(layer::AbstractLayer, x̂, Δ)
     # WARNING Valid only for sign activations
-    @extract layer: m  σ 
-    
+    @extract layer: m  σ
+
     @tullio ω[k,a] := m[k,i] * x̂[i,a]
     V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
     @tullio p[k,a] := H(-ω[k,a] / V[k,a]) avx=false
     x̂new = 2p .- 1
-    Δnew = 1 .- x̂new.^2 
+    Δnew = 1 .- x̂new.^2
     return x̂new, Δnew
 end
 
@@ -348,7 +356,7 @@ function bayesian_error(g::FactorGraph, x, y)
         ŷ = sign.(ŷ) |> vec
     else
         ŷ = argmax(ŷ, dims=1)
-        ŷ = getindex.(ŷ, 1) |> vec    
+        ŷ = getindex.(ŷ, 1) |> vec
     end
 
     #@show size(ŷ) size(y)
@@ -369,10 +377,10 @@ function plot_info(g::FactorGraph, info=1; verbose=0, teacher=nothing)
     for l=1:L
         wt = !isnothing(teacher) ? teacher[l] : nothing
         q0, Δ0, qWαβ, R = compute_overlaps(layers[l], teacher=wt)
-        
+
         push!(Δ0s, Δ0)
         push!(q0s, q0)
-        push!(qWαβs, qWαβ) 
+        push!(qWαβs, qWαβ)
 
         verbose > 0 && printvec(q0, "layer $l q0=")
         verbose > 0 && printvec(Δ0, "layer $l Δ0=")
