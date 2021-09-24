@@ -101,7 +101,7 @@ else
 
 end
 
-online = true
+online = false
 if online
     plot_sgd, plot_bp, plot_bayes = true, true, true
     dataset = :fashion
@@ -223,6 +223,9 @@ if plot_bp
             lbl_test = "$lay (test) $pars"
         end
 
+        lbl_train = "$lay (train)"
+        lbl_test = "$lay (test)"
+
         ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
         ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
 
@@ -329,11 +332,55 @@ if plot_sgd
         lbl_test = "bin-sgd (test), lr=$lrsgd"
     end
 
+    lbl_train = "bin-sgd (train)"
+    lbl_test = "bin-sgd (test)"
+
     ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=0.25)
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=0.25)
 
     ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd], alpha=0.3)
     ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd], alpha=0.3)
+
+    println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
+
+end
+
+plot_continuous_sgd = true
+lrsgd = 0.1
+if plot_continuous_sgd
+    epoche, train_sgd, test_sgd = [], [], []
+    for seedgd in seed_sgd
+        file = "../../representations/knet/results/res_dataset$(dset_sgd)_classes$(classes)_binwfalse_hidden$(Ksgd)_biasfalse_freezetopfalse"
+        (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
+        file *= "_lr$(lrsgd)_bs$(batchsize)"
+        seedgd ≠ 2 && (file *= "_seed$(seedgd)")
+        file *= ".dat"
+        @show file
+
+        if isfile(file)
+            dati_sgd = readdlm(file)
+            push!(epoche, dati_sgd[:, 1])
+            push!(train_sgd, dati_sgd[:, 2])
+            push!(test_sgd, dati_sgd[:, 3])
+        else
+            println("* NOT FOUND: $file")
+        end
+    end
+
+    μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
+    μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
+
+    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
+
+    lbl_train = "cont-sgd (train)"
+    lbl_test = "cont-sgd (test)"
+
+    ax1.plot(epoche[1], μ_train, ls="-", c="tab:red", label=lbl_train, alpha=0.75)
+    ax1.plot(epoche[1], μ_test, ls="--", c="tab:red", label=lbl_test, alpha=0.75)
+
+    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color="tab:red", alpha=0.75)
+    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color="tab:red", alpha=0.75)
 
     println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
 
@@ -386,15 +433,16 @@ Pstring = "$P"[1] * "e$(length("$(Int(P))")-1)"
 dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
-fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
-#fig.tight_layout()
+#fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
+fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_deepMP.png")
 multc = multiclass ? "multiclass" : "2class"
 fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
 ovs = plot_overlaps ? ".ovs" : ""
-fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs.pdf")
+bay = plot_bayes ? ".bayes" : ""
+fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs$bay.pdf")
 
 plt.close()
 

@@ -28,3 +28,4 @@ ax1.legend(loc="upper left", frameon=false, fontsize=14)
 
 fig.tight_layout()
 fig.savefig("figures/local_energy.png")
+fig.savefig("figures/local_energy.pdf")
