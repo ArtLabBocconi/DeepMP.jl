@@ -70,15 +70,22 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
     return xtrain, ytrain, xtest, ytest
 end
 
-function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_type=:bpi, kws...)
+function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_type=:bpi, 
+                          dataset2=nothing, kws...)
 
     xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, multiclass)
+    if isnothing(dataset2)
+        xtrain2, ytrain2, xtest2, ytest2 = nothing, nothing, nothing, nothing
+    else
+        xtrain2, ytrain2, xtest2, ytest2 = get_dataset(M; dataset=dataset2, multiclass)
+    end
     K[end] = multiclass ? 10 : 1
     K[1] = dataset in [:mnist, :fashion] ? 28*28 : 32*32*3
     layers = [lay_type for _ in 1:length(K)-1]
     multiclass && (layers[end] = :argmax)
     
-    g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, K, layers, kws...)
+    g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, K, layers, 
+                                        xtrain2, ytrain2, xtest2, ytest2, kws...)
 
     #GC.gc()
     #CUDA.reclaim()
