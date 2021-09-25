@@ -182,8 +182,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
 
-    g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
-
+    # g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
+    g0 !== nothing && @assert isa(g0, FactorGraph)
+    if isa(g0, FactorGraph)
+        g = deepcopy(g0)
+    else
+        g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
+    end
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
         teacher = device.(teacher)
@@ -191,10 +196,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
     # initrand!(g)
     g0 !== nothing || initrand!(g)
-    g0 !== nothing && @assert isa(g0, FactorGraph)
-    if isa(g0, FactorGraph)
-        copy_layers!(g0, g)
-    end
     freezetop && freezetop!(g, 1)
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 

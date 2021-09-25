@@ -208,6 +208,7 @@ end
 
 # g gets g0's layers
 function copy_layers!(g0::FactorGraph, g::FactorGraph)
+    # g = deepcopy(g0)
     @assert g0.L == g.L
     for l = 2:g0.L+1
         g.layers[l] = deepcopy(g0.layers[l])
