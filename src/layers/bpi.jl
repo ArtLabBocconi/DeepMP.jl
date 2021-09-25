@@ -97,7 +97,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
                 @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
             else
                 # reinforcement 
-                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio Hnew[k,i] := Hin[k,i] + r[l] * H[k,i] + Hext[k,i]
             end
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             H .= Hnew

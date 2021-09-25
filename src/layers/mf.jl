@@ -97,10 +97,9 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
             @tullio B[i,a] = m[k,i] * g[k,a]
         end
 
-        if !isfrozen(layer) 
+        if !isfrozen(layer)
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio Hnew[k,i] := Hin[k,i]  + r*H[k,i] + Hext[k,i]
-            
+            @tullio Hnew[k,i] := Hin[k,i]  + r[l] * H[k,i] + Hext[k,i]
             H .= Hnew
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             

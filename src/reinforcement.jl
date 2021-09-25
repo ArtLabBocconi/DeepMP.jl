@@ -1,5 +1,5 @@
 mutable struct ReinfParams
-    r::Float32                           # reinforcement (γ for focusing) for W variables
+    r::Union{Float32, Vector{Float64}}   # reinforcement (γ for focusing) for W variables
     rstep::Float32
     y::Float32                           # parameter for FocusingBP
     ψ::Union{Float32, Vector{Float64}}   # damping parameter

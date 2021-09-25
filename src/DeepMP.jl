@@ -51,31 +51,38 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     for it = 1:maxiters
         
         t = @timed Δ = update!(g, reinfpar)
+
         #E = energy(g)
         E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%f) Etrain=%.2f%% \t Δ=%f \n",
+        verbose >= 1 && @printf("it=%d \t (r=%s) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
+
         if verbose >= 2
             Etest = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             end
-            @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            @printf("\t\t\t Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
         end
 
-        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose)
+        plotinfo > 0 && plot_info(g, 0; verbose)
+
         update_reinforcement!(reinfpar)
+
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
             return it, E, Δ
         end
+
         if altconv && Δ < ϵ
             verbose > 0 && println("Converged!")
             return it, E, Δ
         end
     end
+
     return maxiters, 1, 1.0
+
 end
 
 function solve(; K::Vector{Int} = [101, 3],
@@ -178,6 +185,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     L = length(K) - 1
     ψ = num_to_vec(ψ, L)
     ρ = num_to_vec(ρ, L)
+    r = num_to_vec(r, L)
 
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
@@ -225,7 +233,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest_bayes = bayesian_error(g, xtest, ytest) *100
         end
         
-        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
@@ -255,7 +263,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if batchsize <= 0
         ## FULL BATCH message passing
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
-                            altsolv, altconv, plotinfo,
+                            altsolv, altconv, plotinfo=1,
                             teacher, verbose,
                             xtest, ytest)
         
@@ -311,6 +319,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         end
 
     end
+
     if saveres 
         close(fres)
         println("outfile: $resfile")

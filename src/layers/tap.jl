@@ -108,7 +108,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
             # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
             @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio Hnew[k,i] := Hin[k,i] + m[k,i] * G[k,i] + r*H[k,i] + Hext[k,i]
+            @tullio Hnew[k,i] := Hin[k,i] + m[k,i] * G[k,i] + r[l] * H[k,i] + Hext[k,i]
             @tullio Hnew[k,i] += -Δ[i,a] * Γ[k,a]
 
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
