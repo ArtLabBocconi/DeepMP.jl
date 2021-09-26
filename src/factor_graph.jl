@@ -195,9 +195,9 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
             Hmp = (lay.H .< lay.Hext) .* (lay.Hext .>= 0)
 
             Heq = (Hpp .+ Hmm)
-            #Heq = min.(Heq, 1)
+            Heq = min.(Heq, 1)
             Hdiff = (Hpm .+ Hmp)
-            #Hdiff = min.(Hdiff, 1)
+            Hdiff = min.(Hdiff, 1)
 
             #lay.Hext .= ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-m) .* lay.H .+ m .* lay.Hext) # original line
             lay.Hext .= ρ .* ( Heq .* lay.H .+ Hdiff .* ((1-meta) .* lay.H .+ meta .* lay.Hext) )
