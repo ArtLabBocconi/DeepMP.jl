@@ -178,6 +178,7 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
 
     meta = 0.0
     #meta = rbatch; rbatch = 0.0
+    meta = 0.1
 
     if hasproperty(lay, :allh) # TODO deprecate
         @assert hasproperty(lay, :allhext)
@@ -188,13 +189,18 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
         if meta == 0.0
             lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
         else
-            Hpp = (lay.H .> lay.Hext) .* (lay.Hext .> 0)
+            Hpp = (lay.H .>= lay.Hext) .* (lay.Hext .>= 0)
             Hmm = (lay.H .< lay.Hext) .* (lay.Hext .< 0)
-            Hpm = (lay.H .> lay.Hext) .* (lay.Hext .< 0)
-            Hmp = (lay.H .< lay.Hext) .* (lay.Hext .> 0)
-            #lay.Hext .= ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-m) .* lay.H .+ m .* lay.Hext) # original line
-            lay.Hext .= ρ .* ( (Hpp .+ Hmm) .* lay.H .+ (Hpm .+ Hmp) .* ((1-meta) .* lay.H .+ meta .* lay.Hext) )
+            Hpm = (lay.H .>= lay.Hext) .* (lay.Hext .< 0)
+            Hmp = (lay.H .< lay.Hext) .* (lay.Hext .>= 0)
 
+            Heq = (Hpp .+ Hmm)
+            #Heq = min.(Heq, 1)
+            Hdiff = (Hpm .+ Hmp)
+            #Hdiff = min.(Hdiff, 1)
+
+            #lay.Hext .= ρ .* (Hpp .+ Hmm) .* lay.H .+ ρ .* (Hpm .+ Hmp) .* ((1-m) .* lay.H .+ m .* lay.Hext) # original line
+            lay.Hext .= ρ .* ( Heq .* lay.H .+ Hdiff .* ((1-meta) .* lay.H .+ meta .* lay.Hext) )
         end
         if hasproperty(lay, :Ωext)
             # for continuous weights
