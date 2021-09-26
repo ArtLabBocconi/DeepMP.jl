@@ -98,7 +98,9 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: Bup B A H Hext ω  V
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ
+    
     Δm = 0.
+    rl = r[end]
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -135,7 +137,7 @@ function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
                 @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
             else
                 # reinforcement 
-                @tullio Hnew[k,i] := Hin[k,i] + r[l] * H[k,i] + Hext[k,i]
+                @tullio Hnew[k,i] := Hin[k,i] + rl * H[k,i] + Hext[k,i]
             end
             H .= ψ[end] .* H .+ (1-ψ[end]) .* Hnew
 
