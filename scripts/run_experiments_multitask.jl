@@ -1,14 +1,14 @@
 multicl = [true]
 datasets = [:mnist]
 dataset2 = :fashion
-lays = [:mf]
+lays = [:bpi]
 seeds = [2]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
     if lay_type ≠ :mf
         ρ = [1.0+1e-4, 1.0+1e-4, 0.9]
     else
-        ρ = [1.0, 1.0, 0.9]
+        ρ = [1.0+1e-1, 1.0+1e-1, 0.9]
     end
     #try
         run_experiment(; multiclass, dataset, dataset2, lay_type, seed, ρ,
