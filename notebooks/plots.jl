@@ -9,7 +9,7 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-dataset = :mnist
+dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
@@ -21,9 +21,9 @@ lrsgd = 10.0
 lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
-plot_sgd, plot_bp, plot_bayes = true, true, true
-plot_overlaps = true
-multiclass = false
+plot_sgd, plot_bp, plot_bayes = true, true, false
+plot_overlaps = false
+multiclass = true
 
 if multiclass
     K[end] = 10
