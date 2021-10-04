@@ -71,7 +71,9 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
     @extract layer: Bup B  A H Hext ω  V g
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r ψ l
+    
     Δm = 0.
+    rl = r[l]
 
     if mode == :forw || mode == :both
         ## FORWARD
@@ -99,7 +101,7 @@ function update!(layer::MeanFieldLayer, reinfpar; mode=:both)
 
         if !isfrozen(layer)
             @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio Hnew[k,i] := Hin[k,i]  + r[l] * H[k,i] + Hext[k,i]
+            @tullio Hnew[k,i] := Hin[k,i]  + rl * H[k,i] + Hext[k,i]
             H .= Hnew
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             

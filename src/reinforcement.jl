@@ -16,7 +16,7 @@ function update_reinforcement!(reinfpar::ReinfParams)
     else
         if reinfpar.y <= 0
             # reinforcement update
-            reinfpar.r = 1 .- (1 .- reinfpar.r) .* (1-reinfpar.rstep)
+            reinfpar.r .= 1 .- (1 .- reinfpar.r) .* (1 - reinfpar.rstep)
         else
             # focusing update
             reinfpar.r .*= (1.0 + reinfpar.rstep)

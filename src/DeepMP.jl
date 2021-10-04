@@ -53,7 +53,8 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
         t = @timed Δ = update!(g, reinfpar)
 
         #E = energy(g)
-        E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
+        xtrain, ytrain = g.layers[1].x, g.layers[end].y
+        E = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
 
         verbose >= 1 && @printf("it=%d \t (r=%s) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
@@ -62,8 +63,12 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             Etest = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+                Etest_bayes = bayesian_error(g, xtest, ytest) *100
             end
-            @printf("\t\t\t Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            @printf("\t\t\t\t  Etest=%.2f%%   rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            
+            Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
+            @printf("\t  EtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
         end
 
         plotinfo > 0 && plot_info(g, 0; verbose)
