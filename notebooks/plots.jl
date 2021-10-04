@@ -16,7 +16,7 @@ Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
 #K = [Nin, 101, 101, 101, 1]
 L = length(K)-1
-lrsgd = 10.0
+lrsgd = 3.0
 
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
@@ -73,7 +73,7 @@ if multiclass
 else
 
     if batchsize == 128
-        seed_bp = [2, 7, 11]
+        seed_bp = [2]
         seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1   
@@ -173,9 +173,9 @@ if plot_bp
             resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
             seed ≠ -1 && (resfile *= "_seed$(seed)")
             resfile *= ".dat"
-            @show resfile
 
             if isfile(resfile) && filesize(resfile) ≠ 0
+                @show resfile
                 dati = readdlm(resfile)
 
                 push!(epoche_bp, dati[:, 1])
@@ -194,7 +194,7 @@ if plot_bp
                 end
 
             else
-                println("* NOT FOUND: $resfile")
+                println("NOT FOUND: $resfile")
             end
         end
 
