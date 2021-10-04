@@ -1,7 +1,7 @@
 multicl = [false]
 datasets = [:mnist]
 lays = [:bpi]
-seeds = [2]
+seeds = [7, 11]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
     if lay_type ≠ :mf
