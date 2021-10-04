@@ -16,11 +16,11 @@ locen_bp = readdlm("../scripts/results/localenergy_dataset$(dataset)_K$(Ksgd)_ex
 fig, ax1 = plt.subplots(1)
 
 ax1.errorbar(locen_sgd[:,1], locen_sgd[:,2] .- locen_sgd[1,2], locen_sgd[:,3], ls="-", errorevery=1,
-label="SGD", marker="^", c="tab:blue")
+label="binaryNet", marker="v", c="tab:blue")
 ax1.errorbar(locen_sgd[:,1], locen_bp[:,2] .- locen_bp[1,2], locen_bp[:,3], ls="-", errorevery=1,
-label="BP", marker="s", c="tab:red")
+label="BPI", marker="s", c="tab:red")
 
-ax1.set_xlabel("flip probability", fontsize=16)
+ax1.set_xlabel("flip probability p", fontsize=16)
 ax1.set_ylabel("local energy", fontsize=16)
 ax1.tick_params(labelsize=14)
 

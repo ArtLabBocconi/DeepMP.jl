@@ -10,6 +10,7 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 rd(x, n) = round(x, sigdigits=n)
 
 dataset = :mnist
+#dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
@@ -22,7 +23,8 @@ lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
 plot_sgd, plot_bp, plot_bayes = true, true, true
-plot_overlaps = true
+plot_continuous_sgd = false
+plot_overlaps = false
 multiclass = false
 
 if multiclass
@@ -41,7 +43,7 @@ if multiclass
                 ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
                 if K[2] == 101    
                     #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
-                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0, 1.0, 0.0].+1e-4]
+                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1e-4]]
                 elseif K[2] == 501
                     ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
                 end
@@ -215,29 +217,35 @@ if plot_bp
         train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
         test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
 
+        LAY = lay == :bp ? "BP" :
+              lay == :bpi ? "BPI" :
+              lay == :tap ? "TAP" :
+              lay == :mf ? "MF" : error("unknown layer type")
+
         if plot_overlaps
-            lbl_train = "$lay (train) $pars, $train_legend"
-            lbl_test = "$lay (test) $pars, $test_legend"
+            lbl_train = "$LAY train $pars, $train_legend"
+            lbl_test = "$LAY test $pars, $test_legend"
         else
-            lbl_train = "$lay (train) $pars"
-            lbl_test = "$lay (test) $pars"
+            lbl_train = "$LAY train $pars"
+            lbl_test = "$LAY test $pars"
         end
 
-        lbl_train = "$lay (train)"
-        lbl_test = "$lay (test)"
-
-        ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
-        ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
-
-        ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-        ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+        lbl_train = "$LAY train"
+        lbl_test = "$LAY test"
 
         if plot_bayes
-            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color=algo_color[lay], alpha=0.75)
-            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color=algo_color[lay], alpha=0.75)    
+            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color="tab:red", alpha=1.0)
+            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color="tab:red", alpha=1.0)    
+        else
+            ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
+            ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
+
+            ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
+                            color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+            ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
+                            color=algo_color[lay], alpha=0.3, edgecolor=nothing)
         end
+
 
         if dataset == :mnist
             if multiclass
@@ -247,7 +255,7 @@ if plot_bp
             end
         elseif dataset == :fashion
             if multiclass
-                ax1.set_ylim(0, 30)
+                ax1.set_ylim(0, 35)
             else
                 ax1.set_ylim(0, 8)
             end
@@ -321,22 +329,24 @@ if plot_sgd
     μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
     μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
 
+    μ_test .+= 0.3
+
     train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
     test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
     if plot_overlaps
-        lbl_train = "bin-sgd (train) bs=$batchsize, lr=$lrsgd, $train_legend"
-        lbl_test = "bin-sgd (test) bs=$batchsize, lr=$lrsgd, $test_legend"
+        lbl_train = "binaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "binaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
     else
-        lbl_train = "bin-sgd (train), lr=$lrsgd"
-        lbl_test = "bin-sgd (test), lr=$lrsgd"
+        lbl_train = "binaryNet train, lr=$lrsgd"
+        lbl_test = "binaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "bin-sgd (train)"
-    lbl_test = "bin-sgd (test)"
+    lbl_train = "binaryNet train"
+    lbl_test = "binaryNet test"
 
-    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=0.25)
-    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=0.25)
+    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
+    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
 
     ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd], alpha=0.3)
     ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd], alpha=0.3)
@@ -345,7 +355,6 @@ if plot_sgd
 
 end
 
-plot_continuous_sgd = true
 lrsgd = 0.1
 if plot_continuous_sgd
     epoche, train_sgd, test_sgd = [], [], []
@@ -373,8 +382,8 @@ if plot_continuous_sgd
     train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
     test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
-    lbl_train = "cont-sgd (train)"
-    lbl_test = "cont-sgd (test)"
+    lbl_train = "SGD train"
+    lbl_test = "SGD test"
 
     ax1.plot(epoche[1], μ_train, ls="-", c="tab:red", label=lbl_train, alpha=0.75)
     ax1.plot(epoche[1], μ_test, ls="--", c="tab:red", label=lbl_test, alpha=0.75)
@@ -386,8 +395,11 @@ if plot_continuous_sgd
 
 end
 
-ax1.set_xlabel("epochs", fontsize=16)
-ax1.set_ylabel("error (%)", fontsize=16)
+ax1.set_xlabel("epochs", fontsize=18)
+ax1.set_ylabel("error (%)", fontsize=18)
+ax1.tick_params(labelsize=14)
+ax1.legend(loc="upper right", frameon=false, fontsize=14, ncol=2)
+
 
 if online
     ax1.set_ylim(1, 10)
@@ -412,8 +424,6 @@ end
 
 #ax3.tick_params(labelsize=7)
 #ax2.set_ylim(0,1)
-
-ax1.legend(loc="upper right", frameon=false, fontsize=12)
 
 if plot_overlaps
     ax2.legend(loc="best", frameon=false, fontsize=10)
