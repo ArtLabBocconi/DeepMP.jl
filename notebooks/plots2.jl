@@ -2,6 +2,7 @@ using DelimitedFiles, Statistics
 using PyPlot
 using PyCall
 using Printf
+using LaTeXStrings
 
 plt.style.use("default")
 plt.style.use("seaborn-whitegrid")
@@ -9,23 +10,22 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-dataset = :mnist
-#dataset = :fashion
+dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 101, 101, 1]
-#K = [Nin, 101, 101, 101, 1]
+K = [Nin, 501, 501, 1]
+#K = [Nin, 501, 501, 501, 1]
 L = length(K)-1
-lrsgd = 3.0
+lrsgd = 10.0
 
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
-plot_sgd, plot_bp, plot_bayes = false, true, true
+plot_sgd, plot_bp, plot_bayes = true, true, false
 plot_continuous_sgd = false
-plot_overlaps = false
-multiclass = false
+plot_overlaps = true
+multiclass = true
 
 if multiclass
     K[end] = 10
@@ -36,14 +36,19 @@ if multiclass
         seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1
+        #r = [0., 0., 0.]
         r = 0.
         ϵinits = [1.0, 1.0, 1.0]
 
         if length(K) == 4
                 ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+                #ψs = [[0.81, 0.81, 0.81], [0.81, 0.81, 0.81], [0.81, 0.81, 0.81]]
                 if K[2] == 101    
                     #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
                     ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1e-4]]
+                    if ψs[1][1]==0.81
+                        ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0, 1.0, 0.9]]
+                    end
                 elseif K[2] == 501
                     ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
                 end
@@ -123,8 +128,6 @@ if online
 
 end
 
-
-
 density = 1.
 
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
@@ -151,7 +154,7 @@ end
 if plot_bp 
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
         
-        lay in [:tap, :mf] && continue
+        #lay in [:tap, :mf] && continue
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
@@ -219,7 +222,7 @@ if plot_bp
 
         LAY = lay == :bp ? "BP" :
               lay == :bpi ? "BPI" :
-              lay == :tap ? "TAP" :
+              lay == :tap ? "AMP" :
               lay == :mf ? "MF" : error("unknown layer type")
 
         if plot_overlaps
@@ -255,142 +258,17 @@ ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_tes
         if plot_overlaps
 
             ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY layer1", c=algo_color[lay])
             ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY layer1", c=algo_color[lay])
             ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY layer2", c=algo_color[lay])
             ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY layer2", c=algo_color[lay])
             ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY layer3", c=algo_color[lay])
             ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
-
-            ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
-                        color=algo_color[lay], alpha=0.3)
-            ax3.fill_between(epoche_bp[1], μ_qablay1-σ_qablay1, μ_qablay1+σ_qablay1,
-                        color=algo_color[lay], alpha=0.3)
-            ax4.fill_between(epoche_bp[1], μ_q0lay2-σ_q0lay2, μ_q0lay2+σ_q0lay2,
-                        color=algo_color[lay], alpha=0.3)
-            ax5.fill_between(epoche_bp[1], μ_qablay2-σ_qablay2, μ_qablay2+σ_qablay2,
-                        color=algo_color[lay], alpha=0.3)
-            ax6.fill_between(epoche_bp[1], μ_q0lay3-σ_q0lay3, μ_q0lay3+σ_q0lay3,
-                        color=algo_color[lay], alpha=0.3)
-            ax7.fill_between(epoche_bp[1], μ_qablay3-σ_qablay3, μ_qablay3+σ_qablay3,
-                        color=algo_color[lay], alpha=0.3)
-        
-        end
-
-        println("$lay: train: $(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3)); test: $(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))")
-
-    end
-end
-
-bb = true
-ρs = [[1.0001, 1.0001, 0.9], [1.0, 1.0, 0.9], [1.0, 1.0, 0.9]]
-if plot_bayes && bb
-    for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
-        
-        lay in [:tap, :mf] && continue
-
-        if !multiclass
-            layers = [lay for i in 1:(length(K)-1)]
-        else
-            layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
-        end
-        
-        epoche_bp, train_bp, test_bp = [],[], []
-        q0lay1, qablay1 = [], []
-        q0lay2, qablay2 = [], []
-        q0lay3, qablay3 = [], []
-
-        train_bayes, test_bayes = [], []
-
-        for seed in seed_bp
-            resfile = "../scripts/results/res_dataset$(dataset)_"
-            resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
-            resfile *= "_density$(density)"
-            resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-            seed ≠ -1 && (resfile *= "_seed$(seed)")
-            resfile *= ".dat"
-
-            if isfile(resfile) && filesize(resfile) ≠ 0
-                @show resfile
-                dati = readdlm(resfile)
-
-                push!(epoche_bp, dati[:, 1])
-                push!(train_bp, dati[:, 2])
-                push!(test_bp, dati[:, 3])
-                push!(q0lay1, dati[:, 4])
-                push!(qablay1, dati[:, 5])
-                push!(q0lay2, dati[:, 6])
-                push!(qablay2, dati[:, 7])
-                push!(q0lay3, dati[:, 8])
-                push!(qablay3, dati[:, 9])
-
-                if plot_bayes
-                    push!(train_bayes, dati[:, 11])
-                    push!(test_bayes, dati[:, 12])
-                end
-
-            else
-                println("NOT FOUND: $resfile")
-            end
-        end
-
-        μ_train_bp, σ_train_bp = mean(train_bp), std(train_bp)
-        μ_test_bp, σ_test_bp = mean(test_bp), std(test_bp)
-
-        μ_q0lay1, σ_q0lay1 = mean(q0lay1), std(q0lay1)
-        μ_qablay1, σ_qablay1 = mean(qablay1), std(qablay1)
-        μ_q0lay2, σ_q0lay2 = mean(q0lay2), std(q0lay2)
-        μ_qablay2, σ_qablay2 = mean(qablay2), std(qablay2)
-        μ_q0lay3, σ_q0lay3 = mean(q0lay3), std(q0lay3)
-        μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
-
-        pars = "ρ=$([ρ[l] for l=1:L])"
-        train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
-        test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
-
-        LAY = lay == :bp ? "BP" :
-              lay == :bpi ? "BPI" :
-              lay == :tap ? "TAP" :
-              lay == :mf ? "MF" : error("unknown layer type")
-
-        if plot_overlaps
-            lbl_train = "$LAY train $pars, $train_legend"
-            lbl_test = "$LAY test $pars, $test_legend"
-        else
-            lbl_train = "$LAY train $pars"
-            lbl_test = "$LAY test $pars"
-        end
-
-        lbl_train = "$LAY train"
-        lbl_test = "$LAY test"
-
-        ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
-        ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
-
-        ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-        ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-
-        if plot_overlaps
-
-            ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
-            ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
-            ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
-            ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
-            ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
-            ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY layer3", c=algo_color[lay])
 
             ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
                         color=algo_color[lay], alpha=0.3)
@@ -514,7 +392,7 @@ if dataset == :mnist
     end
 elseif dataset == :fashion
     if multiclass
-        ax1.set_ylim(0, 35)
+        ax1.set_ylim(0, 25)
     else
         ax1.set_ylim(0, 8)
     end
@@ -539,30 +417,40 @@ if online
 end
 
 if plot_overlaps
-    ax2.set_ylabel("q0", fontsize=10)
-    ax2.set_xlabel("epochs", fontsize=10)
-    ax3.set_xlabel("epochs", fontsize=10)
-    ax3.set_ylabel("qab", fontsize=10)
-    ax4.set_ylabel("q0", fontsize=10)
-    ax4.set_xlabel("epochs", fontsize=10)
-    ax5.set_xlabel("epochs", fontsize=10)
-    ax5.set_ylabel("qab", fontsize=10)
-    ax6.set_ylabel("q0", fontsize=10)
-    ax6.set_xlabel("epochs", fontsize=10)
-    ax7.set_xlabel("epochs", fontsize=10)
-    ax7.set_ylabel("qab", fontsize=10)
+    font_ov = 14
+    ax2.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax2.set_xlabel("epochs", fontsize=font_ov)
+    ax3.set_xlabel("epochs", fontsize=font_ov)
+    ax3.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+    ax4.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax4.set_xlabel("epochs", fontsize=font_ov)
+    ax5.set_xlabel("epochs", fontsize=font_ov)
+    ax5.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+    ax6.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax6.set_xlabel("epochs", fontsize=font_ov)
+    ax7.set_xlabel("epochs", fontsize=font_ov)
+    ax7.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+
+    font_tick = 11
+    ax2.tick_params(labelsize=font_tick)
+    ax3.tick_params(labelsize=font_tick)
+    ax4.tick_params(labelsize=font_tick)
+    ax5.tick_params(labelsize=font_tick)
+    ax6.tick_params(labelsize=font_tick)
+    ax7.tick_params(labelsize=font_tick)
+
 end
 
 #ax3.tick_params(labelsize=7)
 #ax2.set_ylim(0,1)
 
 if plot_overlaps
-    ax2.legend(loc="best", frameon=false, fontsize=10)
-    ax3.legend(loc="best", frameon=false, fontsize=10)
-    ax4.legend(loc="best", frameon=false, fontsize=10)
-    ax5.legend(loc="best", frameon=false, fontsize=10)
-    ax6.legend(loc="best", frameon=false, fontsize=10)
-    ax7.legend(loc="best", frameon=false, fontsize=10)
+    ax2.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax3.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax4.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax5.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax6.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax7.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
 end
 
 #plt.grid(false)
@@ -586,38 +474,3 @@ bay = plot_bayes ? ".bayes" : ""
 fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs$bay.pdf")
 
 plt.close()
-
-## FIGURE 2
-#nlays = length(K)-1
-#fig, ax = plt.subplots(nlays,2)
-#
-#for (i,(lay, ρ)) in enumerate(zip(lays, ρs))
-#    
-#    if !multiclass
-#        layers = [lay for i in 1:(length(K)-1)]
-#    else
-#        layers = [[lay for i in 1:(length(K)-2)]..., :argmax]
-#    end
-#    
-#    resfile = "../scripts/results/res_dataset$(dataset)_"
-#    resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
-#    resfile *= "_density$(density)"
-#    resfile *= "_M$(Int(P))_ϵinit$(ϵinit)_maxiters$(maxiters)"
-#    seed ≠ -1 && (resfile *= "_seed$(seed)")
-#    resfile *= ".dat"
-#    
-#    @show resfile
-#
-#    dati = readdlm(resfile)
-#
-#    ax1.plot(dati[:,1], dati[:,4], ls="-", label="q0 lay1 $lay", c=algo_color[lay])
-#    ax[1+nlays].plot(dati[:,1], dati[:,5], ls="-", label="qab lay1 $lay", c=algo_color[lay])
-#
-#end
-#
-#ax1.legend(loc="best", frameon=false, fontsize=10)
-#ax[1+nlays].legend(loc="best", frameon=false, fontsize=10)
-#
-#fig.savefig("figures/figure_deepMP2.png")
-#
-#plt.close()

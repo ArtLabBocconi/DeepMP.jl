@@ -51,31 +51,43 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     for it = 1:maxiters
         
         t = @timed Δ = update!(g, reinfpar)
-        #E = energy(g)
-        E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%f) Etrain=%.2f%% \t Δ=%f \n",
+        #E = energy(g)
+        xtrain, ytrain = g.layers[1].x, g.layers[end].y
+        E = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
+
+        verbose >= 1 && @printf("it=%d \t (r=%s) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
+
         if verbose >= 2
             Etest = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+                Etest_bayes = bayesian_error(g, xtest, ytest) *100
             end
-            @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            @printf("\t\t\t\t  Etest=%.2f%%   rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            
+            Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
+            @printf("\t  EtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
         end
 
-        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose)
+        plotinfo > 0 && plot_info(g, 0; verbose)
+
         update_reinforcement!(reinfpar)
+
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
             return it, E, Δ
         end
+
         if altconv && Δ < ϵ
             verbose > 0 && println("Converged!")
             return it, E, Δ
         end
     end
+
     return maxiters, 1, 1.0
+
 end
 
 function solve(; K::Vector{Int} = [101, 3],
@@ -137,6 +149,8 @@ end
 
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
+                xtrain2 = nothing, ytrain2 = nothing,
+                xtest2 = nothing, ytest2 = nothing,
                 dataset = :fashion,
                 K::Vector{Int},                # List of widths for each layer, e.g. [28*28, 101, 101, 1]
                 layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
@@ -176,11 +190,23 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     L = length(K) - 1
     ψ = num_to_vec(ψ, L)
     ρ = num_to_vec(ρ, L)
+    r = num_to_vec(r, L)
 
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-	
+    
+    #for (x,y) in dtrain
+    #    print(y, ",")
+    #end
+    #error()
+
+    if !isnothing(xtrain2)
+        xtrain2, ytrain2 = device(xtrain2), device(ytrain2)
+        xtest2, ytest2 = device(xtest2), device(ytest2)
+        dtrain2 = DataLoader((xtrain2, ytrain2); batchsize, shuffle=true, partial=false)
+    end
+
     g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
@@ -202,6 +228,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
+
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
         Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
         num_batches = length(dtrain)
@@ -211,11 +238,17 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest_bayes = bayesian_error(g, xtest, ytest) *100
         end
         
-        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
             
         verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
+
+        if !isnothing(xtrain2)
+            Etrain2 = mean(vec(forward(g, xtrain2)) .!= ytrain2) * 100
+            Etest2 = mean(vec(forward(g, xtest2)) .!= ytest2) * 100
+            verbose >= 1 && @printf("\t\t\tEtrain2=%.2f%% Etest2=%.2f%%\n\n", Etrain2, Etest2)
+        end
 
         q0s, qWαβs = plot_info(g, 0; verbose)
 
@@ -235,7 +268,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if batchsize <= 0
         ## FULL BATCH message passing
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
-                            altsolv, altconv, plotinfo,
+                            altsolv, altconv, plotinfo=1,
                             teacher, verbose,
                             xtest, ytest)
         
@@ -266,7 +299,32 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
         end
+
+        if !isnothing(xtrain2)
+        
+            for epoch = epochs+1:Int(2*epochs)
+                converged = solved = meaniters = 0
+                t = @timed for (b, (x, y)) in enumerate(dtrain2)
+                    all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
+                    set_input_output!(g, x, y)
+
+                    it, e, δ = converge!(g; maxiters, ϵ, 
+                                            reinfpar, altsolv, altconv, plotinfo=0,
+                                            teacher, verbose=verbose-1)
+                    converged += (δ < ϵ)
+                    solved    += (e == 0)
+                    meaniters += it
+                    
+                    verbose >= 2 && print("b = $b / $(length(dtrain))\r")
+
+                end
+                Etrain = report(epoch; t, converged, solved, meaniters)
+                #Etrain == 0 && break
+            end
+        end
+
     end
+
     if saveres 
         close(fres)
         println("outfile: $resfile")
