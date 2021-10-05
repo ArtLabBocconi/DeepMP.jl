@@ -68,29 +68,29 @@ function compute_g_argmax(y, ω, V)
     return g
 end
 
-# # version 2 with sampling
-# function compute_g_argmax(y, ω, V, nsamples=10)
-#     # transform y (vector of integers) to 2d array of CartesianIndex
-#     yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
-#     yc = reshape(yc, 1, :)
-#     V = .√V
-#     # @assert size(ω) == (10, 128) 
-#     ωc = ω[yc]
-#     Vc = V[yc]
-#     # @assert size(ωc) == (1, 128)
-#     dω = ωc .- ω
-#     # @assert size(dω) == (10, 128)
-#     g = fill!(similar(ω), 0)
-#     # @assert size(g) == (10, 128)
-#     for _ in 1:nsamples
-#         z = Vc .* randn!(similar(ωc))
-#         # @assert size(z) == (1, 128)
-#         g .+= @. -GH(-(dω + z) / V) / V 
-#     end
-#     g[yc] .= .- sum(g, dims=1) .+ g[yc]
-#     g ./= nsamples
-#     return g
-# end
+ # version 2 with sampling
+ #function compute_g_argmax(y, ω, V, nsamples=10)
+ #    # transform y (vector of integers) to 2d array of CartesianIndex
+ #    yc = map(t -> CartesianIndex(t[2], t[1]), enumerate(y))
+ #    yc = reshape(yc, 1, :)
+ #    V = .√V
+ #    # @assert size(ω) == (10, 128) 
+ #    ωc = ω[yc]
+ #    Vc = V[yc]
+ #    # @assert size(ωc) == (1, 128)
+ #    dω = ωc .- ω
+ #    # @assert size(dω) == (10, 128)
+ #    g = fill!(similar(ω), 0)
+ #    # @assert size(g) == (10, 128)
+ #    for _ in 1:nsamples
+ #        z = Vc .* randn!(similar(ωc))
+ #        # @assert size(z) == (1, 128)
+ #        g .+= @. -GH(-(dω + z) / V) / V 
+ #    end
+ #    g[yc] .= .- sum(g, dims=1) .+ g[yc]
+ #    g ./= nsamples
+ #    return g
+ #end
 
 function update!(layer::ArgmaxLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask

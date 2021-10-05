@@ -180,7 +180,7 @@ function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
 
     meta = 0.0
     #meta = rbatch; rbatch = 0.0
-    meta = 0.5
+    #meta = 0.5
 
     if hasproperty(lay, :allh) # TODO deprecate
         @assert hasproperty(lay, :allhext)
