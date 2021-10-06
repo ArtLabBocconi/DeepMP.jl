@@ -324,15 +324,15 @@ if plot_sgd
     test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
     if plot_overlaps
-        lbl_train = "binaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
-        lbl_test = "binaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
+        lbl_train = "BinaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "BinaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
     else
-        lbl_train = "binaryNet train, lr=$lrsgd"
-        lbl_test = "binaryNet test, lr=$lrsgd"
+        lbl_train = "BinaryNet train, lr=$lrsgd"
+        lbl_test = "BinaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "binaryNet train"
-    lbl_test = "binaryNet test"
+    lbl_train = "BinaryNet train"
+    lbl_test = "BinaryNet test"
 
     ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
