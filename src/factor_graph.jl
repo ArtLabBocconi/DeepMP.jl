@@ -271,7 +271,9 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
-    
+end
+
+function reset_downgoing_messages!(g)
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
         lay.B .= 0  
