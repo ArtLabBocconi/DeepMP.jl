@@ -1002,16 +1002,54 @@ Dividing the update equations in a forward and backward pass, and ordering
  of information, we obtain the set of BP equations presented in TODO EQREF.
 \end_layout
 
-\begin_layout Section
-Derivation of the AMP equations
+\begin_layout Standard
+Let's start from BP equations.
+\end_layout
+
+\begin_layout Paragraph
+Initialization
 \end_layout
 
 \begin_layout Standard
-Let's start from BP equations, where us
+At 
+\begin_inset Formula $\tau=0$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in\to k}^{\ell,0} & =0\\
+A_{in}^{\ell,0} & =0\\
+H_{ki\to n}^{\ell,0} & =0\\
+G_{ki}^{\ell,0} & =0
+\end{align}
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Paragraph
 Forward Pass
+\end_layout
+
+\begin_layout Standard
+At each 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=0,\dots,L$
+\end_inset
+
+(CHECK 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range):
 \end_layout
 
 \begin_layout Standard
@@ -1021,7 +1059,7 @@ Forward Pass
 \Delta_{in}^{\ell,\tau} & =\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
 m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki\to n}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
 \sigma_{ki}^{\ell,\tau} & =\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
-V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau}\,\left(\hat{x}_{i'n}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\,\Delta_{in}^{\ell,\tau}\right)\\
+V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau-1}\left(\hat{x}_{i'n}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\right)\\
 \omega_{kn\to i}^{\ell,\tau} & =\sum_{i'\neq i}m_{ki'\to n}^{\ell,\tau}\,\hat{x}_{i'n\to k}^{\ell,\tau}
 \end{align}
 
@@ -1032,6 +1070,22 @@ V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_
 
 \begin_layout Paragraph
 Backward Pass
+\end_layout
+
+\begin_layout Standard
+For 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=L,\dots,0$
+\end_inset
+
+ (CHECK 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range):
 \end_layout
 
 \begin_layout Standard
@@ -1048,6 +1102,10 @@ H_{ki\to n}^{\ell,\tau} & =\sum_{n'\neq n}\hat{x}_{in'\to k}^{\ell,\tau}\,g_{kn'
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section
+Derivation of the AMP equations
 \end_layout
 
 \begin_layout Standard
@@ -1078,7 +1136,7 @@ Analogously, for the weight's mean we have
 \begin{align}
 m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1}-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
  & \approx\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1}\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
- & \approx m_{ki}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\,g_{kn}^{\ell,\tau-1}\sigma_{ki}^{\ell,\tau}
+ & \approx m_{ki}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\,g_{kn}^{\ell,\tau-1}\,\sigma_{ki}^{\ell,\tau}
 \end{align}
 
 \end_inset
@@ -1123,7 +1181,7 @@ g_{kn\to i}^{\ell,\tau} & =\partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau
 \begin_layout Standard
 \begin_inset Formula 
 \begin{align}
-B_{in}^{\ell}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\\
+B_{in}^{\ell,\tau}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\\
 \approx & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}\sum_{k}\left(g_{kn}^{\ell,\tau}\right)^{2}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\\
  & [maybe-irrelevant]-(\hat{x}_{in}^{\ell,\tau})^{2}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}
 \end{align}
@@ -1139,6 +1197,92 @@ B_{in}^{\ell}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\\
 H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in\to k}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\\
 \approx & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau}\sum_{n}(g_{kn}^{\ell,\tau})^{2}\Delta_{in}^{\ell,\tau}\\
  & [maybe-irrelevant]-(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Initialization
+\end_layout
+
+\begin_layout Standard
+At 
+\begin_inset Formula $\tau=0$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in}^{\ell,0} & =0\\
+A_{in}^{\ell,0} & =0\\
+H_{ki}^{\ell,0} & =0\text{ or some values}\\
+G_{ki}^{\ell,0} & =0\text{ or some values}\\
+g_{kn}^{\ell,0} & =0
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Forward Pass
+\end_layout
+
+\begin_layout Standard
+At each 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=0,\dots,L$
+\end_inset
+
+(CHECK 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{x}_{in}^{\ell,\tau}= & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+\Delta_{in}^{\ell,\tau}= & \partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+m_{ki}^{\ell,\tau}= & \partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+\sigma_{ki}^{\ell,\tau}= & \partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+V_{kn}^{\ell,\tau}= & \sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau}\,\left(\hat{x}_{i'n}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\,\Delta_{in}^{\ell,\tau}\right)\\
+\omega_{kn}^{\ell,\tau}= & \sum_{i}m_{ki}^{\ell,\tau}\,\hat{x}_{in}^{\ell,\tau}-g_{kn}^{\ell,\tau-1}\sum_{i}\,\sigma_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}-g_{kn}^{\ell,\tau-1}\sum_{i}m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\\
+ & +(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Backward Pass
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+g_{kn}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn\to i}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+\Gamma_{kn}^{\ell,\tau}= & -\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+A_{in}^{\ell,\tau}= & \sum_{k}\left(\left(\left(m_{ki}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\sigma_{ki}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+B_{in}^{\ell,\tau}= & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}\sum_{k}\left(g_{kn}^{\ell,\tau}\right)^{2}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\\
+ & -(\hat{x}_{in}^{\ell,\tau})^{2}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\\
+G_{ki}^{\ell,\tau}= & \sum_{n}\left(\left(\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\Delta_{in}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\Delta_{in}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau}\sum_{n}(g_{kn}^{\ell,\tau})^{2}\Delta_{in}^{\ell,\tau}\\
+ & -(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
 \end{align}
 
 \end_inset

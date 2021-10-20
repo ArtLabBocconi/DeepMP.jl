@@ -64,6 +64,9 @@ function set_weight_mask!(lay::AbstractLayer, m::AbstractMatrix)
     lay.weight_mask .= m
 end
 
+weight_mean(l::AbstractLayer) = l.m
+weight_var(l::AbstractLayer) = l.σ
+
 function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     @extract layer: K N
     # q0 = Float64[]
@@ -102,8 +105,8 @@ function compute_overlaps(layer::AbstractLayer; teacher=nothing)
     #         # push!(qWαβ, dot(layer.allm[k], layer.allm[p]) / sqrt(q0[k]*q0[p])/K[l])
     #     end
     # end
-    m = layer.m
-    σ = layer.σ
+    m = weight_mean(layer)
+    σ = weight_var(layer)
 
     @tullio q0[k] := m[k,i] * m[k,i]
     @tullio Δ0[k] := σ[k,i]

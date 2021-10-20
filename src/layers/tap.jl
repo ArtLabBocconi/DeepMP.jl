@@ -19,7 +19,7 @@ mutable struct TapLayer <: AbstractLayer
     B 
     A 
     
-    H
+    H   # = Hcav + Hext
     Hext
     
     g 
@@ -79,16 +79,33 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         ## FORWARD
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
-            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
+
+            @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
             Δ .= 1 .- x̂.^2
+        else 
+            x̂new = x̂
         end
+        mnew = weight_mean(layer)
+        σ .= 1 .- mnew.^2
         
-        # V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        # V[k,a] = σ[k,i] * (x̂.^2)[i,a]
-        V .= σ * x̂.^2 + m.^2 * Δ 
+        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        @tullio ω[k,a] += - g[k,a] * V[k,a] 
-        V .+= σ * Δ .+ 1f-8 
+        @tullio ω[k,a] += - g[k,a] * σ[k,i] * x̂new[i,a] * x̂[i,a]
+        @tullio ω[k,a] += - g[k,a] * mnew[k,i] * m[k,i] * Δ[i,a]
+        @tullio ω[k,a] += + g[k,a]^2 * σ[k,i] * m[k,i] * x̂[i,a] * Δ[i,a]
+        
+        mnew = ψ[l] .* m .+ (1-ψ[l]) .* mnew .* weight_mask
+        Δm = mean(abs.(m .- mnew))
+        m .= mnew
+        σ .= (1 .- m.^2) .* weight_mask
+
+        # # OLD VERSION ########
+        # V .= σ * x̂.^2 + m.^2 * Δ 
+        # @tullio ω[k,a] = m[k,i] * x̂[i,a]
+        # @tullio ω[k,a] += - g[k,a] * V[k,a] 
+        # V .+= σ * Δ .+ 1f-8 
+        #####################
+        
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
     end
 
@@ -115,12 +132,6 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
 
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             H .= Hnew
-
-            mnew = ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H) .* weight_mask
-            # mnew = tanh.(H) .* weight_mask
-            Δm = mean(abs.(m .- mnew))
-            m .= mnew
-            σ .= (1 .- m.^2) .* weight_mask
         end
     end
     
@@ -137,7 +148,7 @@ function initrand!(layer::TapLayer)
     σ .= (1 .- m.^2) .* weight_mask
 end
 
-function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
+function fix_input!(layer::TapLayer, x::AbstractMatrix)
     @extract layer: K N M 
     @extract layer: x̂ Δ m  σ 
     @assert size(x) == size(x̂)
@@ -145,18 +156,28 @@ function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{TapLayer}}
     Δ .= 0
 end
 
-function getW(layer::L) where L <: Union{TapLayer}
-    return sign.(layer.m) .* layer.weight_mask
+function getW(layer::TapLayer)
+    m = weight_mean(layer)
+    return sign.(m) .* layer.weight_mask
 end
 
-function forward(layer::L, x) where L <: Union{TapLayer}
+function weight_mean(layer::TapLayer)
+    return tanh.(layer.H)
+end
+
+function weight_var(layer::TapLayer)
+    m = weight_mean(layer)
+    return 1 .- m.^2
+end
+
+function forward(layer::TapLayer, x)
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
     return sign.(W*x .+ 1f-10)
 end
 
-function fixW!(layer::L, w=1.) where {L <: Union{TapLayer}}
+function fixW!(layer::TapLayer, w=1.)
     @extract layer: K N M m σ  weight_mask
     m .= w .* weight_mask
     σ .= 0

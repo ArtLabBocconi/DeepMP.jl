@@ -170,7 +170,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 batchsize = -1,                 # only supported by some algorithms
                 epochs = 100,
                 ϵinit = 0.,
-                plotinfo = 0,
                 verbose = 1,
                 usecuda = true,
                 gpu_id = -1,
@@ -273,11 +272,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 meaniters += it
                 
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
-
-                #if epochs == 1 && b % 1000 == 0
-                #    Etrain = report(b; converged, solved, meaniters)
-                #end
-
             end
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
