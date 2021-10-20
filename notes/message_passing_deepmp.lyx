@@ -1290,5 +1290,17 @@ H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki
 
 \end_layout
 
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Standard
+- B and H equations have to be changed yet on the cl/amp branch in DeepMP.jl
+\end_layout
+
+\begin_layout Standard
+- not clear how to put damping.
+\end_layout
+
 \end_body
 \end_document
