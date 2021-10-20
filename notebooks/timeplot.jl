@@ -46,9 +46,9 @@ for lay in [lays..., :sgd]
     device = ""
     LAY = lay == :bp ? "BP" :
           lay == :bpi ? "BPI" :
-          lay == :tap ? "TAP" :
+          lay == :tap ? "AMP" :
           lay == :mf ? "MF" : 
-          lay == :sgd ? "binaryNet" : error()
+          lay == :sgd ? "BinaryNet" : error()
     ax1.plot(batchsizes, times_gpu[lay], marker=algo_mark[lay], ls=":", label="$LAY $device", c=algo_color[lay])
     #ax1.plot(batchsizes, times_gpu[lay], ls="-", label="$lay", c=algo_color[lay])
 end
