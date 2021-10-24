@@ -1,11 +1,13 @@
-#LyX 2.3 created this file. For more info see http://www.lyx.org/
-\lyxformat 544
-\begin_document
-\begin_header
-\save_transient_properties true
-\origin unavailable
-\textclass article
-\begin_preamble
+%% LyX 2.3.6.2 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\makeatletter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
 %%%%% NEW MATH DEFINITIONS %%%%%
 
 \usepackage{amsmath,amsfonts,bm}
@@ -516,610 +518,209 @@
 \DeclareMathOperator{\sign}{sign}
 \DeclareMathOperator{\Tr}{Tr}
 \let\ab\allowbreak
-\end_preamble
-\use_default_options true
-\maintain_unincluded_children false
-\language english
-\language_package default
-\inputencoding auto
-\fontencoding global
-\font_roman "default" "default"
-\font_sans "default" "default"
-\font_typewriter "default" "default"
-\font_math "auto" "auto"
-\font_default_family default
-\use_non_tex_fonts false
-\font_sc false
-\font_osf false
-\font_sf_scale 100 100
-\font_tt_scale 100 100
-\use_microtype false
-\use_dash_ligatures true
-\graphics default
-\default_output_format default
-\output_sync 0
-\bibtex_command default
-\index_command default
-\paperfontsize default
-\spacing single
-\use_hyperref false
-\papersize default
-\use_geometry false
-\use_package amsmath 1
-\use_package amssymb 1
-\use_package cancel 1
-\use_package esint 1
-\use_package mathdots 1
-\use_package mathtools 1
-\use_package mhchem 1
-\use_package stackrel 1
-\use_package stmaryrd 1
-\use_package undertilde 1
-\cite_engine basic
-\cite_engine_type default
-\biblio_style plain
-\use_bibtopic false
-\use_indices false
-\paperorientation portrait
-\suppress_date false
-\justification true
-\use_refstyle 1
-\use_minted 0
-\index Index
-\shortcut idx
-\color #008000
-\end_index
-\secnumdepth 3
-\tocdepth 3
-\paragraph_separation indent
-\paragraph_indentation default
-\is_math_indent 0
-\math_numbering_side default
-\quotes_style english
-\dynamic_quotes 0
-\papercolumns 1
-\papersides 1
-\paperpagestyle default
-\tracking_changes false
-\output_changes false
-\html_math_output 0
-\html_css_as_file 0
-\html_be_strict false
-\end_header
 
-\begin_body
+\makeatother
 
-\begin_layout Title
-DeepMP derivation
-\end_layout
+\usepackage{babel}
+\begin{document}
+\title{DeepMP derivation}
+\maketitle
 
-\begin_layout Section
-Derivation of the BP and AMP equations
-\end_layout
+\section{Derivation of the BP and AMP equations}
 
-\begin_layout Subsection
-Derivation of the BP equations
-\begin_inset CommandInset label
-LatexCommand label
-name "sec:bp_derivation"
+\subsection{Derivation of the BP equations\label{sec:bp_derivation}}
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
 In order to derive the BP equations, we start with the following portion
- of the factor graph reported in Eq.
-\begin_inset ERT
-status open
+of the factor graph reported in Eq.~\ref{eq:factors} in the main
+text, describing the contribution of a single data example in the
+inner loop of the PasP updates:
 
-\begin_layout Plain Layout
-
-~
-\backslash
-ref{eq:factors}
-\end_layout
-
-\end_inset
-
- in the main text, describing the contribution of a single data example
- in the inner loop of the PasP updates:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{equation}
 \prod_{\ell=0}^{L}\prod_{k}\,P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i}W_{ki}^{\ell}x_{in}^{\ell}\right)\quad\text{where }\vx_{n}^{0}=\vx_{n},\ \vx_{n}^{L+1}=y_{n}.
 \end{equation}
+where we recall that the quantity $x_{kn}^{\ell}$ corresponds to
+the activation of neuron $k$ in layer $\ell$ in correspondence of
+the input example $n$. 
 
-\end_inset
-
-where we recall that the quantity 
-\begin_inset Formula $x_{kn}^{\ell}$
-\end_inset
-
- corresponds to the activation of neuron 
-\begin_inset Formula $k$
-\end_inset
-
- in layer 
-\begin_inset Formula $\ell$
-\end_inset
-
- in correspondence of the input example 
-\begin_inset Formula $n$
-\end_inset
-
-.
- 
-\end_layout
-
-\begin_layout Standard
 Let us start by analyzing the single factor:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{equation}
 P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i}W_{ki}^{\ell}x_{in}^{\ell}\right)
 \end{equation}
+We refer to messages that travel from input to output in the factor
+graph as \textit{upgoing} or \textit{upwards} messages, while to the
+ones that travel from output to input as \textit{downgoing} or \textit{backwards}
+messages.
 
-\end_inset
+\paragraph{Factor-to-variable-$\mathbf{W}$ messages}
 
-We refer to messages that travel from input to output in the factor graph
- as 
-\shape italic
-upgoing
-\shape default
- or 
-\shape italic
-upwards
-\shape default
- messages, while to the ones that travel from output to input as 
-\shape italic
-downgoing
-\shape default
- or 
-\shape italic
-backwards
-\shape default
- messages.
-\end_layout
+The factor-to-variable-$W$ messages read:
 
-\begin_layout Paragraph
-Factor-to-variable-
-\begin_inset Formula $\mathbf{W}$
-\end_inset
-
- messages
-\end_layout
-
-\begin_layout Standard
-The factor-to-variable-
-\begin_inset Formula $W$
-\end_inset
-
- messages read:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{\nu}_{kn\to ki}^{\ell+1}(W_{ki}^{\ell})\propto & \int\prod_{i'\neq i}d\nu_{ki'\to n}^{\ell}(W_{ki'}^{\ell})\prod_{i'}d\nu_{i'n\to k}^{\ell}(x_{i'n}^{\ell})\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i'}W_{ki'}^{\ell}x_{i'n}^{\ell}\right)\label{eq:factor_to_W}
 \end{align}
+where $\nu_{\downarrow}$ denotes the messages travelling downwards
+(from output to input) in the factor graph.
 
-\end_inset
-
-where 
-\begin_inset Formula $\nu_{\downarrow}$
-\end_inset
-
- denotes the messages travelling downwards (from output to input) in the
- factor graph.
-\end_layout
-
-\begin_layout Standard
 We denote the means and variances of the incoming messages respectively
- with 
-\begin_inset Formula $m_{ki\to n}^{\ell},\,\hat{x}_{in\to k}^{\ell}$
-\end_inset
+with $m_{ki\to n}^{\ell},\,\hat{x}_{in\to k}^{\ell}$ and $\sigma_{ki\to n}^{\ell},\,\Delta_{in\to k}^{\ell}$:
 
- and 
-\begin_inset Formula $\sigma_{ki\to n}^{\ell},\,\Delta_{in\to k}^{\ell}$
-\end_inset
-
-:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 m_{ki\to n}^{\ell}= & \int d\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})\ W_{ki}^{\ell}\\
 \sigma_{ki\to n}^{\ell}= & \int d\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})\ \left(W_{ki}^{\ell}-m_{ki\to n}^{\ell}\right)^{2}\\
 \hat{x}_{in\to k}^{\ell}= & \int d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ x_{in}^{\ell}\\
 \Delta_{in\to k}^{\ell}= & \int d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ \left(x_{in}^{\ell}-\hat{x}_{in\to k}^{\ell}\right)^{2}
 \end{align}
+We now use the central limit theorem to observe that with respect
+to the incoming messages distributions - assuming independence of
+these messages - in the large input limit the preactivation is a Gaussian
+random variable:
 
-\end_inset
-
-We now use the central limit theorem to observe that with respect to the
- incoming messages distributions - assuming independence of these messages
- - in the large input limit the preactivation is a Gaussian random variable:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{equation}
 \sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\sim\mathcal{N}(\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})
 \end{equation}
-
-\end_inset
-
 where:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \omega_{kn\to i}^{\ell} & =\mathbb{E}_{\nu}\left[\sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\right]=\sum_{i'\neq i}m_{ki'\to n}^{\ell}\,\hat{x}_{i'n\to k}^{\ell}\\
 V_{kn\to i}^{\ell} & =Var_{\nu}\left[\sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\right]\nonumber \\
  & =\sum_{i'\neq i}\left(\sigma_{ki'\to n}^{\ell}\,\Delta_{i'n\to k}^{\ell}+\left(m_{ki'\to n}^{\ell}\right)^{2}\,\Delta_{i'n\to k}^{\ell}+\sigma_{ki'\to n}^{\ell}\,\left(\hat{x}_{i'n\to k}^{\ell}\right)^{2}\right)
 \end{align}
-
-\end_inset
-
 Therefore we can rewrite the outgoing messages as:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{equation}
 \hat{\nu}_{kn\to i}^{\ell+1}(W_{ki}^{\ell})\propto\int dz\,d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ e^{-\frac{\left(z-\omega_{kn\to i}-W_{ki}^{\ell}x_{in}^{\ell}\right)^{2}}{2V_{kn\to i}}}\,P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ z\right)
 \end{equation}
+We now assume $W_{ki}^{\ell}x_{in}^{\ell}$ to be small compared to
+the other terms. With a second order Taylor expansion we obtain:
 
-\end_inset
-
-We now assume 
-\begin_inset Formula $W_{ki}^{\ell}x_{in}^{\ell}$
-\end_inset
-
- to be small compared to the other terms.
- With a second order Taylor expansion we obtain:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{\nu}_{kn\to i}^{\ell}(W_{ki}^{\ell})\propto & \int dz\,\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ e^{-\frac{\left(z-\omega_{kn\to i}\right)^{2}}{2V_{kn\to i}}}P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ z\right)\nonumber \\
  & \times\left(1+\frac{z-\omega_{kn\to i}}{V_{kn\to i}}\hat{x}_{in\to k}^{\ell}W_{ki}^{\ell}+\frac{\left(z-\omega_{kn\to i}\right)^{2}-V_{kn\to i}}{2V_{kn\to i}}\left(\Delta+\left(\hat{x}_{in\to k}^{\ell}\right)^{2}\right)\left(W_{ki}^{\ell}\right)^{2}\right)
 \end{align}
-
-\end_inset
-
 Introducing now the function:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{equation}
 \varphi^{\ell}(B,A,\omega,V)=\log\int\mathrm{d}x\,\mathrm{d}z\ e^{-\frac{1}{2}Ax^{2}+Bx}\,P^{\ell}\left(x|z\right)e^{-\frac{\left(\omega-z\right)^{2}}{2V}}
 \end{equation}
-
-\end_inset
-
 and defining:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 g_{kn\to i}^{\ell} & =\partial_{\omega}\varphi^{\ell+1}(B^{\ell+1},A^{\ell+1},\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})\\
 \Gamma_{kn\to i}^{\ell} & =-\partial_{\omega}^{2}\varphi^{\ell+1}(B^{\ell+1},A^{\ell+1},\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})
 \end{align}
-
-\end_inset
-
 the expansion for the log-message reads:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \log\hat{\nu}_{kn\to i}^{\ell}(W_{ki}^{\ell}) & \approx const+\hat{x}_{in\to k}^{\ell}\,g_{kn\to i}^{\ell}W_{ki}^{\ell}\nonumber \\
  & -\frac{1}{2}\left(\left(\Delta_{in\to k}^{\ell}+\left(\hat{x}_{in\to k}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\Delta_{in\to k}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)\left(W_{ki}^{\ell}\right)^{2}
 \end{align}
 
-\end_inset
 
+\paragraph{Factor-to-variable-$\mathbf{x}$ messages}
 
-\end_layout
+The derivation of these messages is analogous to the factor-to-variable-$W$
+ones in Eq.~\ref{eq:factor_to_W} just reported. The final result
+for the log-message is:
 
-\begin_layout Paragraph
-Factor-to-variable-
-\begin_inset Formula $\mathbf{x}$
-\end_inset
-
- messages
-\end_layout
-
-\begin_layout Standard
-The derivation of these messages is analogous to the factor-to-variable-
-\begin_inset Formula $W$
-\end_inset
-
- ones in Eq.
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~
-\backslash
-ref{eq:factor_to_W}
-\end_layout
-
-\end_inset
-
- just reported.
- The final result for the log-message is:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \log\hat{\nu}_{kn\to i}^{\ell}(x_{in}^{\ell})\approx & const+m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}x_{in}^{\ell}\nonumber \\
  & -\frac{1}{2}\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)\left(x_{in}^{\ell}\right)^{2}
 \end{align}
 
-\end_inset
 
+\paragraph{Variable-$\mathbf{W}$-to-output factor messages}
 
-\end_layout
+The message from variable $W_{ki}^{\ell}$ to the output factor $kn$
+reads:
 
-\begin_layout Paragraph
-Variable-
-\begin_inset Formula $\mathbf{W}$
-\end_inset
-
--to-output factor messages
-\end_layout
-
-\begin_layout Standard
-The message from variable 
-\begin_inset Formula $W_{ki}^{\ell}$
-\end_inset
-
- to the output factor 
-\begin_inset Formula $kn$
-\end_inset
-
- reads:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \nu_{ki\to n}^{\ell}(W_{ki}^{\ell}) & \propto P_{\theta_{ki}}^{\ell}(W_{ki}^{\ell})e^{\sum_{n'\neq n}\log\hat{\nu}_{kn'\to i}^{\ell}(W_{ki}^{\ell})}\nonumber \\
  & \approx P_{\theta_{ki}}^{\ell}(W_{ki}^{\ell})e^{H_{ki\to n}^{\ell}W_{ki}^{\ell}-\frac{1}{2}G_{ki\to n}^{\ell}\left(W_{ki}^{\ell}\right)^{2}}
 \end{align}
-
-\end_inset
-
 where we have defined:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 H_{ki\to n}^{\ell} & =\sum_{n'\neq n}\hat{x}_{in'\to k}^{\ell}\,g_{kn'\to i}^{\ell}\\
 G_{ki\to n}^{\ell} & =\sum_{n'\neq n}\left(\left(\Delta_{in'\to k}^{\ell}+\left(\hat{x}_{in'\to k}^{\ell}\right)^{2}\right)\Gamma_{kn'\to i}^{\ell}-\Delta_{in'\to k}^{\ell}\left(g_{kn'\to i}^{\ell}\right)^{2}\right)
 \end{align}
-
-\end_inset
-
 Introducing now the effective free energy:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \psi^{\ell}(H,G,\theta) & =\log\int\mathrm{d}W\,\ P_{\theta}^{\ell}\left(W\right)e^{HW-\frac{1}{2}GW^{2}}
 \end{align}
+we can express the first two cumulants of the message $\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})$
+as:
 
-\end_inset
-
-we can express the first two cumulants of the message 
-\begin_inset Formula $\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})$
-\end_inset
-
- as:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 m_{ki\to n}^{\ell} & =\partial_{H}\psi^{\ell}(H_{ki\to n}^{\ell},G_{ki\to n}^{\ell},\theta_{ki})\\
 \sigma_{ki\to n}^{\ell} & =\partial_{H}^{2}\psi^{\ell}(H_{ki\to n}^{\ell},G_{ki\to n}^{\ell},\theta_{ki})
 \end{align}
 
-\end_inset
 
+\paragraph{Variable-$\mathbf{x}$-to-input factor messages}
 
-\end_layout
-
-\begin_layout Paragraph
-Variable-
-\begin_inset Formula $\mathbf{x}$
-\end_inset
-
--to-input factor messages
-\end_layout
-
-\begin_layout Standard
 We can write the downgoing message as:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \nu_{\downarrow}(x_{in}^{\ell}) & \propto e^{\sum_{k}\log\hat{\nu}_{kn\to i}^{\ell}(x_{in}^{\ell})}\nonumber \\
  & \approx e^{B_{in}^{\ell}x-\frac{1}{2}A_{in}^{\ell}x^{2}}
 \end{align}
-
-\end_inset
-
 where:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 B_{in}^{\ell} & =\sum_{n}m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}\\
 A_{in}^{\ell} & =\sum_{n}\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell+1}\right)^{2}\right)
 \end{align}
 
-\end_inset
 
+\paragraph{Variable-$\mathbf{x}$-to-output factor messages}
 
-\end_layout
-
-\begin_layout Paragraph
-Variable-
-\begin_inset Formula $\mathbf{x}$
-\end_inset
-
--to-output factor messages
-\end_layout
-
-\begin_layout Standard
 By defining the following cavity quantities:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 B_{in\to k}^{\ell} & =B_{in\to k}^{\ell}-m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}\\
 A_{in\to k}^{\ell} & =A_{in\to k}^{\ell}-\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)
 \end{align}
-
-\end_inset
-
 and the following non-cavity ones:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \omega_{kn}^{\ell} & =\sum_{i}m_{ki\to n}^{\ell}\,\hat{x}_{in\to k}^{\ell}\\
 V_{kn}^{\ell} & =\sum_{i}\left(\sigma_{ki\to n}^{\ell}\,\Delta_{in\to k}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\,\Delta_{in\to k}^{\ell}+\sigma_{ki\to n}^{\ell}\,\left(\hat{x}_{i'n\to k}^{\ell}\right)^{2}\right)
 \end{align}
-
-\end_inset
-
 we can express the first 2 cumulants of the upgoing messages as:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{x}_{in\to k}^{\ell} & =\partial_{B}\varphi^{\ell}(B_{in\to k}^{\ell},A_{in\to k}^{\ell},\omega_{in}^{\ell-1},V_{in}^{\ell-1})\\
 \Delta_{in\to k}^{\ell} & =\partial_{B}^{2}\varphi^{\ell}(B_{in\to k}^{\ell},A_{in\to k}^{\ell},\omega_{in}^{\ell-1},V_{in}^{\ell-1})
 \end{align}
 
-\end_inset
 
+\paragraph{Wrapping it up}
 
-\end_layout
+Additional but straightforward considerations are required for the
+final input and output layers ($\ell=0$ and $\ell=L+1$ respectively),
+since they do not receive messages from below and above respectively.
+In the end, thanks to indipendence assumptions and the central limit
+theorem that we used throughout the derivations, we arrive to a closed
+set of equations involving the means and the variances (or otherwise
+the corresponding natural parameters) of the messages. 
 
-\begin_layout Paragraph
-Wrapping it up
-\end_layout
+{[}TODO mention that we approximate cavity variances with non-cavity
+ones{]} {[}TODO use non-cavity variances for BP equations{]}
 
-\begin_layout Standard
-Additional but straightforward considerations are required for the final
- input and output layers (
-\begin_inset Formula $\ell=0$
-\end_inset
+Dividing the update equations in a \textit{forward} and \textit{backward}
+pass, and ordering them using time indexes in such a way that we have
+an efficient flow of information, we obtain the set of BP equations
+presented in the main text Eqs.~(\ref{eq:upd-x}-\ref{eq:upd-H}) and
+in the Appendix Eqs.~(\ref{eqa:upd-x}-\ref{eqa:upd-H}). We report
+the complete set of the BP equations here (TODO forse non c'è bisogno,
+magari solo l'inizializzazione):
 
- and 
-\begin_inset Formula $\ell=L+1$
-\end_inset
+\paragraph{Initialization}
 
- respectively), since they do not receive messages from below and above
- respectively.
- In the end, thanks to indipendence assumptions and the central limit theorem
- that we used throughout the derivations, we arrive to a closed set of equations
- involving the means and the variances (or otherwise the corresponding natural
- parameters) of the messages.
- 
-\end_layout
+At $\tau=0$:
 
-\begin_layout Standard
-[TODO mention that we approximate cavity variances with non-cavity ones]
- [TODO use non-cavity variances for BP equations]
-\end_layout
-
-\begin_layout Standard
-Dividing the update equations in a 
-\shape italic
-forward
-\shape default
- and 
-\shape italic
-backward
-\shape default
- pass, and ordering them using time indexes in such a way that we have an
- efficient flow of information, we obtain the set of BP equations presented
- in the main text Eqs.
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~(
-\backslash
-ref{eq:upd-x}-
-\backslash
-ref{eq:upd-H})
-\end_layout
-
-\end_inset
-
- and in the Appendix Eqs.
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~(
-\backslash
-ref{eqa:upd-x}-
-\backslash
-ref{eqa:upd-H})
-\end_layout
-
-\end_inset
-
-.
- We report the complete set of the BP equations here (TODO forse non c'è
- bisogno, magari solo l'inizializzazione):
-\end_layout
-
-\begin_layout Paragraph
-Initialization
-\end_layout
-
-\begin_layout Standard
-At 
-\begin_inset Formula $\tau=0$
-\end_inset
-
-:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 B_{in\to k}^{\ell,0} & =0\\
 A_{in}^{\ell,0} & =0\\
@@ -1127,33 +728,12 @@ H_{ki\to n}^{\ell,0} & =0\\
 G_{ki}^{\ell,0} & =0
 \end{align}
 
-\end_inset
 
+\paragraph{Forward Pass}
 
-\end_layout
+At each $\tau=1,\dots,\tau_{max}$, for $\ell=0,\dots,L$ (TODO check
+$\ell$ range):
 
-\begin_layout Paragraph
-Forward Pass
-\end_layout
-
-\begin_layout Standard
-At each 
-\begin_inset Formula $\tau=1,\dots,\tau_{max}$
-\end_inset
-
-, for 
-\begin_inset Formula $\ell=0,\dots,L$
-\end_inset
-
- (TODO check 
-\begin_inset Formula $\ell$
-\end_inset
-
- range):
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{x}_{in\to k}^{\ell,\tau} & =\partial_{B}\varphi^{\ell}(B_{in\to k}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
 \Delta_{in}^{\ell,\tau} & =\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
@@ -1163,33 +743,12 @@ V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\Delta_{i
 \omega_{kn\to i}^{\ell,\tau} & =\sum_{i'\neq i}m_{ki'\to n}^{\ell,\tau}\,\hat{x}_{i'n\to k}^{\ell,\tau}
 \end{align}
 
-\end_inset
 
+\paragraph{Backward Pass}
 
-\end_layout
+For $\tau=1,\dots,\tau_{max}$, for $\ell=L,\dots,0$ (TODO check
+$\ell$ range):
 
-\begin_layout Paragraph
-Backward Pass
-\end_layout
-
-\begin_layout Standard
-For 
-\begin_inset Formula $\tau=1,\dots,\tau_{max}$
-\end_inset
-
-, for 
-\begin_inset Formula $\ell=L,\dots,0$
-\end_inset
-
- (TODO check 
-\begin_inset Formula $\ell$
-\end_inset
-
- range):
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 g_{kn\to i}^{\ell,\tau} & =\partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn\to i}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
 \Gamma_{kn}^{\ell,\tau} & =-\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
@@ -1199,85 +758,35 @@ G_{ki}^{\ell,\tau} & =\sum_{n}\left(\left(\left(\hat{x}_{in}^{\ell,\tau}\right)^
 H_{ki\to n}^{\ell,\tau} & =\sum_{n'\neq n}\hat{x}_{in'\to k}^{\ell,\tau}\,g_{kn'\to i}^{\ell,\tau}
 \end{align}
 
-\end_inset
 
+\subsection{Derivation of the AMP equations\label{sec:amp_derivation}}
 
-\end_layout
+In order to obtain the AMP equations, we approximate cavity quantities
+with non-cavity ones in the BP equations Eqs.~(\ref{eqa:upd-x}-\ref{eqa:upd-H})
+using a first order expansion. We start with the mean activation:
 
-\begin_layout Subsection
-Derivation of the AMP equations
-\begin_inset CommandInset label
-LatexCommand label
-name "sec:amp_derivation"
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-In order to obtain the AMP equations, we approximate cavity quantities with
- non-cavity ones in the BP equations Eqs.
-\begin_inset ERT
-status open
-
-\begin_layout Plain Layout
-
-~(
-\backslash
-ref{eqa:upd-x}-
-\backslash
-ref{eqa:upd-H})
-\end_layout
-
-\end_inset
-
- using a first order expansion.
- We start with the mean activation:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{x}_{in\to k}^{\ell,\tau}= & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1}-m_{ki\to n}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
 \approx & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
  & -m_{ki\to n}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1}\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
 \approx & \hat{x}_{in}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
 \end{align}
-
-\end_inset
-
 Analogously, for the weight's mean we have:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1}-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\nonumber \\
  & \approx\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1}\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\nonumber \\
  & \approx m_{ki}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\,g_{kn}^{\ell,\tau-1}\,\sigma_{ki}^{\ell,\tau}.
 \end{align}
-
-\end_inset
-
 This brings us to:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \omega_{kn}^{\ell,\tau}= & \sum_{i}m_{ki\to n}^{\ell,\tau}\,\hat{x}_{in\to k}^{\ell,\tau}\nonumber \\
 \approx & \sum_{i}m_{ki}^{\ell,\tau}\,\hat{x}_{in}^{\ell,\tau}-g_{kn}^{\ell,\tau-1}\sum_{i}\,\sigma_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}-g_{kn}^{\ell,\tau-1}\sum_{i}m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
  & [maybe-irrelevant]+(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
 \end{align}
-
-\end_inset
-
 Let us now apply the same procedure to the other set of cavity messages:
-\end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 g_{kn\to i}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau}-m_{ki\to n}^{\ell,\tau}\,\hat{x}_{in\to k}^{\ell,\tau},V_{kn}^{\ell,\tau})\nonumber \\
 \approx & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\nonumber \\
@@ -1285,51 +794,23 @@ g_{kn\to i}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau
 \approx & g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}
 \end{align}
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 B_{in}^{\ell,\tau}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
 \approx & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}\sum_{k}\left(g_{kn}^{\ell,\tau}\right)^{2}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
  & [maybe-irrelevant]-(\hat{x}_{in}^{\ell,\tau})^{2}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}
 \end{align}
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in\to k}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
 \approx & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau}\sum_{n}(g_{kn}^{\ell,\tau})^{2}\Delta_{in}^{\ell,\tau}\nonumber \\
  & [maybe-irrelevant]-(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
 \end{align}
-
-\end_inset
-
 We are now able to write down the full AMP equations:
-\end_layout
 
-\begin_layout Paragraph
-Initialization
-\end_layout
+\paragraph{Initialization}
 
-\begin_layout Standard
-At 
-\begin_inset Formula $\tau=0$
-\end_inset
+At $\tau=0$:
 
-:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 B_{in}^{\ell,0} & =0\\
 A_{in}^{\ell,0} & =0\\
@@ -1338,33 +819,12 @@ G_{ki}^{\ell,0} & =0\text{ or some values}\\
 g_{kn}^{\ell,0} & =0
 \end{align}
 
-\end_inset
 
+\paragraph{Forward Pass}
 
-\end_layout
+At each $\tau=1,\dots,\tau_{max}$, for $\ell=0,\dots,L$ (TODO check
+$\ell$ range):
 
-\begin_layout Paragraph
-Forward Pass
-\end_layout
-
-\begin_layout Standard
-At each 
-\begin_inset Formula $\tau=1,\dots,\tau_{max}$
-\end_inset
-
-, for 
-\begin_inset Formula $\ell=0,\dots,L$
-\end_inset
-
- (TODO check 
-\begin_inset Formula $\ell$
-\end_inset
-
- range):
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 \hat{x}_{in}^{\ell,\tau}= & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
 \Delta_{in}^{\ell,\tau}= & \partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
@@ -1375,17 +835,9 @@ V_{kn}^{\ell,\tau}= & \sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_
  & +(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
 \end{align}
 
-\end_inset
 
+\paragraph{Backward Pass}
 
-\end_layout
-
-\begin_layout Paragraph
-Backward Pass
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
 \begin{align}
 g_{kn}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn\to i}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
 \Gamma_{kn}^{\ell,\tau}= & -\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
@@ -1397,32 +849,16 @@ H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki
  & -(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
 \end{align}
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
 TODO
-\end_layout
 
-\begin_layout Standard
-- B and H equations have to be changed yet on the cl/amp branch in DeepMP.jl
-\end_layout
+- B and H equations have to be changed yet on the cl/amp branch in
+DeepMP.jl
 
-\begin_layout Standard
 - not clear how to put damping
-\end_layout
 
-\begin_layout Standard
 - presentare in appendice una sola volta la forma finale delle equazioni
- di BP e AMP
-\end_layout
+di BP e AMP
 
-\begin_layout Standard
-- nei vari algoritmi riportati nel paper non viene specificata l'inizializzazion
-e dei messaggi
-\end_layout
-
-\end_body
-\end_document
+- nei vari algoritmi riportati nel paper non viene specificata l'inizializzazione
+dei messaggi
+\end{document}
