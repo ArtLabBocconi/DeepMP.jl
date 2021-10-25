@@ -201,7 +201,8 @@ function getW(layer::TapLayer)
 end
 
 function weight_mean(layer::TapLayer)
-    return tanh.(layer.H)
+    # return tanh.(layer.H)
+    return layer.m
 end
 
 function weight_var(layer::TapLayer)
