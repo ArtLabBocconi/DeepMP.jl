@@ -1308,27 +1308,13 @@ and this expansion brings us to the following equations for
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\left(m_{ki}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\,g_{kn}^{\ell,\tau-1}\,\sigma_{ki}^{\ell,\tau}\right)\times\left(g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\right)$
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
 \begin_inset Formula 
 \begin{align}
 B_{in}^{\ell,\tau}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
-\approx & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}\sum_{k}\left(g_{kn}^{\ell,\tau}\right)^{2}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
- & [maybe-irrelevant]-(\hat{x}_{in}^{\ell,\tau})^{2}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}
+\approx & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\sum_{k}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
+ & [maybe-irrelevant]-\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}
 \end{align}
 
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula $\left(\hat{x}_{in}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\right)\times\left(g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\right)$
 \end_inset
 
 
@@ -1338,8 +1324,8 @@ B_{in}^{\ell,\tau}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\n
 \begin_inset Formula 
 \begin{align}
 H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in\to k}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
-\approx & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau}\sum_{n}(g_{kn}^{\ell,\tau})^{2}\Delta_{in}^{\ell,\tau}\nonumber \\
- & [maybe-irrelevant]-(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
+\approx & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & [maybe-irrelevant]-m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
 \end{align}
 
 \end_inset
@@ -1421,11 +1407,11 @@ Backward Pass
 g_{kn}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
 \Gamma_{kn}^{\ell,\tau}= & -\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
 A_{in}^{\ell,\tau}= & \sum_{k}\left(\left(\left(m_{ki}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\sigma_{ki}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
-B_{in}^{\ell,\tau}= & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}\sum_{k}\left(g_{kn}^{\ell,\tau}\right)^{2}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
- & -(\hat{x}_{in}^{\ell,\tau})^{2}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\\
+B_{in}^{\ell,\tau}= & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\sum_{k}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
+ & -\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\\
 G_{ki}^{\ell,\tau}= & \sum_{n}\left(\left(\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\Delta_{in}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\Delta_{in}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
-H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau}\sum_{n}(g_{kn}^{\ell,\tau})^{2}\Delta_{in}^{\ell,\tau}\nonumber \\
- & -(m_{ki}^{\ell,\tau})^{2}\sum_{n}g_{kn}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
+H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & -m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
 \end{align}
 
 \end_inset
