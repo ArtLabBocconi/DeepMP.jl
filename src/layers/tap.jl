@@ -68,7 +68,7 @@ end
 function update!(layer::TapLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m σ 
-    @extract layer: Bup B  A H Hext ω  V g
+    @extract layer: Bup B A H Hext ω  V g
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r ψ l
 
@@ -76,26 +76,34 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
     rl = r[l]
 
     if mode == :forw || mode == :both
+
         ## FORWARD
+
+        # TODO: non mi torna come sono gestiti gli indici temporali
+
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
-
             @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
             Δ .= 1 .- x̂.^2
         else 
             x̂new = x̂
         end
+
         mnew = weight_mean(layer)
+
         σ .= 1 .- mnew.^2
         
-        V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
+        V .= m.^2 * Δ + σ * x̂.^2 + σ * Δ .+ 1f-8
+
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
         @tullio ω[k,a] += - g[k,a] * σ[k,i] * x̂new[i,a] * x̂[i,a]
         @tullio ω[k,a] += - g[k,a] * mnew[k,i] * m[k,i] * Δ[i,a]
         @tullio ω[k,a] += + g[k,a]^2 * σ[k,i] * m[k,i] * x̂[i,a] * Δ[i,a]
         
         mnew = ψ[l] .* m .+ (1-ψ[l]) .* mnew .* weight_mask
+
         Δm = mean(abs.(m .- mnew))
+
         m .= mnew
         σ .= (1 .- m.^2) .* weight_mask
 
@@ -107,10 +115,13 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         #####################
         
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
+
     end
 
     if mode == :back || mode == :both
+
         ## BACKWARD 
+        
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
         @tullio g[k,a] = compute_g(Btop[k,a], ω[k,a], √V[k,a])  avx=false
