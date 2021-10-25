@@ -929,7 +929,16 @@ Introducing now the effective free energy:
 
 \end_inset
 
-we can express the first two cumulants of the message 
+[TODO: 
+\begin_inset Formula $\psi^{\ell}$
+\end_inset
+
+ ha l'indice di layer 
+\begin_inset Formula $\ell$
+\end_inset
+
+ mentre nelle equazioni sul paper non ce l'ha] we can express the first
+ two cumulants of the message 
 \begin_inset Formula $\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})$
 \end_inset
 
@@ -1149,7 +1158,15 @@ At each
 \begin_inset Formula $\ell$
 \end_inset
 
- range):
+ range -> 
+\begin_inset Formula $\hat{x}_{in\to k}^{\ell,\tau}$
+\end_inset
+
+ non dovrebbe partire da 
+\begin_inset Formula $\ell=1$
+\end_inset
+
+?):
 \end_layout
 
 \begin_layout Standard
@@ -1159,7 +1176,7 @@ At each
 \Delta_{in}^{\ell,\tau} & =\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
 m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki\to n}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
 \sigma_{ki}^{\ell,\tau} & =\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
-V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau-1}\left(\hat{x}_{i'n}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\right)\\
+V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau-1}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\right)\\
 \omega_{kn\to i}^{\ell,\tau} & =\sum_{i'\neq i}m_{ki'\to n}^{\ell,\tau}\,\hat{x}_{i'n\to k}^{\ell,\tau}
 \end{align}
 
@@ -1387,7 +1404,7 @@ At each
 \Delta_{in}^{\ell,\tau}= & \partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
 m_{ki}^{\ell,\tau}= & \partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
 \sigma_{ki}^{\ell,\tau}= & \partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
-V_{kn}^{\ell,\tau}= & \sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau}\,\left(\hat{x}_{i'n}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\,\Delta_{in}^{\ell,\tau}\right)\\
+V_{kn}^{\ell,\tau}= & \sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau}\,\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\,\Delta_{in}^{\ell,\tau}\right)\\
 \omega_{kn}^{\ell,\tau}= & \sum_{i}m_{ki}^{\ell,\tau}\,\hat{x}_{in}^{\ell,\tau}-g_{kn}^{\ell,\tau-1}\sum_{i}\,\sigma_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}-g_{kn}^{\ell,\tau-1}\sum_{i}m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
  & +(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
 \end{align}
