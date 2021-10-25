@@ -9,9 +9,12 @@ mutable struct TapLayer <: AbstractLayer
     M::Int
     ϵinit
 
-    x̂ 
+
+    x̂old
+    x̂
     Δ
 
+    mold 
     m 
     σ 
 
@@ -22,6 +25,9 @@ mutable struct TapLayer <: AbstractLayer
     H   # = Hcav + Hext
     Hext
     
+    
+    
+    gold 
     g 
     ω 
     V
@@ -36,9 +42,11 @@ end
 @functor TapLayer
 
 function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
+    x̂old = zeros(F, N, M)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
     
+    mold = zeros(F, K, N)
     m = zeros(F, K, N)
     σ = zeros(F, K, N)
     
@@ -49,6 +57,7 @@ function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
     H = zeros(F, K, N)
     Hext = zeros(F, K, N)
     
+    gold = zeros(F, K, M)
     g = zeros(F, K, M)
     ω = zeros(F, K, M)
     V = zeros(F, K, M)
@@ -56,10 +65,10 @@ function TapLayer(K::Int, N::Int, M::Int, ϵinit; density=1, isfrozen=false)
     weight_mask = rand(K, N) .< density
     
     return TapLayer(-1, K, N, M, ϵinit,
-            x̂, Δ, m, σ,
+            x̂old, x̂, Δ, mold, m, σ,
             Bup, B, A, 
             H, Hext,
-            g, ω, V,
+            gold, g, ω, V,
             DummyLayer(), DummyLayer(),
             weight_mask, isfrozen)
 end
@@ -67,8 +76,8 @@ end
 
 function update!(layer::TapLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
-    @extract layer: x̂ Δ m σ 
-    @extract layer: Bup B A H Hext ω  V g
+    @extract layer: x̂ Δ m σ x̂old mold
+    @extract layer: Bup B A H Hext ω  V g gold
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r ψ l
 
@@ -79,43 +88,23 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
 
         ## FORWARD
 
-        # TODO: non mi torna come sono gestiti gli indici temporali
-
         if !isbottomlayer(layer)
             bottBup = bottom_layer.Bup
-            @tullio x̂new[i,a] := tanh(bottBup[i,a] + B[i,a])
+            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
             Δ .= 1 .- x̂.^2
-        else 
-            x̂new = x̂
         end
 
-        mnew = weight_mean(layer)
-
-        σ .= 1 .- mnew.^2
+        σ .= 1 .- m.^2
         
         V .= m.^2 * Δ + σ * x̂.^2 + σ * Δ .+ 1f-8
 
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        @tullio ω[k,a] += - g[k,a] * σ[k,i] * x̂new[i,a] * x̂[i,a]
-        @tullio ω[k,a] += - g[k,a] * mnew[k,i] * m[k,i] * Δ[i,a]
-        @tullio ω[k,a] += + g[k,a]^2 * σ[k,i] * m[k,i] * x̂[i,a] * Δ[i,a]
-        
-        mnew = ψ[l] .* m .+ (1-ψ[l]) .* mnew .* weight_mask
-
-        Δm = mean(abs.(m .- mnew))
-
-        m .= mnew
-        σ .= (1 .- m.^2) .* weight_mask
-
-        # # OLD VERSION ########
-        # V .= σ * x̂.^2 + m.^2 * Δ 
-        # @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        # @tullio ω[k,a] += - g[k,a] * V[k,a] 
-        # V .+= σ * Δ .+ 1f-8 
-        #####################
+        # Terms below are 0 for first iteration
+        @tullio ω[k,a] += - gold[k,a] * σ[k,i] * x̂[i,a] * x̂old[i,a]
+        @tullio ω[k,a] += - gold[k,a] * m[k,i] * mold[k,i] * Δ[i,a]
+        @tullio ω[k,a] += + gold[k,a]^2 * σ[k,i] * mold[k,i] * x̂old[i,a] * Δ[i,a]
         
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / √V[k,a]) avx=false
-
     end
 
     if mode == :back || mode == :both
@@ -128,27 +117,65 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         @tullio Γ[k,a] := g[k,a] * (ω[k,a] / V[k,a] + g[k,a])
 
         if !isbottomlayer(layer)
-            # A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
-            @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
-            @tullio B[i,a] = m[k,i] * g[k,a] - σ[k,i] * Γ[k,a]
-            @tullio B[i,a] += x̂[i,a] * A[i,a]
+            ## A is used only for continuous actvations
+            ## A .= (m.^2 .+ σ)' * Γ .- σ' * g.^2
+            # @tullio A[i,a] = m[k,i]^2 * Γ[k,a]
+            # @tullio A[i,a] += σ[k,i] * Γ[k,a]
+            # @tullio A[i,a] += -σ[k,i] * g[k,a]^2
+
+
+            @tullio B[i,a] = m[k,i] * g[k,a]
+            @tullio B[i,a] += x̂[i,a] * m[k,i]^2 * Γ[k,a]
+            # Terms below are 0 for first iteration
+            @tullio B[i,a] += -x̂old[i,a] * g[k,a] * gold[k,a] * σ[k,i]
+            @tullio B[i,a] += -x̂[i,a] * x̂old[i,a] * σ[k,i] * m[k,i] * gold[k,a] * Γ[k,a]
         end
 
         if !isfrozen(layer) 
-            # G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
-            @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
-            @tullio Hin[k,i] := g[k,a] * x̂[i,a]
-            @tullio Hnew[k,i] := Hin[k,i] + m[k,i] * G[k,i] + rl * H[k,i] + Hext[k,i]
-            @tullio Hnew[k,i] += -Δ[i,a] * Γ[k,a]
+            ## G is used only for continuous weights
+            ## G = Γ * (x̂.^2 .+ Δ)' .- g.^2 * Δ'
+            # @tullio G[k,i] := Γ[k,a] * x̂[i,a]^2
+            # @tullio G[k,i] += Γ[k,a] * Δ[i,a]
+            # @tullio G[k,i] += -g[k,a]^2 * Δ[i,a]
 
+            @tullio Hin[k,i] := g[k,a] * x̂[i,a]
+            @tullio Hin[k,i] += m[k,i] * x̂[i,a]^2 * Γ[k,a]
+            # Terms below are 0 for first iteration
+            @tullio Hin[k,i] += -mold[k,i] * g[k,a] * gold[k,a] * Δ[i,a]
+            @tullio Hin[k,i] += -m[k,i] * mold[k,i] * gold[k,a] * Γ[k,a] * Δ[i,a] * x̂[i,a]
+            
+            @tullio Hnew[k,i] := Hin[k,i] + Hext[k,i] + rl * H[k,i] 
+            
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             H .= Hnew
         end
+
+        mold .= m
+        gold .= g
+        x̂old .= x̂
+        
+        mnew = tanh.(H)
+        mnew = ψ[l] .* m .+ (1-ψ[l]) .* mnew .* weight_mask
+        Δm = mean(abs.(m .- mnew))
+        m .= mnew
+        σ .= (1 .- m.^2) .* weight_mask
     end
     
     return Δm
 end
 
+
+function reset_downgoing_messages!(lay::TapLayer)
+    lay.B .= 0  
+    lay.A .= 0
+    lay.g .= 0
+    lay.gold .= 0
+    lay.mold .= lay.m
+    if !isbottomlayer(layer)
+        lay.x̂ .= 0
+        lay.x̂old .= 0
+    end
+end
 
 function initrand!(layer::TapLayer)
     @extract layer: K N M weight_mask ϵinit
@@ -156,6 +183,7 @@ function initrand!(layer::TapLayer)
     @extract layer: B A ω H  V Hext
     H .= ϵinit .* randn!(similar(m)) + Hext
     m .= tanh.(H) .* weight_mask
+    mold .= m
     σ .= (1 .- m.^2) .* weight_mask
 end
 

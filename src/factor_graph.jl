@@ -201,26 +201,30 @@ end
 function reset_downgoing_messages!(g)
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
-        lay.B .= 0  
-        if hasproperty(lay, :Bcav)
-            lay.Bcav .= 0
-        end
-        if hasproperty(lay, :A)
-            lay.A .= 0
-        end
-        if hasproperty(lay, :mcav)
-            lay.mcav .= lay.m
-        end
-        if hasproperty(lay, :g)
-            lay.g .= 0
-        end
-        if hasproperty(lay, :gcav)
-            lay.gcav .= 0
-        end
-        # if hasproperty(lay, :H)
-        #     lay.H .= lay.Hext
-        # end
+        reset_downgoing_messages!(lay)
     end
+end
+
+function reset_downgoing_messages!(lay::AbstractLayer)
+    lay.B .= 0  
+    if hasproperty(lay, :Bcav)
+        lay.Bcav .= 0
+    end
+    if hasproperty(lay, :A)
+        lay.A .= 0
+    end
+    if hasproperty(lay, :mcav)
+        lay.mcav .= lay.m
+    end
+    if hasproperty(lay, :g)
+        lay.g .= 0
+    end
+    if hasproperty(lay, :gcav)
+        lay.gcav .= 0
+    end
+    # if hasproperty(lay, :H)
+    #     lay.H .= lay.Hext
+    # end
 end
 
 function freezetop!(g::FactorGraph, w)
