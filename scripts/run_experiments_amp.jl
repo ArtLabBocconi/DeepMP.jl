@@ -1,10 +1,10 @@
 multicl = [true]
 datasets = [:mnist]
-lays = [:mf]
+lays = [:tap]
 seeds = [2]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
-    ρ = [1.0, 1.0, 1.0]
+    ρ = [1.0001, 1.0001, 0.9]
     #try
         run_experiment(; multiclass, dataset, lay_type, seed, ρ,
         epochs=100, batchsize=Int(6e4), usecuda=true, gpu_id=1, 
