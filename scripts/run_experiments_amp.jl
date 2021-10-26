@@ -1,6 +1,6 @@
-multicl = [false]
+multicl = [true]
 datasets = [:fashion]
-lays = [:bpi]
+lays = [:mf]
 seeds = [2]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
