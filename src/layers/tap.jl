@@ -171,7 +171,7 @@ function reset_downgoing_messages!(lay::TapLayer)
     lay.g .= 0
     lay.gold .= 0
     lay.mold .= lay.m
-    if !isbottomlayer(layer)
+    if !isbottomlayer(lay)
         lay.x̂ .= 0
         lay.x̂old .= 0
     end
@@ -181,6 +181,7 @@ function initrand!(layer::TapLayer)
     @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂  Δ m σ 
     @extract layer: B A ω H  V Hext
+    @extract layer: mold
     H .= ϵinit .* randn!(similar(m)) + Hext
     m .= tanh.(H) .* weight_mask
     mold .= m

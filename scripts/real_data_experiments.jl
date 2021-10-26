@@ -90,7 +90,8 @@ function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_ty
     multiclass && (layers[end] = :argmax)
     
     g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, K, layers, 
-                                        xtrain2, ytrain2, xtest2, ytest2, kws...)
+                                        #xtrain2, ytrain2, xtest2, ytest2, 
+                                        kws...)
 
     #GC.gc()
     #CUDA.reclaim()
