@@ -9,21 +9,21 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-dataset = :mnist
-#dataset = :fashion
+#dataset = :mnist
+dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
 #K = [Nin, 101, 101, 101, 1]
 L = length(K)-1
-lrsgd = 3.0
+lrsgd = 10.0
 
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
-multiclass = false
-plot_sgd, plot_bp, plot_bayes = false, true, true
+multiclass = true
+plot_sgd, plot_bp, plot_bayes = true, true, false
 plot_continuous_sgd = false
 plot_overlaps = false
 
@@ -151,7 +151,7 @@ end
 if plot_bp 
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
         
-        lay in [:tap, :mf] && continue
+        #lay in [:tap, :mf] && continue
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
