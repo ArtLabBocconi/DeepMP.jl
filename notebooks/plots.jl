@@ -21,7 +21,7 @@ lrsgd = 10.0
 lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
-multiclass = false
+multiclass = true
 plot_sgd, plot_bp, plot_bayes = true, true, false
 plot_continuous_sgd = false
 plot_overlaps = false
@@ -43,8 +43,9 @@ if multiclass
                     #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
                     ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1e-4]]
                 elseif K[2] == 501
-                    ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
+                    ψs = [[0.81, 0.81, 0.81], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
                     ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
                 end
 
         elseif length(K) == 5
@@ -154,7 +155,7 @@ if plot_bp
         
         #lay in [:tap, :mf] && continue
 
-        if lay == :tap
+        if lay in [:bpi, :tap]
             r = [0.0 for _=1:length(K)-1]
         else
             r = 0.
@@ -357,8 +358,8 @@ if plot_bayes && bb
         μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
 
         pars = "ρ=$([ρ[l] for l=1:L])"
-        train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
-        test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
+        local train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
+        local test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
 
         LAY = lay == :bp ? "BP" :
               lay == :bpi ? "BPI" :
@@ -366,11 +367,11 @@ if plot_bayes && bb
               lay == :mf ? "MF" : error("unknown layer type")
 
         if plot_overlaps
-            lbl_train = "$LAY train $pars, $train_legend"
-            lbl_test = "$LAY test $pars, $test_legend"
+            local lbl_train = "$LAY train $pars, $train_legend"
+            local lbl_test = "$LAY test $pars, $test_legend"
         else
-            lbl_train = "$LAY train $pars"
-            lbl_test = "$LAY test $pars"
+            local lbl_train = "$LAY train $pars"
+            local lbl_test = "$LAY test $pars"
         end
 
         lbl_train = "$LAY train"
