@@ -1,6 +1,7 @@
 module DeepMP
 
 using ExtractMacro
+using DelimitedFiles
 using SpecialFunctions
 using Printf
 using Random
@@ -279,12 +280,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
 
     end
 
-    if saveres 
+    if saveres
         close(fres)
         println("outfile: $resfile")
         conf_file = "results/conf$(resfile[12:end-4]).jld2"
         @show conf_file
         #save(conf_file, Dict("weights" => getW(g)))
+        write_weight_mask(g)
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
