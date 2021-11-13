@@ -1,11 +1,11 @@
 multicl = [false]
 datasets = [:mnist]
 lays = [:bpi]
-seeds = [2]
+seeds = [11]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
     if lay_type ≠ :mf
-        ρ = [0.9999, 0.999, 0.9]
+        ρ = [0.9999, 0.9999, 0.9]
         #ρ = [1.0001, 1.0001, 1.0001]
     else
         ρ = [1.0+1e-4, 1.0+1e-4, 0.]

@@ -295,9 +295,9 @@ ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_tes
     end
 end
 
-bb = true
+pointwise = true
 ρs = [[1.0001, 1.0001, 0.9], [1.0, 1.0, 0.9], [1.0, 1.0, 0.9]]
-if plot_bayes && bb
+if plot_bayes && pointwise
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
         
         lay in [:tap, :mf] && continue
