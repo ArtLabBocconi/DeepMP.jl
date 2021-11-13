@@ -78,6 +78,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ l
     Δm = 0.
+    rl = r[l]
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -134,7 +135,7 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
                 @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i]
             else
                 # reinforcement
-                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio Hnew[k,i] := Hin[k,i] + rl * H[k,i] + Hext[k,i]
             end
             @tullio Hcavnew[k,i,a] := Hnew[k,i] - gcav[k,i,a] * x̂cav[k,i,a]
             # H .= ψ[l] .* H .+ (1 - ψ[l]) .* Hnew 

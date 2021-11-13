@@ -9,12 +9,11 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-#dataset = :mnist
-dataset = :fashion
+dataset = :cifar10
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-K = [Nin, 101, 101, 1]
-#K = [Nin, 101, 101, 101, 1]
+K = [Nin, 501, 501, 1]
+#K = [Nin, 501, 501, 501, 1]
 L = length(K)-1
 lrsgd = 10.0
 
@@ -36,7 +35,6 @@ if multiclass
         seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1
-        r = 0.
         ϵinits = [1.0, 1.0, 1.0]
 
         if length(K) == 4
@@ -45,7 +43,9 @@ if multiclass
                     #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
                     ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1e-4]]
                 elseif K[2] == 501
+                    ψs = [[0.81, 0.81, 0.81], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
                     ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
                 end
 
         elseif length(K) == 5
@@ -77,7 +77,7 @@ else
         seed_sgd = [2, 7, 11]
         P = dataset ≠ :cifar10 ? 6e4 : 5e4
         maxiters = 1   
-        r = [0., 0., 0.]        
+        r = [0.0 for _=1:length(K)-1]
         ϵinits = [1.0, 1.0, 1.0]
         ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
         #ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]] 
@@ -93,9 +93,11 @@ else
             #ρs = [[1.0, 1.0, -1e-4].+1e-4, [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]
             if dataset == :cifar10
                 ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
             else
                 ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
-                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99999], [0.8, 0.8, 0.8]]
+                #ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99999], [0.8, 0.8, 0.8]]
+                ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
             end
 
         end 
@@ -152,6 +154,12 @@ if plot_bp
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
         
         #lay in [:tap, :mf] && continue
+
+        if lay in [:bpi, :tap]
+            r = [0.0 for _=1:length(K)-1]
+        else
+            r = 0.
+        end
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
@@ -219,7 +227,7 @@ if plot_bp
 
         LAY = lay == :bp ? "BP" :
               lay == :bpi ? "BPI" :
-              lay == :tap ? "TAP" :
+              lay == :tap ? "AMP" :
               lay == :mf ? "MF" : error("unknown layer type")
 
         if plot_overlaps
@@ -350,20 +358,20 @@ if plot_bayes && bb
         μ_qablay3, σ_qablay3 = mean(qablay3), std(qablay3)
 
         pars = "ρ=$([ρ[l] for l=1:L])"
-        train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
-        test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
+        local train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
+        local test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
 
         LAY = lay == :bp ? "BP" :
               lay == :bpi ? "BPI" :
-              lay == :tap ? "TAP" :
+              lay == :tap ? "AMP" :
               lay == :mf ? "MF" : error("unknown layer type")
 
         if plot_overlaps
-            lbl_train = "$LAY train $pars, $train_legend"
-            lbl_test = "$LAY test $pars, $test_legend"
+            local lbl_train = "$LAY train $pars, $train_legend"
+            local lbl_test = "$LAY test $pars, $test_legend"
         else
-            lbl_train = "$LAY train $pars"
-            lbl_test = "$LAY test $pars"
+            local lbl_train = "$LAY train $pars"
+            local lbl_test = "$LAY test $pars"
         end
 
         lbl_train = "$LAY train"
@@ -453,8 +461,8 @@ if plot_sgd
         lbl_test = "binaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "binaryNet train"
-    lbl_test = "binaryNet test"
+    lbl_train = "BinaryNet train"
+    lbl_test = "BinaryNet test"
 
     ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
@@ -514,7 +522,7 @@ if dataset == :mnist
     end
 elseif dataset == :fashion
     if multiclass
-        ax1.set_ylim(0, 35)
+        ax1.set_ylim(0, 25)
     else
         ax1.set_ylim(0, 8)
     end
