@@ -6,7 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
-
+    
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int}, ϵinit::F,
                 layertype::Vector{Symbol};
@@ -128,8 +128,11 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
 end
 
 function write_weight_mask(g::FactorGraph)
+    @extract g: density
     for l=2:g.L+1
-        writedlm("results/mask_layer$(l-1).dat", g.layers[l].weight_mask)
+        file = "results/mask_density$(density)_layer$(l-1).dat"
+        writedlm(file, g.layers[l].weight_mask)
+        println(file)
     end
 end
 
@@ -269,7 +272,7 @@ Forward pass with pointwise estimator.
 """
 function forward(g::FactorGraph, x)
     @extract g: L layers
-   for l=2:L+1
+    for l=2:L+1
         x = forward(layers[l], x)
     end
     return x

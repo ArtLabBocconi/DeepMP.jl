@@ -104,7 +104,7 @@ function update!(layer::BPILayer, reinfpar; mode=:both)
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             H .= Hnew
 
-            mnew = ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H) .* weight_mask
+            mnew = (ψ[l] .* m .+ (1-ψ[l]) .* tanh.(H)) .* weight_mask
             # mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= mnew
