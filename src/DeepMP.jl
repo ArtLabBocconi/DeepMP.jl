@@ -1,6 +1,7 @@
 module DeepMP
 
 using ExtractMacro
+using DelimitedFiles
 using SpecialFunctions
 using Printf
 using Random
@@ -149,8 +150,6 @@ end
 
 function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
-                xtrain2 = nothing, ytrain2 = nothing,
-                xtest2 = nothing, ytest2 = nothing,
                 dataset = :fashion,
                 K::Vector{Int},                # List of widths for each layer, e.g. [28*28, 101, 101, 1]
                 layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
@@ -172,7 +171,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 batchsize = -1,                 # only supported by some algorithms
                 epochs = 100,
                 ϵinit = 0.,
-                plotinfo = 0,
                 verbose = 1,
                 usecuda = true,
                 gpu_id = -1,
@@ -196,16 +194,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
     
-    #for (x,y) in dtrain
-    #    print(y, ",")
-    #end
-    #error()
-
-    if !isnothing(xtrain2)
-        xtrain2, ytrain2 = device(xtrain2), device(ytrain2)
-        xtest2, ytest2 = device(xtest2), device(ytest2)
-        dtrain2 = DataLoader((xtrain2, ytrain2); batchsize, shuffle=true, partial=false)
-    end
 
     g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
@@ -244,12 +232,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             
         verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
 
-        if !isnothing(xtrain2)
-            Etrain2 = mean(vec(forward(g, xtrain2)) .!= ytrain2) * 100
-            Etest2 = mean(vec(forward(g, xtest2)) .!= ytest2) * 100
-            verbose >= 1 && @printf("\t\t\tEtrain2=%.2f%% Etest2=%.2f%%\n\n", Etrain2, Etest2)
-        end
-
         q0s, qWαβs = plot_info(g, 0; verbose)
 
         if saveres
@@ -281,6 +263,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             t = @timed for (b, (x, y)) in enumerate(dtrain)
                 all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
                 set_input_output!(g, x, y)
+                reset_downgoing_messages!(g)
 
                 it, e, δ = converge!(g; maxiters, ϵ, 
                                         reinfpar, altsolv, altconv, plotinfo=0,
@@ -290,47 +273,20 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 meaniters += it
                 
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
-
-                #if epochs == 1 && b % 1000 == 0
-                #    Etrain = report(b; converged, solved, meaniters)
-                #end
-
             end
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
         end
 
-        if !isnothing(xtrain2)
-        
-            for epoch = epochs+1:Int(2*epochs)
-                converged = solved = meaniters = 0
-                t = @timed for (b, (x, y)) in enumerate(dtrain2)
-                    all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
-                    set_input_output!(g, x, y)
-
-                    it, e, δ = converge!(g; maxiters, ϵ, 
-                                            reinfpar, altsolv, altconv, plotinfo=0,
-                                            teacher, verbose=verbose-1)
-                    converged += (δ < ϵ)
-                    solved    += (e == 0)
-                    meaniters += it
-                    
-                    verbose >= 2 && print("b = $b / $(length(dtrain))\r")
-
-                end
-                Etrain = report(epoch; t, converged, solved, meaniters)
-                #Etrain == 0 && break
-            end
-        end
-
     end
 
-    if saveres 
+    if saveres
         close(fres)
         println("outfile: $resfile")
         conf_file = "results/conf$(resfile[12:end-4]).jld2"
         @show conf_file
         #save(conf_file, Dict("weights" => getW(g)))
+        write_weight_mask(g)
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)
