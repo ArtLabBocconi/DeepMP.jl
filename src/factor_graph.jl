@@ -6,7 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
-
+    
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int}, ϵinit::F,
                 layertype::Vector{Symbol};
@@ -88,8 +88,8 @@ function process_density(density, L)
     end
     @assert length(density) == L
     if density[L] < 1.0
-        density[L] = 1.0
-        # @warn "Setting density[$L] = 1.0"
+        #density[L] = 1.0
+        #@warn "Setting density[$L] = 1.0"
     end
     return density
 end
@@ -124,6 +124,15 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     @assert g2.L == g.L
     for l=2:g.L+1
         set_weight_mask!(g.layers[l], g2.layers[l].weight_mask)
+    end
+end
+
+function write_weight_mask(g::FactorGraph)
+    @extract g: density
+    for l=2:g.L+1
+        file = "results/mask_density$(density)_layer$(l-1).dat"
+        writedlm(file, g.layers[l].weight_mask)
+        println(file)
     end
 end
 
@@ -263,7 +272,7 @@ Forward pass with pointwise estimator.
 """
 function forward(g::FactorGraph, x)
     @extract g: L layers
-   for l=2:L+1
+    for l=2:L+1
         x = forward(layers[l], x)
     end
     return x
@@ -285,8 +294,8 @@ end
 
 function bayesian_forward(layer::AbstractLayer, x̂, Δ)
     # WARNING Valid only for sign activations
-    m = weight_mean(layer)
-    σ = weight_var(layer)
+    m = weight_mean(layer) .* layer.weight_mask
+    σ = weight_var(layer) .* layer.weight_mask
 
     @tullio ω[k,a] := m[k,i] * x̂[i,a]
     V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
