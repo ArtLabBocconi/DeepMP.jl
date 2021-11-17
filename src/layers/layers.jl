@@ -22,6 +22,7 @@ freeze!(layer::AbstractLayer) = layer.isfrozen = true
 unfreeze!(layer::AbstractLayer) = layer.isfrozen = false
 
 isbottomlayer(layer::AbstractLayer) = layer.bottom_layer isa InputLayer
+istoplayer(layer::AbstractLayer) = layer.top_layer isa OutputLayer
 
 signB(x::T) where {T} = sign(x + 1f-10)
 

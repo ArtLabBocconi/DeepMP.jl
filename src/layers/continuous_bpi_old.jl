@@ -12,7 +12,9 @@ mutable struct CBPILayer <: AbstractLayer
     Δ
     m 
     σ 
+    Bup
     B 
+    Aup
     A 
     H
     Hext
@@ -39,7 +41,9 @@ function CBPILayer(K::Int, N::Int, M::Int, ϵinit;
     m = zeros(F, K, N)
     σ = zeros(F, K, N)
     
+    Bup = zeros(F, K, M)
     B = zeros(F, N, M)
+    Aup = zeros(F, N, M)
     A = zeros(F, N, M)
     
     H = zeros(F, K, N)
@@ -54,7 +58,7 @@ function CBPILayer(K::Int, N::Int, M::Int, ϵinit;
 
     return CBPILayer(-1, K, N, M, ϵinit,
             x̂, Δ, m, σ,
-            B, A, 
+            Bup, B, Aup, A, 
             H, Hext,
             Ω, Ωext,
             ω, V,
@@ -66,39 +70,67 @@ end
 function update!(layer::CBPILayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
-    @extract layer: B A H Hext ω  V  Ω  Ωext
+    @extract layer: Bup B Aup A H Hext ω  V  Ω  Ωext
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ l
     
     Δm = 0.
     rl = r[l]
+    chin = channel(:sign)
     chout = channel(:sign)
-    Btop = top_layer.B
-    Atop = top_layer.A
 
-    if mode == :forw || mode == :both        
+    if mode == :forw || mode == :both
+        if !isbottomlayer(layer)
+            # bottBup = bottom_layer.Bup
+            # @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
+            # Δ .= 1 .- x̂.^2
+            
+            Btot = bottom_layer.Bup .+ B
+            Atot = 0
+            # Atot = bottom_layer.Aup .+ A
+            x̂ .= ∂B_ϕout.(chin, Atot, Btot)
+            Δ .= ∂B²_ϕout.(chin, Atot, Btot)
+        end
+        
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
         V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
+        # @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
 
-        if !istoplayer(layer)
-            top_layer.x̂ .= ∂B_ϕout.(chout, Atop, Btop, ω, V)
-            top_layer.Δ .= ∂²B_ϕout.(chout, Atop, Btop, ω, V)
-        end
+        Bup .= Bout_ϕout.(chout, ω, V)
     end
 
     if mode == :back || mode == :both
-        @tullio g[k,a] := ∂ω_ϕout(chout, Atop[k,a], Btop[k,a], ω[k,a], V[k,a])  avx=false
-        @tullio gcav[k,i,a] := ∂ω_ϕout(chout, Atop[k,a], Btop[k,a], ω[k,a] - m[k,i] * x̂[i,a], V[k,a])  avx=false
-        @tullio Γ[k,a] := -∂²ω_ϕout(chout, Atop[k,a], Btop[k,a], ω[k,a], V[k,a])  avx=false
-   
+        Btop = top_layer.B 
+        @assert size(Btop) == (K, M)
+        # @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
+        # @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i] * x̂[i,a], V[k,a])  avx=false
+        
+        @tullio g[k,a] := ∂ω_ϕout(chout, 0, Btop[k,a], ω[k,a], V[k,a])  avx=false
+        @tullio gcav[k,i,a] := ∂ω_ϕout(chin, 0, Btop[k,a], ω[k,a] - m[k,i] * x̂[i,a], V[k,a])  avx=false
+        
+
+
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        # grad_g(B, ω, V) = ForwardDiff.derivative(ω -> compute_g(B, ω, V), ω)
+        # Γ = -grad_g.(Btop, ω, V)
+        @tullio Γ[k,a] := -∂²ω_ϕout(chout, 0, Btop[k,a], ω[k,a], V[k,a])  avx=false
+        # @show count(!isfinite, Γ)
         if !all(isfinite, Γ)
             # @warn mean((!isfinite).(Γ))
+            # Γa = Array(Γ)
+            # iinf = (!isfinite).(Γa)
+            # @show Γa[iinf] Btop[iinf] ω[iinf] V[iinf]
+            # Γb = grad_g.(Array{Float64}(Btop), Array{Float64}(ω), Array{Float64}(V))
+            # @show Γb[iinf] Array(Btop)[iinf] Array(ω)[iinf] Array(V)[iinf]
             Γ[(!isfinite).(Γ)] .= 0
         end
+        @assert all(isfinite, g)
+        @assert all(isfinite, gcav)
+        @assert all(isfinite, Γ)
         
         if !isbottomlayer(layer)
             @tullio B[i,a] = m[k,i] * gcav[k,i,a]
-            @tullio A[i,a] = (m[k,i]^2 + σ[k,i]) * Γ[k,a] - σ[k,i] * g[k,a]^2
+            #TODO add A
         end
 
         if !isfrozen(layer)

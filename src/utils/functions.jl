@@ -59,6 +59,7 @@ function GHt(m, x::T) where T
     return r
 end
 
+# V here is √V in the paper
 compute_g(B, ω, V) = GH2(B, -ω / V) / V
 
 function GH2(uσ, x)
