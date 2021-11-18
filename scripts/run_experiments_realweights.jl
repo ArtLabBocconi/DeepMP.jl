@@ -4,10 +4,10 @@ multicl = [false]
 datasets = [:mnist]
 lays = [:cbpi]
 seeds = [2]
-gpu_id = 1
+gpu_id = 0
 density = 1
 usecuda = false
-M = 60000
+M = 1000
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
     ρ = [1.0, 1.0, 0.9]

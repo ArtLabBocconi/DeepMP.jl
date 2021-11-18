@@ -23,26 +23,30 @@ CUDA.allowscalar(false)
 # using PyPlot
 
 const F = Float64
-const CVec = Vector{Complex{F}}
-const IVec = Vector{Int}
-const Vec = Vector{F}
-const VecVec = Vector{Vec}
-const IVecVec = Vector{IVec}
-const VecVecVec = Vector{VecVec}
-const IVecVecVec = Vector{IVecVec}
 
 include("cuda.jl")
+
 include("utils/utils.jl")
 include("utils/functions.jl")
 include("utils/dataloader.jl")
-include("utils/Magnetizations.jl"); using .Magnetizations
+
 include("channels/channels.jl")
 include("channels/sign.jl")
 include("channels/relu.jl")
 
 include("layers/layers.jl")
+include("layers/input.jl")
+include("layers/output.jl")
+include("layers/bp.jl")
+include("layers/tap.jl")
+include("layers/bpi.jl")
+include("layers/continuous_bpi.jl")
+include("layers/mf.jl")
+include("layers/argmax.jl")
+
 include("factor_graph.jl")
 include("reinforcement.jl")
+
 
 function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
                                     altsolv=false, 

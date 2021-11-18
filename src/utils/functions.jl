@@ -5,30 +5,8 @@
 G(x::T) where T = exp(-(x^2) / 2) / √(T(2)*π)
 H(x::T) where T = erfc(x / √T(2)) / 2
 
-∞atanh = 25.0
-
-function myatanh(x)
-    y = atanh(x)
-    return isfinite(y) ? y : sign(x)*∞atanh
-end
-
-myatanh(p,m) = _myatanh(p/(p+m), m/(p+m))
-
-function _myatanh(p::T, m::T) where T
-    # @assert p >= 0 "p >= 0 p=$p"
-    # @assert m >= 0
-    p == 0 && return -T(∞atanh)
-    m == 0 && return T(∞atanh)
-    if m < 1f-10
-        y = (log(T(2)) - log(2m)) / 2
-    elseif p < 1f-10
-        y = -(log(T(2)) - log(2p)) / 2
-    else
-        y = atanh(p-m)
-    end
-    @assert isfinite(y) "y=$y p=$p m=$m"
-    return y
-end
+logH(x::T) where T = logerfc(x/√T(2)) - log(2)
+logG(x::T) where T = -x^2/2 - log(T(2)*π)/2
 
 function logcosh(x::T) where T
     ax = abs(x)
@@ -68,14 +46,4 @@ function GH2(uσ, x)
     return sign(m) * GHt(abs(m), s*x)
     # return m > 0 ? GHt(m, x) : - GHt(-m, -x) 
     # return GHt(tanh(uσ), x)
-end
-
-# TODO approx
-function DH(σu, x, y, C)
-    p = (1+tanh(σu)) /2
-    Hpp = H(-(x+y)/C)
-    Hpm = H(-(x-y)/C)
-    Hmp = 1 - Hpp
-    Hmm = 1 - Hpm
-    (p*(Hpp - Hpm) + (1-p)*(Hmp - Hmm)) / (p*(Hpp + Hpm) + (1-p)*(Hmp + Hmm))
 end

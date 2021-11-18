@@ -1,10 +1,10 @@
 ##### CHANNELS  ##################
 abstract type AbstractChannel end
 
-∂ω_ϕout(y, ω, V, chout::AbstractChannel) = deriv(ω->ϕout(y, ω, V, chout),ω)
-∂²ω_ϕout(y, ω, V, chout::AbstractChannel) = deriv(ω->∂ω_ϕout(y, ω, V, chout),ω)
-∂B_ϕin(B, A, chin::AbstractChannel) = deriv(B->ϕin(B, A, chin), B)
-∂²B_ϕin(B, A, chin::AbstractChannel) = deriv(B->∂B_ϕin(B, A, chin), B)
+∂ω_ϕout(ch::AbstractChannel, y, ω, V) = deriv(ω->ϕout(ch, y, ω, V), ω)
+∂²ω_ϕout(ch::AbstractChannel, y, ω, V, chout::AbstractChannel) = deriv(ω->∂ω_ϕout(ch, y, ω, V), ω)
+∂B_ϕin(ch::AbstractChannel, B, A, chin::AbstractChannel) = deriv(B->ϕin(ch, B, A), B)
+∂²B_ϕin(ch::AbstractChannel, B, A, chin::AbstractChannel) = deriv(B->∂B_ϕin(ch, B, A), B)
 
 
 channel(ch::AbstractChannel) = ch

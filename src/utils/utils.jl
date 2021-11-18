@@ -1,3 +1,10 @@
+function softmax(x)
+    mx = maximum(x...)
+    x = x .- mx
+    ex = exp.(x)
+    ex ./ sum(ex)
+end
+
 function printvec(q::AbstractArray, head = "")
     print(head)
     if length(q) < 10

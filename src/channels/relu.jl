@@ -42,48 +42,26 @@ function ∂²ω_ϕout(ch::ActReLU, A, B, ω, V)
         ∂g = ((A^2*c*d+B)*E1/(√d*(1+A*d)^2)
         - EH2*(A^2*(d-c^2)+2A*B*c+A-B^2)/(1 + A*d)^2) / Z - g^2
     end
-    -∂g
+    ∂g
 end
 
-function ∂B_ϕout(ch::ActReLU, Atot, Btot)
-    Btot / Atot
-end
-
-function ∂B²_ϕout(ch::ActReLU, Atot, Btot)
-    1 / Atot
-end
-
-function Bout_ϕout(ch::ActReLU, ω, V)
+function ∂B_ϕout(ch::ActReLU, A, B, ω, V)
     c = ω
     d = V^2
-
-    E1, H1, EH2, Z = compute_relu_exps(0, 0, c, d)
-
-    H1 = @. H(c/√d)
-    E1 = @. exp(-c^2/(2d)) / √(2π)
-
-    a = @. (B^2*d+2*B*c-A*c^2)/(2*(1+A*d))
-    b = @. -(c+B*d)/√(d*(1+A*d))
-    # H2 = @. H(-(c+B*d)/√(d*(1+A*d)))
-    # E2 = @. exp(a) / √(1 + A*d)
-    # EH2 = E2 .* H2
-    EH2 = @. exp(a + logH(b)) / √(1 + A*d) 
-    Z = @. H1 + EH2
-    @assert all(isfinite.(H1))
-    @assert all(isfinite.(EH2))
-    @assert all(isfinite.(E1))
-    # @assert all(isfinite.(E2))
-    @assert all(isfinite.(Z))
+    E1, H1, EH2, Z = compute_relu_exps(A, B, c, d)
     
-    @. hnew = updh_relu(A, B, c, d, H1, E1, EH2)
-
-    Δĥ = mean(abs.(hnew .- ĥ))
-    ĥ = hnew
-
-    @. σ = updσ_relu(A, B, c, d, H1, E1, EH2, ĥ)
-    
+    compute_x̂_relu(A, B, c, d, H1, E1, EH2)
 end
 
+
+function ∂²B_ϕout(ch::ActReLU, A, B, ω, V)
+    c = ω
+    d = V^2
+    E1, H1, EH2, Z = compute_relu_exps(A, B, c, d)
+    
+    x̂ = compute_x̂_relu(A, B, c, d, H1, E1, EH2)
+    compute_σ_relu(A, B, c, d, H1, E1, EH2, x̂)
+end
 
 function compute_relu_exps(A, B, c, d)
     a =  (B^2*d+2*B*c-A*c^2)/(2*(1+A*d))
@@ -172,7 +150,7 @@ end
 # end
 
 
-function updh_relu(A, B, c, d, H1, E1, EH2)
+function compute_x̂_relu(A, B, c, d, H1, E1, EH2)
     if EH2 > 1e5*H1
         hnew = (B*d+c)/(1 + A*d)
     else
@@ -181,7 +159,7 @@ function updh_relu(A, B, c, d, H1, E1, EH2)
     end
     return hnew
 end
-function updσ_relu(A, B, c, d, H1, E1, EH2, ĥ)
+function compute_σ_relu(A, B, c, d, H1, E1, EH2, ĥ)
     if EH2 > 1e5*H1
         σ =  (d*((A+B^2)*d + 1) + 2B*c*d+c^2)/(1 + A*d)^2 - ĥ^2
     else
@@ -192,37 +170,37 @@ function updσ_relu(A, B, c, d, H1, E1, EH2, ĥ)
     return σ
 end
 
-function update_ĥσ!(ĥ, hnew, σ, A, B, c, d, act::ActReLU, updmask)
-    @assert all(isfinite.(A))
-    @assert all(isfinite.(B))
-    @assert all(isfinite.(c))
-    @assert all(isfinite.(d))
+# function update_ĥσ!(ĥ, hnew, σ, A, B, c, d, act::ActReLU, updmask)
+#     @assert all(isfinite.(A))
+#     @assert all(isfinite.(B))
+#     @assert all(isfinite.(c))
+#     @assert all(isfinite.(d))
 
-    H1 = @. H(c/√d)
-    E1 = @. exp(-c^2/(2d)) / √(2π)
+#     H1 = @. H(c/√d)
+#     E1 = @. exp(-c^2/(2d)) / √(2π)
 
-    a = @. (B^2*d+2*B*c-A*c^2)/(2*(1+A*d))
-    b = @. -(c+B*d)/√(d*(1+A*d))
-    # H2 = @. H(-(c+B*d)/√(d*(1+A*d)))
-    # E2 = @. exp(a) / √(1 + A*d)
-    # EH2 = E2 .* H2
-    EH2 = @. exp(a + logH(b)) / √(1 + A*d) 
-    Z = @. H1 + EH2
-    @assert all(isfinite.(H1))
-    @assert all(isfinite.(EH2))
-    @assert all(isfinite.(E1))
-    # @assert all(isfinite.(E2))
-    @assert all(isfinite.(Z))
+#     a = @. (B^2*d+2*B*c-A*c^2)/(2*(1+A*d))
+#     b = @. -(c+B*d)/√(d*(1+A*d))
+#     # H2 = @. H(-(c+B*d)/√(d*(1+A*d)))
+#     # E2 = @. exp(a) / √(1 + A*d)
+#     # EH2 = E2 .* H2
+#     EH2 = @. exp(a + logH(b)) / √(1 + A*d) 
+#     Z = @. H1 + EH2
+#     @assert all(isfinite.(H1))
+#     @assert all(isfinite.(EH2))
+#     @assert all(isfinite.(E1))
+#     # @assert all(isfinite.(E2))
+#     @assert all(isfinite.(Z))
     
-    @. hnew = updh_relu(A, B, c, d, H1, E1, EH2)
+#     @. hnew = updh_relu(A, B, c, d, H1, E1, EH2)
 
-    Δĥ = mean(abs.(hnew .- ĥ))
-    @. ĥ = hnew
+#     Δĥ = mean(abs.(hnew .- ĥ))
+#     @. ĥ = hnew
 
-    @. σ = updσ_relu(A, B, c, d, H1, E1, EH2, ĥ)
+#     @. σ = updσ_relu(A, B, c, d, H1, E1, EH2, ĥ)
 
-    @assert all(isfinite.(ĥ))
-    @assert all(isfinite.(σ))
+#     @assert all(isfinite.(ĥ))
+#     @assert all(isfinite.(σ))
 
-    return Δĥ
-end
+#     return Δĥ
+# end

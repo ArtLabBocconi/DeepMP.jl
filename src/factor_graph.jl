@@ -16,20 +16,19 @@ mutable struct FactorGraph
         N, M = size(x)
         @assert length(y) == M
 
-        L = length(K)-1
+        L = length(K) - 1
         density = process_density(density, L)
         numW = length(K)==2 ? K[1]*K[2]*density[1]  :
                         sum(l->density[l] * K[l]*K[l+1], 1:length(K)-2)
         numW = round(Int, numW)
-        @assert K[1]==N
+        @assert K[1] == N
         verbose > 0 && println("# N=$N M=$M α=$(M/numW) device=$device")
 
         x, y = x |> device, y |> device
 
         layers = Vector{AbstractLayer}()
         push!(layers, InputLayer(x))
-        # verbose > 0 &&  println("Created InputLayer")
-
+        
         for l=1:L
             if  layertype[l] == :mf
                 push!(layers, MeanFieldLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
@@ -40,38 +39,26 @@ mutable struct FactorGraph
             elseif  layertype[l] == :tap
                 push!(layers, TapLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created TapLayer\t $(K[l])")
-            elseif  layertype[l] == :tapex
-                push!(layers, TapExactLayer(K[l+1], K[l], M))
-                verbose > 0 && println("Created TapExactLayer\t $(K[l])")
             elseif  layertype[l] == :bp
                 push!(layers, BPLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
-            elseif  layertype[l] == :bpacc
-                push!(layers, BPAccurateLayer(K[l+1], K[l], M, density=density[l]))
-                verbose > 0 && println("Created BPAccurateLayer\t $(K[l])")
-            elseif  layertype[l] == :bpex
-                push!(layers, BPExactLayer(K[l+1], K[l], M, density=density[l]))
-                verbose > 0 && println("Created BPExactLayer\t $(K[l])")
             elseif  layertype[l] == :bpi
                 push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
                         density=density[l], type=layertype[l]))
                 verbose > 0 && println("Created BPILayer\t $(K[l])")
             elseif  layertype[l] == :cbpi
-                push!(layers, CBPILayer(K[l+1], K[l], M, ϵinit, 
-                        density=density[l], type=layertype[l]))
+                act = l == L ? :sign : :relu
+                # act = :sign
+                push!(layers, CBPILayer(K[l+1], K[l], M, ϵinit; 
+                        density=density[l], act))
                 verbose > 0 && println("Created CBPILayer\t $(K[l])")
-            elseif  layertype[l] == :bpreal
-                @assert l == 1
-                push!(layers, BPRealLayer(K[l+1], K[l], M))
-                verbose > 0 && println("Created BPRealLayer\t $(K[l])")
             else
                 error("Wrong Layer Symbol")
             end
         end
 
         push!(layers, OutputLayer(y, β=β))
-        # verbose > 0 && println("Created OutputLayer")
-
+        
         layers = device.(layers)
         for l=1:L+1
             chain!(layers[l], layers[l+1])
