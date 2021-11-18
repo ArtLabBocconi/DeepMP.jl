@@ -206,8 +206,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        resfile = "results/res_dataset$(dataset)_"
-        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+        resfile = "resultsreb/res_dataset$(dataset)_"
+        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers[1])_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
         seed ≠ -1 && (resfile *= "_seed$(seed)")
