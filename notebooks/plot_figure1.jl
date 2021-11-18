@@ -15,15 +15,20 @@ Nin = dataset ≠ :cifar10 ? 784 : 3072
 Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], [0, 1024, 1024, 1024, 1024, 1024, 0]]
 ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
 ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
+
+figure_index = 4
+
 lrsgd = 0.001
 density = 1.0
 
 # for different file names
 lays = [:bpi, :tap, :mf]
+lay_to_skip = [:tap, :mf]
 
 multiclass = true
 plot_sgd, plot_bp, plot_bayes = true, true, true
 plot_overlaps = false
+plot_adam = false
 
 if multiclass
     seed_bp = [2, 7, 11]
@@ -32,7 +37,6 @@ if multiclass
     maxiters = 1
     ϵinits = [1.0, 1.0, 1.0]
 
-    figure_index = 1
     K = Ks[figure_index]
     K[1] = Nin
     K[end] = 10
@@ -77,9 +81,9 @@ else
 end
 
 if plot_bp 
-    for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, ρs, ψs, ϵinits))
+    for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, [ρs[figure_index] for _=1:length(lays)], [ψs[figure_index] for _=1:length(lays)], ϵinits))
         
-        #lay in [:tap, :mf] && continue
+        lay in lay_to_skip && continue
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
@@ -117,8 +121,8 @@ if plot_bp
                 push!(qablay3, dati[:, 9])
 
                 if plot_bayes
-                    push!(train_bayes, dati[:, 11])
-                    push!(test_bayes, dati[:, 12])
+                    push!(train_bayes, dati[:, end-1])
+                    push!(test_bayes, dati[:, end])
                 end
 
             else
@@ -266,6 +270,56 @@ if plot_sgd
     println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
 
 end
+
+if plot_adam
+    epoche, train_sgd, test_sgd = [], [], []
+    for seedgd in seed_sgd
+        file = "../../representations/knet/scripts/resultsreb/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
+        (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
+        file *= "_lr$(lrsgd)_bs$(batchsize)"
+        seedgd ≠ 2 && (file *= "_seed$(seedgd)")
+        file *= ".dat"
+        @show file
+        
+        if isfile(file)
+            dati_sgd = readdlm(file)
+            push!(epoche, dati_sgd[:, 1])
+            push!(train_sgd, dati_sgd[:, 2])
+            push!(test_sgd, dati_sgd[:, 3])
+        else
+            println("* NOT FOUND: $file")
+        end
+    end
+
+    μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
+    μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
+
+    #μ_test .+= 0.3
+
+    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
+
+    if plot_overlaps
+        lbl_train = "binaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "binaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
+    else
+        lbl_train = "binaryNet train, lr=$lrsgd"
+        lbl_test = "binaryNet test, lr=$lrsgd"
+    end
+
+    lbl_train = "BinaryNet train"
+    lbl_test = "BinaryNet test"
+
+    ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
+    ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
+
+    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd], alpha=0.3)
+    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd], alpha=0.3)
+
+    println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
+
+end
+
 
 if dataset == :mnist
     if multiclass
