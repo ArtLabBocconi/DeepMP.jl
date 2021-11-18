@@ -40,6 +40,7 @@ include("factor_graph.jl")
 include("reinforcement.jl")
 
 function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
+                                    batchsize=1, saveres=false, fres=nothing,
                                     altsolv=false, 
                                     altconv=false, 
                                     plotinfo=0,
@@ -72,7 +73,19 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             @printf("\t  EtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
         end
 
-        plotinfo > 0 && plot_info(g, 0; verbose)
+        if plotinfo > 0 || (batchsize == -1 && saveres && !isnothing(fres))
+            q0s, qWαβs = plot_info(g, 0; verbose)
+        end
+
+        if batchsize == -1 && saveres && !isnothing(fres)
+            outf = @sprintf("%d %g %g", it, E, Etest)
+            for (q0, qWαβ) in zip(q0s, qWαβs)
+                outf *= @sprintf(" %g %g", mean(q0), mean(qWαβ))
+            end
+            outf *= @sprintf(" %g", t.time)
+            outf *= @sprintf(" %g %g", Etrain_bayes, Etest_bayes)
+            println(fres, outf); flush(fres)
+        end
 
         update_reinforcement!(reinfpar)
 
@@ -206,6 +219,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
+
         resfile = "resultsreb/res_dataset$(dataset)_"
         resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers[1])_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
@@ -213,17 +227,26 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         seed ≠ -1 && (resfile *= "_seed$(seed)")
         resfile *= ".dat"
         fres = open(resfile, "w")
+
+        #resfile = "resultsreb/res_dataset$(dataset)_"
+        #resfile *= "Ks$(length(K)-2)x$(K[2])_bs$(batchsize)_layers$(layers[1])_rho$(ρ[1])_r$(r[1])_damp$(ψ[1])"
+        #resfile *= "_density$(density[1])"
+        #resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
+        #seed ≠ -1 && (resfile *= "_seed$(seed)")
+        #resfile *= ".dat"
+        #fres = open(resfile, "w")
+
     end
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
 
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
-        Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
+        Etrain_bayes = bayesian_error(g, xtrain, ytrain) * 100
         num_batches = length(dtrain)
         Etest = 100.0
         if ytest !== nothing
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
-            Etest_bayes = bayesian_error(g, xtest, ytest) *100
+            Etest_bayes = bayesian_error(g, xtest, ytest) * 100
         end
         
         verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
@@ -246,10 +269,10 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         return Etrain
     end
 
-
     if batchsize <= 0
         ## FULL BATCH message passing
-        it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
+        it, e, δ = converge!(g; maxiters, 
+                            batchsize, saveres, fres, ϵ, reinfpar,
                             altsolv, altconv, plotinfo=1,
                             teacher, verbose,
                             xtest, ytest)
@@ -286,7 +309,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         conf_file = "results/conf$(resfile[12:end-4]).jld2"
         @show conf_file
         #save(conf_file, Dict("weights" => getW(g)))
-        write_weight_mask(g)
+        if !all(x->x==1.0, density)
+            write_weight_mask(g)
+        end
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)

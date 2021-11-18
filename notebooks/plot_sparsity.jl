@@ -330,9 +330,9 @@ fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchs
 fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figures/figure_deepMP.png")
+fig.savefig("figures/figure_sparsity.png")
 multc = multiclass ? "multiclass" : "2class"
-fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
+#fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
 ovs = plot_overlaps ? ".ovs" : ""
 bay = plot_bayes ? ".bayes" : ""
 #fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)$(ovs)$(bay)_sparse.pdf")

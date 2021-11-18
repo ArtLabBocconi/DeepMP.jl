@@ -88,8 +88,7 @@ function process_density(density, L)
     end
     @assert length(density) == L
     if density[L] < 1.0
-        #density[L] = 1.0
-        #@warn "Setting density[$L] = 1.0"
+        density[L] = 1.0; @warn "Setting density[$L] = 1.0"
     end
     return density
 end

@@ -16,7 +16,7 @@ Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], 
 ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
 ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
 
-figure_index = 1
+figure_index = 3
 
 lrsgd = 0.001
 density = 1.0
@@ -24,9 +24,10 @@ density = 1.0
 # for different file names
 lays = [:bpi, :tap, :mf]
 lay_to_skip = [:tap, :mf]
+lay_to_skip = []
 
 multiclass = true
-plot_sgd, plot_bp, plot_bayes = true, true, true
+plot_sgd, plot_bp, plot_bayes = true, true, false
 plot_overlaps = false
 plot_adam = false
 
@@ -388,9 +389,9 @@ fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchs
 fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figures/figure_deepMP.png")
+fig.savefig("figures/figure_1.png")
 multc = multiclass ? "multiclass" : "2class"
-fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
+#fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
 ovs = plot_overlaps ? ".ovs" : ""
 bay = plot_bayes ? ".bayes" : ""
 #fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)$(ovs)$(bay)_sparse.pdf")
