@@ -1,7 +1,8 @@
 multicl = [false, true]
 datasets = [:mnist, :fashion, :cifar10]
-lays = [:bpi]: gpu_id = 0
-#lays = [:tap, :mf]; gpu_id = 1
+#lays = [:bpi]: gpu_id = 0
+#lays = [:tap, :mf]; gpu_id = 0
+lays = [:bpi, :tap, :mf]; gpu_id = 0
 seeds = [2, 7, 11]
 
 K = [0, 1024, 1024, 1024, 0]
