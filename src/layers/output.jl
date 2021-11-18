@@ -1,20 +1,24 @@
 mutable struct OutputLayer{T,S,W} <: AbstractLayer
     l::Int
     y::T
+    A::S
     B::S
     β::W
+    bottom_layer::AbstractLayer
 end
 
 function OutputLayer(y::AbstractVector; β=Inf)
     @assert β >= 0.
     B = β .* reshape(y, 1, :)
-    return OutputLayer(-1, y, B, β)
+    A = fill!(similar(B), Inf)
+    return OutputLayer(-1, y, A, B, β, DummyLayer())
 end
 
 @functor OutputLayer
 
 function set_output!(lay::OutputLayer, y)
     lay.B .= lay.β .* reshape(y, 1, :)
+    lay.A = fill!(lay.A, Inf)
     lay.y = y
 end
 
