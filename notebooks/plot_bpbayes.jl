@@ -125,7 +125,7 @@ if plot_overlaps
     ax6 = fig.add_subplot(py"$(gs)[2, 2]")
     ax7 = fig.add_subplot(py"$(gs)[2, 3]")
 else
-    fig = plt.figure(constrained_layout=true, figsize=(6.4,4.8))
+    fig = plt.figure(constrained_layout=true, figsize=(6.4*1.3,4.8))
     gs = fig.add_gridspec(1, 1)
     ax1 = fig.add_subplot(py"$(gs)[:]")
 end
@@ -498,45 +498,48 @@ end
 
 
 if plot_ebp
-    file = "../scripts/results_ebp/oemnist_norm_101_101_b10_ep100.dat"
-    @show file
 
-    if isfile(file)
-        dati_sgd = readdlm(file)
-        epoche = dati_sgd[:, 1]
-        μ_train = dati_sgd[:, 2] .* 100
-        μ_test = dati_sgd[:, 3] .* 100
-        μ_train_bayes = dati_sgd[:, 4] .* 100
-        μ_test_bayes = dati_sgd[:, 5] .* 100
-        σ_train = dati_sgd[:, 6] .* 100
-        σ_test = dati_sgd[:, 7] .* 100
-        σ_train_bayes = dati_sgd[:, 8] .* 100
-        σ_test_bayes = dati_sgd[:, 9] .* 100
-    else
-        println("* NOT FOUND: $file")
+    ebp_names = ["", "_cont"]
+    lbls = ["bin", "cont"]
+
+    for (i,ebp_name) in enumerate(ebp_names)
+        file = "../scripts/results_ebp/oemnist$(ebp_name)_norm_101_101_b10_ep100.dat"
+        @show file
+
+        if isfile(file)
+            dati_sgd = readdlm(file)
+            epoche = dati_sgd[:, 1]
+            μ_train = dati_sgd[:, 2] .* 100
+            μ_test = dati_sgd[:, 3] .* 100
+            μ_train_bayes = dati_sgd[:, 4] .* 100
+            μ_test_bayes = dati_sgd[:, 5] .* 100
+            σ_train = dati_sgd[:, 6] .* 100
+            σ_test = dati_sgd[:, 7] .* 100
+            σ_train_bayes = dati_sgd[:, 8] .* 100
+            σ_test_bayes = dati_sgd[:, 9] .* 100
+        else
+            println("* NOT FOUND: $file")
+        end
+
+        #train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+        #test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
+
+        lbl_train = "EBP train $(lbls[i])"
+        lbl_test = "EBP test $(lbls[i])"
+        ax1.plot(epoche, μ_train, ls="-", c="tab:gray", label=lbl_train, alpha=1.0)
+        ax1.plot(epoche, μ_test, ls="--", c="tab:gray", label=lbl_test, alpha=1.0)
+        ax1.fill_between(epoche, μ_train+σ_train, μ_train-σ_train, color="tab:gray", alpha=0.3)
+        ax1.fill_between(epoche, μ_test+σ_test, μ_test-σ_test, color="tab:gray", alpha=0.3)
+
+        lbl_train = "bayesEBP train $(lbls[i])"
+        lbl_test = "bayesEBP test $(lbls[i])"
+        ax1.plot(epoche,μ_train_bayes, ls="-", c="tab:brown", label=lbl_train, alpha=1.0)
+        ax1.plot(epoche,μ_test_bayes, ls="--", c="tab:brown", label=lbl_test, alpha=1.0)
+        ax1.fill_between(epoche,μ_train_bayes+σ_train_bayes,μ_train_bayes-σ_train_bayes, color="tab:brown", alpha=0.3)
+        ax1.fill_between(epoche, μ_test_bayes+σ_test_bayes, μ_test_bayes-σ_test_bayes, color="tab:brown", alpha=0.3)
+
+        println("EBP $(lbls[i]): train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
     end
-
-    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
-    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
-
-    lbl_train = "EBP train"
-    lbl_test = "EBP test"
-
-    ax1.plot(epoche, μ_train, ls="-", c="tab:gray", label=lbl_train, alpha=1.0)
-    ax1.plot(epoche, μ_test, ls="--", c="tab:gray", label=lbl_test, alpha=1.0)
-    ax1.fill_between(epoche, μ_train+σ_train, μ_train-σ_train, color="tab:gray", alpha=0.3)
-    ax1.fill_between(epoche, μ_test+σ_test, μ_test-σ_test, color="tab:gray", alpha=0.3)
-
-    lbl_train = "bayesEBP train"
-    lbl_test = "bayesEBP test"
-
-    ax1.plot(epoche,μ_train_bayes, ls="-", c="tab:brown", label=lbl_train, alpha=1.0)
-    ax1.plot(epoche,μ_test_bayes, ls="--", c="tab:brown", label=lbl_test, alpha=1.0)
-    ax1.fill_between(epoche,μ_train_bayes+σ_train_bayes,μ_train_bayes-σ_train_bayes, color="tab:brown", alpha=0.3)
-    ax1.fill_between(epoche, μ_test_bayes+σ_test_bayes, μ_test_bayes-σ_test_bayes, color="tab:brown", alpha=0.3)
-
-    println("EBP: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
-
 end
 
 if plot_continuous_bp
@@ -707,14 +710,7 @@ end
 ax1.set_xlabel("epochs", fontsize=18)
 ax1.set_ylabel("error (%)", fontsize=18)
 ax1.tick_params(labelsize=14)
-ax1.legend(loc="upper right", frameon=false, fontsize=12, ncol=2)
-
-
-if online
-    ax1.set_ylim(1, 10)
-    ax1.set_xscale("log")
-    #ax1.set_yscale("log")
-end
+ax1.legend(loc=(1,-0.02), frameon=false, fontsize=11, ncol=1)
 
 if plot_overlaps
     ax2.set_ylabel("q0", fontsize=10)

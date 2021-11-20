@@ -1,5 +1,5 @@
 mutable struct FactorGraph
-    K::Vector{Int} # dimension of hidden layers
+    K::Vector{Int}  # dimension of hidden layers
     M::Int          # number of training examples
     L::Int          # Number of hidden layers. L=length(layers)-2
     layers::Vector{AbstractLayer}  # First and Last Layers are input and output layers
@@ -88,7 +88,7 @@ function process_density(density, L)
     end
     @assert length(density) == L
     if density[L] < 1.0
-        density[L] = 1.0; @warn "Setting density[$L] = 1.0"
+        #density[L] = 1.0; @warn "Setting density[$L] = 1.0"
     end
     return density
 end
@@ -127,9 +127,9 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
 end
 
 function write_weight_mask(g::FactorGraph)
-    @extract g: density
+    @extract g: K density
     for l=2:g.L+1
-        file = "results/mask_density$(density)_layer$(l-1).dat"
+        file = "results/mask_K$(K[2])_density$(density)_layer$(l-1).dat"
         writedlm(file, g.layers[l].weight_mask)
         println(file)
     end

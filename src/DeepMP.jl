@@ -58,10 +58,10 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
         xtrain, ytrain = g.layers[1].x, g.layers[end].y
         E = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%s) Etrain=%.2f%% \t Δ=%f \n",
-                                it, reinfpar.r, E, Δ)
+        verbose >= 1 && @printf("it=%d \t (r=%s, ψ=%s) Etrain=%.2f%% \t Δ=%f \n",
+                                 it, reinfpar.r, reinfpar.ψ, E, Δ)
 
-        if verbose >= 2
+        if verbose >= 2 || (batchsize == -1 && saveres && !isnothing(fres))
             Etest = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
@@ -82,6 +82,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
             for (q0, qWαβ) in zip(q0s, qWαβs)
                 outf *= @sprintf(" %g %g", mean(q0), mean(qWαβ))
             end
+            outf *= @sprintf(" %g", Δ)
             outf *= @sprintf(" %g", t.time)
             outf *= @sprintf(" %g %g", Etrain_bayes, Etest_bayes)
             println(fres, outf); flush(fres)
