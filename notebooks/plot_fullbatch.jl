@@ -205,17 +205,17 @@ ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_tes
         if plot_overlaps
 
             ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY lay1", c=algo_color[lay])
             ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY lay1", c=algo_color[lay])
             ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY lay2", c=algo_color[lay])
             ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY lay2", c=algo_color[lay])
             ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY lay3", c=algo_color[lay])
             ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY lay3", c=algo_color[lay])
 
             ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
                         color=algo_color[lay], alpha=0.3)
@@ -270,11 +270,11 @@ if plot_sgd
     test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
     if plot_overlaps
-        lbl_train = "binaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
-        lbl_test = "binaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
+        lbl_train = "BinaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "BinaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
     else
-        lbl_train = "binaryNet train, lr=$lrsgd"
-        lbl_test = "binaryNet test, lr=$lrsgd"
+        lbl_train = "BinaryNet train, lr=$lrsgd"
+        lbl_test = "BinaryNet test, lr=$lrsgd"
     end
 
     lbl_train = "BinaryNet train"
