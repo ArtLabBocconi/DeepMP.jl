@@ -311,7 +311,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         @show conf_file
         #save(conf_file, Dict("weights" => getW(g)))
         if !all(x->x==1.0, density)
-            write_weight_mask(g)
+            for l=2:g.L+1
+                file = "results/mask_K$(K[2])_density$(density)_layer$(l-1)_seed$(seed).dat"
+                writedlm(file, g.layers[l].weight_mask)
+                println(file)
+            end
         end
     end
 

@@ -126,15 +126,6 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     end
 end
 
-function write_weight_mask(g::FactorGraph)
-    @extract g: K density
-    for l=2:g.L+1
-        file = "results/mask_K$(K[2])_density$(density)_layer$(l-1).dat"
-        writedlm(file, g.layers[l].weight_mask)
-        println(file)
-    end
-end
-
 function set_external_fields!(layer::AbstractLayer, h0; ρ=1., rbatch=0)
     if hasproperty(layer, :allhext)
         # for deprecated tap_exact and bp_exact layers
