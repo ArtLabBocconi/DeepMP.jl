@@ -10,13 +10,14 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 rd(x, n) = round(x, sigdigits=n)
 
 dataset = :fashion
+multiclass = true
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], [0, 1024, 1024, 1024, 1024, 1024, 0]]
-ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
-ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
+Ks = [[0, 1024, 1024, 1024, 0]]
+ρs = [[1.0, 1.0, 1.0, 0.9]]
+ψs = [[0.8, 0.8, 0.8, 0.8]]
 
-figure_index = 3
+figure_index = 1
 
 lrsgd = 0.001
 density = 1.0
@@ -26,37 +27,37 @@ lays = [:bpi, :tap, :mf]
 lay_to_skip = [:tap, :mf]
 lay_to_skip = []
 
-multiclass = true
 plot_sgd, plot_bp, plot_bayes = true, true, false
 plot_overlaps = true
 plot_adam = false
 
+K = Ks[figure_index]
+K[1] = Nin
+L = length(K)-1
+
 if multiclass
+    K[end] = 10
     seed_bp = [2, 7, 11]
     seed_sgd = [2, 7, 11]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1
     ϵinits = [1.0, 1.0, 1.0]
 
-    K = Ks[figure_index]
-    K[1] = Nin
-    K[end] = 10
-    L = length(K)-1
     r = [0.0 for _=1:L]
     ρ = ρs[figure_index]
     ψ = ψs[figure_index]
 
 else
-
+    K[end] = 1
     seed_bp = [2, 7, 11]
     seed_sgd = [2, 7, 11]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1   
-    r = [0.0 for _=1:length(K)-1]
+    r = [0.0 for _=1:L]
     ϵinits = [1.0, 1.0, 1.0]
 
-    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
-    ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
+    #ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    #ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
 
 end
 
@@ -107,7 +108,7 @@ if plot_bp
             seed ≠ -1 && (resfile *= "_seed$(seed)")
             resfile *= ".dat"
 
-            if isfile(resfile) && filesize(resfile) ≠ 0
+            if isfile(resfile) && filesize(resfile) ≠ 0 && countlines(resfile) > 50
                 @show resfile
                 dati = readdlm(resfile)
 
@@ -324,7 +325,7 @@ end
 
 if dataset == :mnist
     if multiclass
-        ax1.set_ylim(0, 50)
+        ax1.set_ylim(0, 5)
     else
         ax1.set_ylim(0, 5)
     end
@@ -389,7 +390,7 @@ fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchs
 #fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figures/figure_1.png")
+fig.savefig("figures/figure_table.png")
 multc = multiclass ? "multiclass" : "2class"
 #fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
 ovs = plot_overlaps ? ".ovs" : ""

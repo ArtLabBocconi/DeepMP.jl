@@ -33,15 +33,15 @@ if multiclass
     K[end] = 10
 
     seed_bp = [2, 7, 11]
-    seed_sgd = [2, 11]
+    seed_sgd = [2, 7, 11]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1
     ϵinits = [1.0, 1.0, 1.0]
     r = [0.0 for _=1:length(K)-1]
 
-    ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
     #ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0, 1.0, 0.9]]
-    ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.0], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99], [0.8, 0.8, 0.8]]
 
 else
 
@@ -51,6 +51,9 @@ else
     maxiters = 1
     r = [0.0 for _=1:length(K)-1]
     ϵinits = [1.0, 1.0, 1.0]
+
+    #ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    #ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
 
     ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
     ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
@@ -240,9 +243,9 @@ if plot_bp
             #             ls="-", color="tab:blue", label=lbl_train)
             #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest[i], final_σtest[i], 
             #             ls="-", color=algo_color[lay], label=lbl_test)
-            plt.plot(1.0 .- densities, 100.0 .- final_μtest[i], ls="-", 
+            plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest[i], ls="-", 
                         color=algo_color[lay], label=lbl_test)
-            plt.fill_between(1.0 .- densities, 100.0 .- final_μtest[i] .- final_σtest[i], 
+            plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest[i] .- final_σtest[i], 
                              100.0 .- final_μtest[i] .+ final_σtest[i],
                              color=algo_color[lay], alpha=0.3)
             if plot_bayes
@@ -250,9 +253,9 @@ if plot_bp
                 #             ls="-", color="tab:cyan", label="Bayes "*lbl_train)
                 #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest_bayes[i], final_σtest_bayes[i], 
                 #             ls="--", color=algo_color[lay], label="Bayes "*lbl_test)
-                plt.plot(1.0 .- densities, 100.0 .- final_μtest_bayes[i], 
-                            ls=":", color=algo_color[lay], label="Bayes "*lbl_test) 
-                plt.fill_between(1.0 .- densities, 100.0 .- final_μtest_bayes[i] .- final_σtest_bayes[i], 
+                plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest_bayes[i], 
+                            ls="--", color=algo_color[lay], label="Bayes "*lbl_test) 
+                plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest_bayes[i] .- final_σtest_bayes[i], 
                             100.0 .- final_μtest_bayes[i] .+ final_σtest_bayes[i],
                             color=algo_color[lay], alpha=0.3)
   
@@ -329,9 +332,9 @@ if plot_sgd
         #             color="black", label="BinaryNet train")
         #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest, final_σtest, ls="-", 
         #             color="black", label="BinaryNet")
-        plt.plot(1.0 .- densities, 100.0 .- final_μtest, ls="-", 
+        plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest, ls="-", 
                      color="black", label="BinaryNet")
-        plt.fill_between(1.0 .- densities, 100.0 .- final_μtest .- final_σtest, 
+        plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest .- final_σtest, 
                      100.0 .- final_μtest .+ final_σtest,
                      color="black", alpha=0.3)
 
@@ -364,9 +367,11 @@ if !plot_varying_density
     ax1.set_ylabel("error (%)", fontsize=18)
     ax1.legend(loc="upper right", frameon=false, fontsize=14, ncol=2)
 else
-    ax1.set_xlabel("sparsity", fontsize=18)
-    ax1.set_ylabel("Accuracy (%)", fontsize=18)
+    ax1.set_xlabel("sparsity (%)", fontsize=18)
+    ax1.set_ylabel("test accuracy (%)", fontsize=18)
     ax1.legend(loc="lower left", frameon=false, fontsize=14, ncol=1)
+    ax1.set_xticks((1.0 .- [0:0.1:1.0...]).*100.0)
+    ax1.set_xlim(-2, 90)
 end
 ax1.tick_params(labelsize=14)
 
@@ -407,12 +412,13 @@ dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
 #fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
-fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(densities[1]*100)% bs=$batchsize, K=$(K[2:end-1]) iters=$maxiters", fontsize=14)
+#fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(densities[1]*100)% bs=$batchsize, K=$(K[2:end-1]) iters=$maxiters", fontsize=14)
 
-fig.tight_layout()
+#fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_sparsity_varyingdensity.png")
+fig.savefig("figures/figure_sparsity_varyingdensity.pdf")
 multc = multiclass ? "multiclass" : "2class"
 #fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
 ovs = plot_overlaps ? ".ovs" : ""

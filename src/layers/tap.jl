@@ -155,7 +155,7 @@ function update!(layer::TapLayer, reinfpar; mode=:both)
         x̂old .= x̂
         
         mnew = tanh.(H)
-        mnew = ψ[l] .* m .+ (1-ψ[l]) .* mnew .* weight_mask
+        mnew = (ψ[l] .* m .+ (1-ψ[l]) .* mnew) .* weight_mask
         Δm = mean(abs.(m .- mnew))
         m .= mnew
         σ .= (1 .- m.^2) .* weight_mask
