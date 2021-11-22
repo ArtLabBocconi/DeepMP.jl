@@ -2,7 +2,7 @@ multicl = [true]
 datasets = [:mnist]
 lays = [:tap for _ = 1:100]
 seeds = [2]
-gpu_id = 0
+gpu_id = 1
 densities = [0.1:0.1:1.0...]
 
 K = [0, 101, 101, 0]
