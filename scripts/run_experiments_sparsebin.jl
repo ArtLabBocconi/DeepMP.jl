@@ -1,13 +1,13 @@
 multicl = [true]
 datasets = [:mnist]
-lays = [:mf]
+lays = [:tap]
 seeds = [2]
-gpu_id = 0
+gpu_id = 1
 densities = [0.1:0.1:1.0...]
 
 K = [0, 101, 101, 0]
-ρ = [1.0+1e-4, 1.0+1e-4, 0.9]
-ψ = [0.8, 0.8, 0.8]
+ρ = [1.0, 1.0, 0.0]
+ψ = [0.8, 0.8, 0.999]
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, density in densities, seed in seeds
     #try

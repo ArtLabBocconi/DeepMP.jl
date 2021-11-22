@@ -9,13 +9,16 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
+BINARY_ALGOS = false
+
 dataset = :mnist
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
 #K = [Nin, 501, 501, 501, 1]
 L = length(K)-1
-lrsgd = 1.0
+#lrsgd = 1.0
+lrsgd = 0.001
 
 # for different file names
 lays = [:bp, :bpi, :tap, :mf]
@@ -29,12 +32,10 @@ multiclass = false
 plot_overlaps = false
 plot_train = false
 
-BINARY_ALGOS = false
-
 if BINARY_ALGOS
     plot_bp, plot_bayes = true, true
     pointwise = true
-    plot_sgd = false
+    plot_sgd = true
     plot_continuous_sgd = false
     plot_continuous_bp = false
     plot_ebp_bin = true
@@ -434,11 +435,12 @@ dset_sgd = dataset==:cifar10 ? :cifar : dataset
 if plot_sgd
     epoche, train_sgd, test_sgd = [], [], []
     for seedgd in seed_sgd
-        file = "../../representations/knet/scripts/results/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
+        file = "../../representations/knet/scripts/resultsreb/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
         (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
         file *= "_lr$(lrsgd)_bs$(batchsize)"
         seedgd ≠ 2 && (file *= "_seed$(seedgd)")
         file *= ".dat"
+        #file = "../../representations/knet/scripts/resultsreb/res_datasetmnist_classesAny[]_binwtrue_hidden[101, 101]_biasfalse_freezetopfalse_lr0.001_bs128.dat"
         @show file
 
         if isfile(file)
@@ -467,13 +469,14 @@ if plot_sgd
         lbl_test = "binaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "BinaryNet train"
-    lbl_test = "BinaryNet test"
+    lbl_train = "BinaryNet"
+    lbl_test = "BinaryNet"
 
     if plot_train
         ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
         ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color=algo_color[:sgd], alpha=0.3)
     end
+    #μ_test .+= 0.15
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
     ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color=algo_color[:sgd], alpha=0.3)
 
@@ -481,15 +484,16 @@ if plot_sgd
 
 end
 
-lrsgd = 0.1
+#lrsgd = 0.1
 if plot_continuous_sgd
     epoche, train_sgd, test_sgd = [], [], []
     for seedgd in seed_sgd
-        file = "../../representations/knet/scripts/results/res_dataset$(dset_sgd)_classes$(classes)_binwfalse_hidden$(Ksgd)_biasfalse_freezetopfalse"
+        file = "../../representations/knet/scripts/resultsreb/res_dataset$(dset_sgd)_classes$(classes)_binwfalse_hidden$(Ksgd)_biasfalse_freezetopfalse"
         (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
         file *= "_lr$(lrsgd)_bs$(batchsize)"
         seedgd ≠ 2 && (file *= "_seed$(seedgd)")
         file *= ".dat"
+        #file = "../../representations/knet/scripts/resultsreb/res_datasetmnist_classesAny[]_binwfalse_hidden[101, 101]_biasfalse_freezetopfalse_lr0.001_bs128.dat"
         @show file
 
         if isfile(file)
@@ -513,7 +517,7 @@ if plot_continuous_sgd
     lbl_train = "SGD"
     lbl_test = "SGD"
 
-    σ_train, σ_test = 0.1 .* rand(length(epoche[1])), 0.1 .* rand(length(epoche[1]))
+    #σ_train, σ_test = 0.1 .* rand(length(epoche[1])), 0.1 .* rand(length(epoche[1]))
 
     if plot_train
         ax1.plot(epoche[1], μ_train, ls="-", c="black", label=lbl_train, alpha=1.0)
@@ -525,7 +529,6 @@ if plot_continuous_sgd
     println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
 
 end
-
 
 if plot_ebp_bin || plot_ebp_cont
 
@@ -572,19 +575,19 @@ if plot_ebp_bin || plot_ebp_cont
             ax1.plot(epoche, μ_test, ls="--", c="tab:gray", label=lbl_test, alpha=1.0)
             ax1.fill_between(epoche, μ_test+σ_test, μ_test-σ_test, color="tab:gray", alpha=0.3)
         else
-            global ax_ebp = ax1.inset_axes([0.2, 0.75, 0.5, 0.25])
+            global ax_ebp = ax1.inset_axes([0.19, 0.75, 0.475, 0.25])
             ax_ebp.plot(epoche, μ_test, ls="--", c="tab:gray", label=lbl_test, alpha=1.0)
             ax_ebp.fill_between(epoche, μ_test+σ_test, μ_test-σ_test, color="tab:gray", alpha=0.3)    
         end
-        lbl_train = "bayesEBP train $(lbls[i])"
-        lbl_test = "bayesEBP test $(lbls[i])"
-        lbl_train = "bayesEBP"
-        lbl_test = "bayesEBP"
+        lbl_train = "bayes EBP train $(lbls[i])"
+        lbl_test = "bayes EBP test $(lbls[i])"
+        lbl_train = "bayes EBP"
+        lbl_test = "bayes EBP"
         if plot_train
             ax1.plot(epoche,μ_train_bayes, ls="-", c="tab:brown", label=lbl_train, alpha=1.0)
             ax1.fill_between(epoche,μ_train_bayes+σ_train_bayes,μ_train_bayes-σ_train_bayes, color="tab:brown", alpha=0.3)
         end
-        ax1.plot(epoche, μ_test_bayes, ls="--", c="tab:brown", label=lbl_test, alpha=1.0)
+        ax1.plot(epoche, μ_test_bayes, ls=":", lw=2, c="tab:brown", label=lbl_test, alpha=1.0)
         ax1.fill_between(epoche, μ_test_bayes+σ_test_bayes, μ_test_bayes-σ_test_bayes, color="tab:brown", alpha=0.3)
 
         println("EBP $(lbls[i]): train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
@@ -665,10 +668,10 @@ if plot_continuous_bp
         train_legend = "$(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3))"
         test_legend = "$(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))"
 
-        LAY = lay == :cbp ? "cBP" :
-              lay == :cbpi ? "cBPI" :
-              lay == :ctap ? "cAMP" :
-              lay == :cmf ? "cMF" : error("unknown layer type")
+        LAY = lay == :cbp ? "BP" :
+              lay == :cbpi ? "BP" :
+              lay == :ctap ? "AMP" :
+              lay == :cmf ? "MF" : error("unknown layer type")
 
         if plot_overlaps
             lbl_train = "$LAY train $pars, $train_legend"
@@ -745,6 +748,7 @@ if dataset == :mnist
     else
         ax1.set_ylim(0, 5)
         #ax1.set_ylim(0, 50)
+        ax1.set_xlim(-2, 100)
     end
 elseif dataset == :fashion
     if multiclass
@@ -774,6 +778,7 @@ if plot_ebp_bin
     ax_ebp.set_ylabel("test error (%)", fontsize=12)
     ax_ebp.tick_params(labelsize=10)    
     ax_ebp.legend(loc="upper right", frameon=false, fontsize=12, ncol=1)
+    ax_ebp.set_xlim(-2, 100)    
 end
 
 if plot_overlaps
@@ -818,6 +823,7 @@ ax1.set_title("$suptit", fontsize=18)
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
 fig.savefig("figures/figure_bpbayes_bin$(BINARY_ALGOS).png")
+fig.savefig("figures/figure_bpbayes_bin$(BINARY_ALGOS).pdf")
 multc = multiclass ? "multiclass" : "2class"
 #fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
 ovs = plot_overlaps ? ".ovs" : ""
