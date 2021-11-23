@@ -12,22 +12,25 @@ rd(x, n) = round(x, sigdigits=n)
 dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], [0, 1024, 1024, 1024, 1024, 1024, 0]]
-ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
-ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
+#Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], [0, 1024, 1024, 1024, 1024, 1024, 0]]
+#ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
+#ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
 
-figure_index = 3
+# for different file names
+lays = [:bpi]
+Ks = [[0, 501, 501, 501, 501, 0]]
+ρs = [[1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
+#ψs = [[0.9, 0.9, 0.9, 0.9, 0.9, 0.9]]
+ψs = [[0.1, 0.1, 0.1, 0.1, 0.9]]
+
+figure_index = 1
 
 lrsgd = 0.001
 density = 1.0
 
-# for different file names
-lays = [:bpi, :tap, :mf]
-lay_to_skip = [:tap, :mf]
-lay_to_skip = []
 
 multiclass = true
-plot_sgd, plot_bp, plot_bayes = true, true, false
+plot_sgd, plot_bp, plot_bayes = true, true, true
 plot_overlaps = true
 plot_adam = false
 
@@ -84,7 +87,7 @@ end
 if plot_bp 
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, [ρs[figure_index] for _=1:length(lays)], [ψs[figure_index] for _=1:length(lays)], ϵinits))
         
-        lay in lay_to_skip && continue
+        #lay in lay_to_skip && continue
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
@@ -118,8 +121,10 @@ if plot_bp
                 push!(qablay1, dati[:, 5])
                 push!(q0lay2, dati[:, 6])
                 push!(qablay2, dati[:, 7])
-                push!(q0lay3, dati[:, 8])
-                push!(qablay3, dati[:, 9])
+
+                # TODO: questo è l'ultimo layer
+                push!(q0lay3, dati[:, 12])
+                push!(qablay3, dati[:, 13])
 
                 if plot_bayes
                     push!(train_bayes, dati[:, end-1])
@@ -167,13 +172,13 @@ if plot_bp
         lbl_test = "$LAY test"
 
         if plot_bayes
-            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color="tab:red", alpha=1.0)
-            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color="tab:red", alpha=1.0)    
+            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color="tab:olive", alpha=0.75)
+            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color="tab:olive", alpha=0.75)    
         
             ax1.fill_between(epoche_bp[1], μ_train_bayes-σ_train_bayes, μ_train_bayes+σ_train_bayes,
-            color="tab:red", alpha=0.3, edgecolor=nothing)
+            color="tab:olive", alpha=0.3, edgecolor=nothing)
 ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_test_bayes,
-            color="tab:red", alpha=0.3, edgecolor=nothing)
+            color="tab:olive", alpha=0.3, edgecolor=nothing)
 
         end
         ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])

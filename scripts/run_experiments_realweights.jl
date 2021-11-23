@@ -3,10 +3,10 @@
 multicl = [false]
 datasets = [:mnist]
 lays = [:cbpi]
-seeds = [2, 7, 11]
-gpu_id = 1
+seeds = [2, 7, 11, 15, 19]
+gpu_id = 0
 density = 1.0
-usecuda = true
+usecuda = false
 
 K = [0, 101, 101, 0]
 ρ = [1.0, 1.0, 0.9]
