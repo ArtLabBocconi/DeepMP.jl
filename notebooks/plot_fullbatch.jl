@@ -379,6 +379,9 @@ if plot_overlaps
     ax7.set_ylabel("qab", fontsize=12)
     ax6.set_xlabel("iterations", fontsize=14)
     ax7.set_xlabel("iterations", fontsize=14)
+
+    ax2.set_ylim(0, 0.025)
+
 end
 
 #ax3.tick_params(labelsize=7)
