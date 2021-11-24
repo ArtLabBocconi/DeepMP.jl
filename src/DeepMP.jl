@@ -250,9 +250,9 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest_bayes = bayesian_error(g, xtest, ytest) * 100
         end
         
-        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s ψ=%s  t=%g (layers=%s, bs=%d)\n",
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
-                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
+                                Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, ψ, t.time, "$layers", batchsize)
             
         verbose >= 1 && @printf("\t\t\tEtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
 

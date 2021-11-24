@@ -42,8 +42,8 @@ if multiclass
     ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.0], [1.0+1e-4, 1.0+1e-4, 0.9]]
     ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99], [0.8, 0.8, 0.8]]
 
-    ρs = [[1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.0], [1.0+1e-4, 1.0+1e-4, 0.9]]
-    ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.999999], [0.8, 0.8, 0.8]]
+    #ρs = [[1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.0], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    #ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.999999], [0.8, 0.8, 0.8]]
 
 else
 
@@ -179,7 +179,7 @@ if plot_bp
             ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
                             color=algo_color[lay], alpha=0.3, edgecolor=nothing)
             if plot_bayes
-                ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color="tab:red", alpha=1.0)
+                ax1.plot(epoche_bp[1], μ_train_bayes, ls="--", lw=2, label="Bayes "*lbl_train, color="tab:red", alpha=1.0)
                 ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color="tab:red", alpha=1.0)    
             
                 ax1.fill_between(epoche_bp[1], μ_train_bayes-σ_train_bayes, μ_train_bayes+σ_train_bayes,
@@ -239,13 +239,13 @@ if plot_bp
                 lay == :mf ? "MF" : error("unknown layer type")
 
             global lbl_train = "$LAY"
-            global lbl_test = "$LAY"
+            global lbl_test = "$LAY test"
         
             #plt.errorbar(1.0 .- densities, 100.0 .- final_μtrain[i], final_σtrain[i], 
             #             ls="-", color="tab:blue", label=lbl_train)
             #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest[i], final_σtest[i], 
             #             ls="-", color=algo_color[lay], label=lbl_test)
-            plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest[i], ls="-", 
+            plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest[i], ls="--", lw=2, 
                         color=algo_color[lay], label=lbl_test)
             plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest[i] .- final_σtest[i], 
                              100.0 .- final_μtest[i] .+ final_σtest[i],
@@ -256,7 +256,7 @@ if plot_bp
                 #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest_bayes[i], final_σtest_bayes[i], 
                 #             ls="--", color=algo_color[lay], label="Bayes "*lbl_test)
                 plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest_bayes[i], 
-                            ls="--", color=algo_color[lay], label="Bayes "*lbl_test) 
+                            ls=":", lw=2, color=algo_color[lay], label="Bayes "*lbl_test) 
                 plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest_bayes[i] .- final_σtest_bayes[i], 
                             100.0 .- final_μtest_bayes[i] .+ final_σtest_bayes[i],
                             color=algo_color[lay], alpha=0.3)
@@ -334,8 +334,8 @@ if plot_sgd
         #             color="black", label="BinaryNet train")
         #plt.errorbar(1.0 .- densities, 100.0 .- final_μtest, final_σtest, ls="-", 
         #             color="black", label="BinaryNet")
-        plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest, ls="-", 
-                     color="black", label="BinaryNet")
+        plt.plot((1.0 .- densities).*100.0, 100.0 .- final_μtest, ls="--", lw=2, 
+                     color="black", label="BinaryNet test")
         plt.fill_between((1.0 .- densities).*100.0, 100.0 .- final_μtest .- final_σtest, 
                      100.0 .- final_μtest .+ final_σtest,
                      color="black", alpha=0.3)
