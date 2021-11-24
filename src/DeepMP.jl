@@ -309,7 +309,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         println("outfile: $resfile")
         conf_file = "results_ECE/conf$(resfile[12:end-4]).jld2"
         @show conf_file
-        save(conf_file, Dict("graph" => g))
+        save(conf_file, Dict("graph" => Array{F}(g.layers[2].m)))
         #save(conf_file, Dict("weights" => getW(g)))
         if !all(x->x==1.0, density)
             for l=2:g.L+1
