@@ -40,7 +40,7 @@ if BINARY_ALGOS
     plot_continuous_bp = false
     plot_ebp_bin = true
     plot_ebp_cont = false
-    suptit = "Binary Algorithms"
+    suptit = "Binary Weights"
 else
     plot_bp, plot_bayes = false, true
     pointwise = false
@@ -49,7 +49,7 @@ else
     plot_continuous_bp = true
     plot_ebp_bin = false
     plot_ebp_cont = true
-    suptit = "Continuous Algorithms"
+    suptit = "Continuous Weights"
 end
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
