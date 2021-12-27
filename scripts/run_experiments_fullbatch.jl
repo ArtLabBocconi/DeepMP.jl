@@ -1,16 +1,16 @@
-multicl = [true]
+multicl = [false]
 datasets = [:fashion]
 lays = [:tap]
 seeds = [2]
 
-maxiters = 10000
-ϵ = 1e-5
-
 K = [0, 501, 501, 0]
 ρ = [1.0, 1.0, 1.0]
-ψ = [0.999, 0.999, 0.999]
-r = [0.0, 0.0, 0.0]
-gpu_id = 1
+ψ = [0.99, 0.99, 0.99]
+r = [0.9, 0.9, 0.9]
+gpu_id = 2
+
+maxiters = 100
+ϵ = 1e-4
 
 for multiclass in multicl, dataset in datasets, lay_type in lays, seed in seeds
     #try
