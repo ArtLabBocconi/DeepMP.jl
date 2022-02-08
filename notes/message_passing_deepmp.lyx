@@ -1,0 +1,1462 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+%%%%% NEW MATH DEFINITIONS %%%%%
+
+\usepackage{amsmath,amsfonts,bm}
+
+% Mark sections of captions for referring to divisions of figures
+\newcommand{\figleft}{{\em (Left)}}
+\newcommand{\figcenter}{{\em (Center)}}
+\newcommand{\figright}{{\em (Right)}}
+\newcommand{\figtop}{{\em (Top)}}
+\newcommand{\figbottom}{{\em (Bottom)}}
+\newcommand{\captiona}{{\em (a)}}
+\newcommand{\captionb}{{\em (b)}}
+\newcommand{\captionc}{{\em (c)}}
+\newcommand{\captiond}{{\em (d)}}
+
+% Highlight a newly defined term
+\newcommand{\newterm}[1]{{\bf #1}}
+
+
+% Figure reference, lower-case.
+\def\figref#1{figure~\ref{#1}}
+% Figure reference, capital. For start of sentence
+\def\Figref#1{Figure~\ref{#1}}
+\def\twofigref#1#2{figures \ref{#1} and \ref{#2}}
+\def\quadfigref#1#2#3#4{figures \ref{#1}, \ref{#2}, \ref{#3} and \ref{#4}}
+% Section reference, lower-case.
+\def\secref#1{section~\ref{#1}}
+% Section reference, capital.
+\def\Secref#1{Section~\ref{#1}}
+% Reference to two sections.
+\def\twosecrefs#1#2{sections \ref{#1} and \ref{#2}}
+% Reference to three sections.
+\def\secrefs#1#2#3{sections \ref{#1}, \ref{#2} and \ref{#3}}
+% Reference to an equation, lower-case.
+\def\eqref#1{equation~\ref{#1}}
+% Reference to an equation, upper case
+\def\Eqref#1{Equation~\ref{#1}}
+% A raw reference to an equation---avoid using if possible
+\def\plaineqref#1{\ref{#1}}
+% Reference to a chapter, lower-case.
+\def\chapref#1{chapter~\ref{#1}}
+% Reference to an equation, upper case.
+\def\Chapref#1{Chapter~\ref{#1}}
+% Reference to a range of chapters
+\def\rangechapref#1#2{chapters\ref{#1}--\ref{#2}}
+% Reference to an algorithm, lower-case.
+\def\algref#1{algorithm~\ref{#1}}
+% Reference to an algorithm, upper case.
+\def\Algref#1{Algorithm~\ref{#1}}
+\def\twoalgref#1#2{algorithms \ref{#1} and \ref{#2}}
+\def\Twoalgref#1#2{Algorithms \ref{#1} and \ref{#2}}
+% Reference to a part, lower case
+\def\partref#1{part~\ref{#1}}
+% Reference to a part, upper case
+\def\Partref#1{Part~\ref{#1}}
+\def\twopartref#1#2{parts \ref{#1} and \ref{#2}}
+
+\def\ceil#1{\lceil #1 \rceil}
+\def\floor#1{\lfloor #1 \rfloor}
+\def\1{\bm{1}}
+\newcommand{\train}{\mathcal{D}}
+\newcommand{\valid}{\mathcal{D_{\mathrm{valid}}}}
+\newcommand{\test}{\mathcal{D_{\mathrm{test}}}}
+
+\def\eps{{\epsilon}}
+
+
+% Random variables
+\def\reta{{\textnormal{$\eta$}}}
+\def\ra{{\textnormal{a}}}
+\def\rb{{\textnormal{b}}}
+\def\rc{{\textnormal{c}}}
+\def\rd{{\textnormal{d}}}
+\def\re{{\textnormal{e}}}
+\def\rf{{\textnormal{f}}}
+\def\rg{{\textnormal{g}}}
+\def\rh{{\textnormal{h}}}
+\def\ri{{\textnormal{i}}}
+\def\rj{{\textnormal{j}}}
+\def\rk{{\textnormal{k}}}
+\def\rl{{\textnormal{l}}}
+% rm is already a command, just don't name any random variables m
+\def\rn{{\textnormal{n}}}
+\def\ro{{\textnormal{o}}}
+\def\rp{{\textnormal{p}}}
+\def\rq{{\textnormal{q}}}
+\def\rr{{\textnormal{r}}}
+\def\rs{{\textnormal{s}}}
+\def\rt{{\textnormal{t}}}
+\def\ru{{\textnormal{u}}}
+\def\rv{{\textnormal{v}}}
+\def\rw{{\textnormal{w}}}
+\def\rx{{\textnormal{x}}}
+\def\ry{{\textnormal{y}}}
+\def\rz{{\textnormal{z}}}
+
+% Random vectors
+\def\rvepsilon{{\mathbf{\epsilon}}}
+\def\rvtheta{{\mathbf{\theta}}}
+\def\rva{{\mathbf{a}}}
+\def\rvb{{\mathbf{b}}}
+\def\rvc{{\mathbf{c}}}
+\def\rvd{{\mathbf{d}}}
+\def\rve{{\mathbf{e}}}
+\def\rvf{{\mathbf{f}}}
+\def\rvg{{\mathbf{g}}}
+\def\rvh{{\mathbf{h}}}
+\def\rvu{{\mathbf{i}}}
+\def\rvj{{\mathbf{j}}}
+\def\rvk{{\mathbf{k}}}
+\def\rvl{{\mathbf{l}}}
+\def\rvm{{\mathbf{m}}}
+\def\rvn{{\mathbf{n}}}
+\def\rvo{{\mathbf{o}}}
+\def\rvp{{\mathbf{p}}}
+\def\rvq{{\mathbf{q}}}
+\def\rvr{{\mathbf{r}}}
+\def\rvs{{\mathbf{s}}}
+\def\rvt{{\mathbf{t}}}
+\def\rvu{{\mathbf{u}}}
+\def\rvv{{\mathbf{v}}}
+\def\rvw{{\mathbf{w}}}
+\def\rvx{{\mathbf{x}}}
+\def\rvy{{\mathbf{y}}}
+\def\rvz{{\mathbf{z}}}
+
+% Elements of random vectors
+\def\erva{{\textnormal{a}}}
+\def\ervb{{\textnormal{b}}}
+\def\ervc{{\textnormal{c}}}
+\def\ervd{{\textnormal{d}}}
+\def\erve{{\textnormal{e}}}
+\def\ervf{{\textnormal{f}}}
+\def\ervg{{\textnormal{g}}}
+\def\ervh{{\textnormal{h}}}
+\def\ervi{{\textnormal{i}}}
+\def\ervj{{\textnormal{j}}}
+\def\ervk{{\textnormal{k}}}
+\def\ervl{{\textnormal{l}}}
+\def\ervm{{\textnormal{m}}}
+\def\ervn{{\textnormal{n}}}
+\def\ervo{{\textnormal{o}}}
+\def\ervp{{\textnormal{p}}}
+\def\ervq{{\textnormal{q}}}
+\def\ervr{{\textnormal{r}}}
+\def\ervs{{\textnormal{s}}}
+\def\ervt{{\textnormal{t}}}
+\def\ervu{{\textnormal{u}}}
+\def\ervv{{\textnormal{v}}}
+\def\ervw{{\textnormal{w}}}
+\def\ervx{{\textnormal{x}}}
+\def\ervy{{\textnormal{y}}}
+\def\ervz{{\textnormal{z}}}
+
+% Random matrices
+\def\rmA{{\mathbf{A}}}
+\def\rmB{{\mathbf{B}}}
+\def\rmC{{\mathbf{C}}}
+\def\rmD{{\mathbf{D}}}
+\def\rmE{{\mathbf{E}}}
+\def\rmF{{\mathbf{F}}}
+\def\rmG{{\mathbf{G}}}
+\def\rmH{{\mathbf{H}}}
+\def\rmI{{\mathbf{I}}}
+\def\rmJ{{\mathbf{J}}}
+\def\rmK{{\mathbf{K}}}
+\def\rmL{{\mathbf{L}}}
+\def\rmM{{\mathbf{M}}}
+\def\rmN{{\mathbf{N}}}
+\def\rmO{{\mathbf{O}}}
+\def\rmP{{\mathbf{P}}}
+\def\rmQ{{\mathbf{Q}}}
+\def\rmR{{\mathbf{R}}}
+\def\rmS{{\mathbf{S}}}
+\def\rmT{{\mathbf{T}}}
+\def\rmU{{\mathbf{U}}}
+\def\rmV{{\mathbf{V}}}
+\def\rmW{{\mathbf{W}}}
+\def\rmX{{\mathbf{X}}}
+\def\rmY{{\mathbf{Y}}}
+\def\rmZ{{\mathbf{Z}}}
+
+% Elements of random matrices
+\def\ermA{{\textnormal{A}}}
+\def\ermB{{\textnormal{B}}}
+\def\ermC{{\textnormal{C}}}
+\def\ermD{{\textnormal{D}}}
+\def\ermE{{\textnormal{E}}}
+\def\ermF{{\textnormal{F}}}
+\def\ermG{{\textnormal{G}}}
+\def\ermH{{\textnormal{H}}}
+\def\ermI{{\textnormal{I}}}
+\def\ermJ{{\textnormal{J}}}
+\def\ermK{{\textnormal{K}}}
+\def\ermL{{\textnormal{L}}}
+\def\ermM{{\textnormal{M}}}
+\def\ermN{{\textnormal{N}}}
+\def\ermO{{\textnormal{O}}}
+\def\ermP{{\textnormal{P}}}
+\def\ermQ{{\textnormal{Q}}}
+\def\ermR{{\textnormal{R}}}
+\def\ermS{{\textnormal{S}}}
+\def\ermT{{\textnormal{T}}}
+\def\ermU{{\textnormal{U}}}
+\def\ermV{{\textnormal{V}}}
+\def\ermW{{\textnormal{W}}}
+\def\ermX{{\textnormal{X}}}
+\def\ermY{{\textnormal{Y}}}
+\def\ermZ{{\textnormal{Z}}}
+
+% Vectors
+\def\vzero{{\bm{0}}}
+\def\vone{{\bm{1}}}
+\def\vmu{{\bm{\mu}}}
+\def\vtheta{{\bm{\theta}}}
+\def\va{{\bm{a}}}
+\def\vb{{\bm{b}}}
+\def\vc{{\bm{c}}}
+\def\vd{{\bm{d}}}
+\def\ve{{\bm{e}}}
+\def\vf{{\bm{f}}}
+\def\vg{{\bm{g}}}
+\def\vh{{\bm{h}}}
+\def\vi{{\bm{i}}}
+\def\vj{{\bm{j}}}
+\def\vk{{\bm{k}}}
+\def\vl{{\bm{l}}}
+\def\vm{{\bm{m}}}
+\def\vn{{\bm{n}}}
+\def\vo{{\bm{o}}}
+\def\vp{{\bm{p}}}
+\def\vq{{\bm{q}}}
+\def\vr{{\bm{r}}}
+\def\vs{{\bm{s}}}
+\def\vt{{\bm{t}}}
+\def\vu{{\bm{u}}}
+\def\vv{{\bm{v}}}
+\def\vw{{\bm{w}}}
+\def\vx{{\bm{x}}}
+%\def\vtau{{\bm{\tau}}}
+\def\vy{{\bm{y}}}
+\def\vz{{\bm{z}}}
+
+% Elements of vectors
+\def\evalpha{{\alpha}}
+\def\evbeta{{\beta}}
+\def\evepsilon{{\epsilon}}
+\def\evlambda{{\lambda}}
+\def\evomega{{\omega}}
+\def\evmu{{\mu}}
+\def\evpsi{{\psi}}
+\def\evsigma{{\sigma}}
+\def\evtheta{{\theta}}
+\def\eva{{a}}
+\def\evb{{b}}
+\def\evc{{c}}
+\def\evd{{d}}
+\def\eve{{e}}
+\def\evf{{f}}
+\def\evg{{g}}
+\def\evh{{h}}
+\def\evi{{i}}
+\def\evj{{j}}
+\def\evk{{k}}
+\def\evl{{l}}
+\def\evm{{m}}
+\def\evn{{n}}
+\def\evo{{o}}
+\def\evp{{p}}
+\def\evq{{q}}
+\def\evr{{r}}
+\def\evs{{s}}
+\def\evt{{t}}
+\def\evu{{u}}
+\def\evv{{v}}
+\def\evw{{w}}
+\def\evx{{x}}
+\def\evy{{y}}
+\def\evz{{z}}
+
+% Matrix
+\def\mA{{\bm{A}}}
+\def\mB{{\bm{B}}}
+\def\mC{{\bm{C}}}
+\def\mD{{\bm{D}}}
+\def\mE{{\bm{E}}}
+\def\mF{{\bm{F}}}
+\def\mG{{\bm{G}}}
+\def\mH{{\bm{H}}}
+\def\mI{{\bm{I}}}
+\def\mJ{{\bm{J}}}
+\def\mK{{\bm{K}}}
+\def\mL{{\bm{L}}}
+\def\mM{{\bm{M}}}
+\def\mN{{\bm{N}}}
+\def\mO{{\bm{O}}}
+\def\mP{{\bm{P}}}
+\def\mQ{{\bm{Q}}}
+\def\mR{{\bm{R}}}
+\def\mS{{\bm{S}}}
+\def\mT{{\bm{T}}}
+\def\mU{{\bm{U}}}
+\def\mV{{\bm{V}}}
+\def\mW{{\bm{W}}}
+\def\mX{{\bm{X}}}
+\def\mY{{\bm{Y}}}
+\def\mZ{{\bm{Z}}}
+\def\mBeta{{\bm{\beta}}}
+\def\mPhi{{\bm{\Phi}}}
+\def\mLambda{{\bm{\Lambda}}}
+\def\mSigma{{\bm{\Sigma}}}
+
+% Tensor
+\DeclareMathAlphabet{\mathsfit}{\encodingdefault}{\sfdefault}{m}{sl}
+\SetMathAlphabet{\mathsfit}{bold}{\encodingdefault}{\sfdefault}{bx}{n}
+\newcommand{\tens}[1]{\bm{\mathsfit{#1}}}
+\def\tA{{\tens{A}}}
+\def\tB{{\tens{B}}}
+\def\tC{{\tens{C}}}
+\def\tD{{\tens{D}}}
+\def\tE{{\tens{E}}}
+\def\tF{{\tens{F}}}
+\def\tG{{\tens{G}}}
+\def\tH{{\tens{H}}}
+\def\tI{{\tens{I}}}
+\def\tJ{{\tens{J}}}
+\def\tK{{\tens{K}}}
+\def\tL{{\tens{L}}}
+\def\tM{{\tens{M}}}
+\def\tN{{\tens{N}}}
+\def\tO{{\tens{O}}}
+\def\tP{{\tens{P}}}
+\def\tQ{{\tens{Q}}}
+\def\tR{{\tens{R}}}
+\def\tS{{\tens{S}}}
+\def\tT{{\tens{T}}}
+\def\tU{{\tens{U}}}
+\def\tV{{\tens{V}}}
+\def\tW{{\tens{W}}}
+\def\tX{{\tens{X}}}
+\def\tY{{\tens{Y}}}
+\def\tZ{{\tens{Z}}}
+
+
+% Graph
+\def\gA{{\mathcal{A}}}
+\def\gB{{\mathcal{B}}}
+\def\gC{{\mathcal{C}}}
+\def\gD{{\mathcal{D}}}
+\def\gE{{\mathcal{E}}}
+\def\gF{{\mathcal{F}}}
+\def\gG{{\mathcal{G}}}
+\def\gH{{\mathcal{H}}}
+\def\gI{{\mathcal{I}}}
+\def\gJ{{\mathcal{J}}}
+\def\gK{{\mathcal{K}}}
+\def\gL{{\mathcal{L}}}
+\def\gM{{\mathcal{M}}}
+\def\gN{{\mathcal{N}}}
+\def\gO{{\mathcal{O}}}
+\def\gP{{\mathcal{P}}}
+\def\gQ{{\mathcal{Q}}}
+\def\gR{{\mathcal{R}}}
+\def\gS{{\mathcal{S}}}
+\def\gT{{\mathcal{T}}}
+\def\gU{{\mathcal{U}}}
+\def\gV{{\mathcal{V}}}
+\def\gW{{\mathcal{W}}}
+\def\gX{{\mathcal{X}}}
+\def\gY{{\mathcal{Y}}}
+\def\gZ{{\mathcal{Z}}}
+
+% Sets
+\def\sA{{\mathbb{A}}}
+\def\sB{{\mathbb{B}}}
+\def\sC{{\mathbb{C}}}
+\def\sD{{\mathbb{D}}}
+% Don't use a set called E, because this would be the same as our symbol
+% for expectation.
+\def\sF{{\mathbb{F}}}
+\def\sG{{\mathbb{G}}}
+\def\sH{{\mathbb{H}}}
+\def\sI{{\mathbb{I}}}
+\def\sJ{{\mathbb{J}}}
+\def\sK{{\mathbb{K}}}
+\def\sL{{\mathbb{L}}}
+\def\sM{{\mathbb{M}}}
+\def\sN{{\mathbb{N}}}
+\def\sO{{\mathbb{O}}}
+\def\sP{{\mathbb{P}}}
+\def\sQ{{\mathbb{Q}}}
+\def\sR{{\mathbb{R}}}
+\def\sS{{\mathbb{S}}}
+\def\sT{{\mathbb{T}}}
+\def\sU{{\mathbb{U}}}
+\def\sV{{\mathbb{V}}}
+\def\sW{{\mathbb{W}}}
+\def\sX{{\mathbb{X}}}
+\def\sY{{\mathbb{Y}}}
+\def\sZ{{\mathbb{Z}}}
+
+% Entries of a matrix
+\def\emLambda{{\Lambda}}
+\def\emA{{A}}
+\def\emB{{B}}
+\def\emC{{C}}
+\def\emD{{D}}
+\def\emE{{E}}
+\def\emF{{F}}
+\def\emG{{G}}
+\def\emH{{H}}
+\def\emI{{I}}
+\def\emJ{{J}}
+\def\emK{{K}}
+\def\emL{{L}}
+\def\emM{{M}}
+\def\emN{{N}}
+\def\emO{{O}}
+\def\emP{{P}}
+\def\emQ{{Q}}
+\def\emR{{R}}
+\def\emS{{S}}
+\def\emT{{T}}
+\def\emU{{U}}
+\def\emV{{V}}
+\def\emW{{W}}
+\def\emX{{X}}
+\def\emY{{Y}}
+\def\emZ{{Z}}
+\def\emSigma{{\Sigma}}
+
+% entries of a tensor
+% Same font as tensor, without \bm wrapper
+\newcommand{\etens}[1]{\mathsfit{#1}}
+\def\etLambda{{\etens{\Lambda}}}
+\def\etA{{\etens{A}}}
+\def\etB{{\etens{B}}}
+\def\etC{{\etens{C}}}
+\def\etD{{\etens{D}}}
+\def\etE{{\etens{E}}}
+\def\etF{{\etens{F}}}
+\def\etG{{\etens{G}}}
+\def\etH{{\etens{H}}}
+\def\etI{{\etens{I}}}
+\def\etJ{{\etens{J}}}
+\def\etK{{\etens{K}}}
+\def\etL{{\etens{L}}}
+\def\etM{{\etens{M}}}
+\def\etN{{\etens{N}}}
+\def\etO{{\etens{O}}}
+\def\etP{{\etens{P}}}
+\def\etQ{{\etens{Q}}}
+\def\etR{{\etens{R}}}
+\def\etS{{\etens{S}}}
+\def\etT{{\etens{T}}}
+\def\etU{{\etens{U}}}
+\def\etV{{\etens{V}}}
+\def\etW{{\etens{W}}}
+\def\etX{{\etens{X}}}
+\def\etY{{\etens{Y}}}
+\def\etZ{{\etens{Z}}}
+
+% The true underlying data generating distribution
+\newcommand{\pdata}{p_{\rm{data}}}
+% The empirical distribution defined by the training set
+\newcommand{\ptrain}{\hat{p}_{\rm{data}}}
+\newcommand{\Ptrain}{\hat{P}_{\rm{data}}}
+% The model distribution
+\newcommand{\pmodel}{p_{\rm{model}}}
+\newcommand{\Pmodel}{P_{\rm{model}}}
+\newcommand{\ptildemodel}{\tilde{p}_{\rm{model}}}
+% Stochastic autoencoder distributions
+\newcommand{\pencode}{p_{\rm{encoder}}}
+\newcommand{\pdecode}{p_{\rm{decoder}}}
+\newcommand{\precons}{p_{\rm{reconstruct}}}
+
+\newcommand{\laplace}{\mathrm{Laplace}} % Laplace distribution
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Ls}{\mathcal{L}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\emp}{\tilde{p}}
+\newcommand{\lr}{\alpha}
+\newcommand{\reg}{\lambda}
+\newcommand{\rect}{\mathrm{rectifier}}
+\newcommand{\softmax}{\mathrm{softmax}}
+\newcommand{\sigmoid}{\sigma}
+\newcommand{\softplus}{\zeta}
+\newcommand{\KL}{D_{\mathrm{KL}}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand{\standarderror}{\mathrm{SE}}
+\newcommand{\Cov}{\mathrm{Cov}}
+% Wolfram Mathworld says $L^2$ is for function spaces and $\ell^2$ is for vectors
+% But then they seem to use $L^2$ for vectors throughout the site, and so does
+% wikipedia.
+\newcommand{\normlzero}{L^0}
+\newcommand{\normlone}{L^1}
+\newcommand{\normltwo}{L^2}
+\newcommand{\normlp}{L^p}
+\newcommand{\normmax}{L^\infty}
+
+\newcommand{\parents}{Pa} % See usage in notation.tex. Chosen to match Daphne's book.
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\Proj}{Proj}
+\DeclareMathOperator{\Approx}{Approx}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\Tr}{Tr}
+\let\ab\allowbreak
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+DeepMP derivation
+\end_layout
+
+\begin_layout Section
+Derivation of the BP and AMP equations
+\end_layout
+
+\begin_layout Subsection
+Derivation of the BP equations
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:bp_derivation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In order to derive the BP equations, we start with the following portion
+ of the factor graph reported in Eq.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{eq:factors}
+\end_layout
+
+\end_inset
+
+ in the main text, describing the contribution of a single data example
+ in the inner loop of the PasP updates:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\prod_{\ell=0}^{L}\prod_{k}\,P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i}W_{ki}^{\ell}x_{in}^{\ell}\right)\quad\text{where }\vx_{n}^{0}=\vx_{n},\ \vx_{n}^{L+1}=y_{n}.
+\end{equation}
+
+\end_inset
+
+where we recall that the quantity 
+\begin_inset Formula $x_{kn}^{\ell}$
+\end_inset
+
+ corresponds to the activation of neuron 
+\begin_inset Formula $k$
+\end_inset
+
+ in layer 
+\begin_inset Formula $\ell$
+\end_inset
+
+ in correspondence of the input example 
+\begin_inset Formula $n$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Let us start by analyzing the single factor:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i}W_{ki}^{\ell}x_{in}^{\ell}\right)
+\end{equation}
+
+\end_inset
+
+We refer to messages that travel from input to output in the factor graph
+ as 
+\shape italic
+upgoing
+\shape default
+ or 
+\shape italic
+upwards
+\shape default
+ messages, while to the ones that travel from output to input as 
+\shape italic
+downgoing
+\shape default
+ or 
+\shape italic
+backwards
+\shape default
+ messages.
+\end_layout
+
+\begin_layout Paragraph
+Factor-to-variable-
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+ messages
+\end_layout
+
+\begin_layout Standard
+The factor-to-variable-
+\begin_inset Formula $W$
+\end_inset
+
+ messages read:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{\nu}_{kn\to ki}^{\ell+1}(W_{ki}^{\ell})\propto & \int\prod_{i'\neq i}d\nu_{ki'\to n}^{\ell}(W_{ki'}^{\ell})\prod_{i'}d\nu_{i'n\to k}^{\ell}(x_{i'n}^{\ell})\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ \sum_{i'}W_{ki'}^{\ell}x_{i'n}^{\ell}\right)\label{eq:factor_to_W}
+\end{align}
+
+\end_inset
+
+where 
+\begin_inset Formula $\nu_{\downarrow}$
+\end_inset
+
+ denotes the messages travelling downwards (from output to input) in the
+ factor graph.
+\end_layout
+
+\begin_layout Standard
+We denote the means and variances of the incoming messages respectively
+ with 
+\begin_inset Formula $m_{ki\to n}^{\ell},\,\hat{x}_{in\to k}^{\ell}$
+\end_inset
+
+ and 
+\begin_inset Formula $\sigma_{ki\to n}^{\ell},\,\Delta_{in\to k}^{\ell}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+m_{ki\to n}^{\ell}= & \int d\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})\ W_{ki}^{\ell}\\
+\sigma_{ki\to n}^{\ell}= & \int d\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})\ \left(W_{ki}^{\ell}-m_{ki\to n}^{\ell}\right)^{2}\\
+\hat{x}_{in\to k}^{\ell}= & \int d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ x_{in}^{\ell}\\
+\Delta_{in\to k}^{\ell}= & \int d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ \left(x_{in}^{\ell}-\hat{x}_{in\to k}^{\ell}\right)^{2}
+\end{align}
+
+\end_inset
+
+We now use the central limit theorem to observe that with respect to the
+ incoming messages distributions - assuming independence of these messages
+ - in the large input limit the preactivation is a Gaussian random variable:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\sim\mathcal{N}(\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})
+\end{equation}
+
+\end_inset
+
+where:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\omega_{kn\to i}^{\ell} & =\mathbb{E}_{\nu}\left[\sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\right]=\sum_{i'\neq i}m_{ki'\to n}^{\ell}\,\hat{x}_{i'n\to k}^{\ell}\\
+V_{kn\to i}^{\ell} & =Var_{\nu}\left[\sum_{i'\neq i}W_{ki'}^{\ell}x_{i'n}^{\ell}\right]\nonumber \\
+ & =\sum_{i'\neq i}\left(\sigma_{ki'\to n}^{\ell}\,\Delta_{i'n\to k}^{\ell}+\left(m_{ki'\to n}^{\ell}\right)^{2}\,\Delta_{i'n\to k}^{\ell}+\sigma_{ki'\to n}^{\ell}\,\left(\hat{x}_{i'n\to k}^{\ell}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+Therefore we can rewrite the outgoing messages as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\hat{\nu}_{kn\to i}^{\ell+1}(W_{ki}^{\ell})\propto\int dz\,d\nu_{in\to k}^{\ell}(x_{in}^{\ell})\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ e^{-\frac{\left(z-\omega_{kn\to i}-W_{ki}^{\ell}x_{in}^{\ell}\right)^{2}}{2V_{kn\to i}}}\,P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ z\right)
+\end{equation}
+
+\end_inset
+
+We now assume 
+\begin_inset Formula $W_{ki}^{\ell}x_{in}^{\ell}$
+\end_inset
+
+ to be small compared to the other terms.
+ With a second order Taylor expansion we obtain:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{\nu}_{kn\to i}^{\ell}(W_{ki}^{\ell})\propto & \int dz\,\ d\nu_{\downarrow}(x_{kn}^{\ell+1})\ e^{-\frac{\left(z-\omega_{kn\to i}\right)^{2}}{2V_{kn\to i}}}P^{\ell+1}\left(x_{kn}^{\ell+1}\ \bigg|\ z\right)\nonumber \\
+ & \times\left(1+\frac{z-\omega_{kn\to i}}{V_{kn\to i}}\hat{x}_{in\to k}^{\ell}W_{ki}^{\ell}+\frac{\left(z-\omega_{kn\to i}\right)^{2}-V_{kn\to i}}{2V_{kn\to i}}\left(\Delta+\left(\hat{x}_{in\to k}^{\ell}\right)^{2}\right)\left(W_{ki}^{\ell}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+Introducing now the function:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{equation}
+\varphi^{\ell}(B,A,\omega,V)=\log\int\mathrm{d}x\,\mathrm{d}z\ e^{-\frac{1}{2}Ax^{2}+Bx}\,P^{\ell}\left(x|z\right)e^{-\frac{\left(\omega-z\right)^{2}}{2V}}
+\end{equation}
+
+\end_inset
+
+and defining:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+g_{kn\to i}^{\ell} & =\partial_{\omega}\varphi^{\ell+1}(B^{\ell+1},A^{\ell+1},\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})\\
+\Gamma_{kn\to i}^{\ell} & =-\partial_{\omega}^{2}\varphi^{\ell+1}(B^{\ell+1},A^{\ell+1},\omega_{kn\to i}^{\ell},V_{kn\to i}^{\ell})
+\end{align}
+
+\end_inset
+
+the expansion for the log-message reads:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\log\hat{\nu}_{kn\to i}^{\ell}(W_{ki}^{\ell}) & \approx const+\hat{x}_{in\to k}^{\ell}\,g_{kn\to i}^{\ell}W_{ki}^{\ell}\nonumber \\
+ & -\frac{1}{2}\left(\left(\Delta_{in\to k}^{\ell}+\left(\hat{x}_{in\to k}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\Delta_{in\to k}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)\left(W_{ki}^{\ell}\right)^{2}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Factor-to-variable-
+\begin_inset Formula $\mathbf{x}$
+\end_inset
+
+ messages
+\end_layout
+
+\begin_layout Standard
+The derivation of these messages is analogous to the factor-to-variable-
+\begin_inset Formula $W$
+\end_inset
+
+ ones in Eq.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~
+\backslash
+ref{eq:factor_to_W}
+\end_layout
+
+\end_inset
+
+ just reported.
+ The final result for the log-message is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\log\hat{\nu}_{kn\to i}^{\ell}(x_{in}^{\ell})\approx & const+m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}x_{in}^{\ell}\nonumber \\
+ & -\frac{1}{2}\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)\left(x_{in}^{\ell}\right)^{2}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Variable-
+\begin_inset Formula $\mathbf{W}$
+\end_inset
+
+-to-output factor messages
+\end_layout
+
+\begin_layout Standard
+The message from variable 
+\begin_inset Formula $W_{ki}^{\ell}$
+\end_inset
+
+ to the output factor 
+\begin_inset Formula $kn$
+\end_inset
+
+ reads:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\nu_{ki\to n}^{\ell}(W_{ki}^{\ell}) & \propto P_{\theta_{ki}}^{\ell}(W_{ki}^{\ell})e^{\sum_{n'\neq n}\log\hat{\nu}_{kn'\to i}^{\ell}(W_{ki}^{\ell})}\nonumber \\
+ & \approx P_{\theta_{ki}}^{\ell}(W_{ki}^{\ell})e^{H_{ki\to n}^{\ell}W_{ki}^{\ell}-\frac{1}{2}G_{ki\to n}^{\ell}\left(W_{ki}^{\ell}\right)^{2}}
+\end{align}
+
+\end_inset
+
+where we have defined:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+H_{ki\to n}^{\ell} & =\sum_{n'\neq n}\hat{x}_{in'\to k}^{\ell}\,g_{kn'\to i}^{\ell}\\
+G_{ki\to n}^{\ell} & =\sum_{n'\neq n}\left(\left(\Delta_{in'\to k}^{\ell}+\left(\hat{x}_{in'\to k}^{\ell}\right)^{2}\right)\Gamma_{kn'\to i}^{\ell}-\Delta_{in'\to k}^{\ell}\left(g_{kn'\to i}^{\ell}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+Introducing now the effective free energy:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\psi^{\ell}(H,G,\theta) & =\log\int\mathrm{d}W\,\ P_{\theta}^{\ell}\left(W\right)e^{HW-\frac{1}{2}GW^{2}}
+\end{align}
+
+\end_inset
+
+[TODO: 
+\begin_inset Formula $\psi^{\ell}$
+\end_inset
+
+ ha l'indice di layer 
+\begin_inset Formula $\ell$
+\end_inset
+
+ mentre nelle equazioni sul paper non ce l'ha] we can express the first
+ two cumulants of the message 
+\begin_inset Formula $\nu_{ki\to n}^{\ell}(W_{ki}^{\ell})$
+\end_inset
+
+ as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+m_{ki\to n}^{\ell} & =\partial_{H}\psi^{\ell}(H_{ki\to n}^{\ell},G_{ki\to n}^{\ell},\theta_{ki})\\
+\sigma_{ki\to n}^{\ell} & =\partial_{H}^{2}\psi^{\ell}(H_{ki\to n}^{\ell},G_{ki\to n}^{\ell},\theta_{ki})
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Variable-
+\begin_inset Formula $\mathbf{x}$
+\end_inset
+
+-to-input factor messages
+\end_layout
+
+\begin_layout Standard
+We can write the downgoing message as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\nu_{\downarrow}(x_{in}^{\ell}) & \propto e^{\sum_{k}\log\hat{\nu}_{kn\to i}^{\ell}(x_{in}^{\ell})}\nonumber \\
+ & \approx e^{B_{in}^{\ell}x-\frac{1}{2}A_{in}^{\ell}x^{2}}
+\end{align}
+
+\end_inset
+
+where:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in}^{\ell} & =\sum_{n}m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}\\
+A_{in}^{\ell} & =\sum_{n}\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell+1}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Variable-
+\begin_inset Formula $\mathbf{x}$
+\end_inset
+
+-to-output factor messages
+\end_layout
+
+\begin_layout Standard
+By defining the following cavity quantities:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in\to k}^{\ell} & =B_{in\to k}^{\ell}-m_{ki\to n}^{\ell}\,g_{kn\to i}^{\ell}\\
+A_{in\to k}^{\ell} & =A_{in\to k}^{\ell}-\left(\left(\sigma_{ki\to n}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\right)\Gamma_{kn\to i}^{\ell}-\sigma_{ki\to n}^{\ell}\left(g_{kn\to i}^{\ell}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+and the following non-cavity ones:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\omega_{kn}^{\ell} & =\sum_{i}m_{ki\to n}^{\ell}\,\hat{x}_{in\to k}^{\ell}\\
+V_{kn}^{\ell} & =\sum_{i}\left(\sigma_{ki\to n}^{\ell}\,\Delta_{in\to k}^{\ell}+\left(m_{ki\to n}^{\ell}\right)^{2}\,\Delta_{in\to k}^{\ell}+\sigma_{ki\to n}^{\ell}\,\left(\hat{x}_{i'n\to k}^{\ell}\right)^{2}\right)
+\end{align}
+
+\end_inset
+
+we can express the first 2 cumulants of the upgoing messages as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{x}_{in\to k}^{\ell} & =\partial_{B}\varphi^{\ell}(B_{in\to k}^{\ell},A_{in\to k}^{\ell},\omega_{in}^{\ell-1},V_{in}^{\ell-1})\\
+\Delta_{in\to k}^{\ell} & =\partial_{B}^{2}\varphi^{\ell}(B_{in\to k}^{\ell},A_{in\to k}^{\ell},\omega_{in}^{\ell-1},V_{in}^{\ell-1})
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Wrapping it up
+\end_layout
+
+\begin_layout Standard
+Additional but straightforward considerations are required for the final
+ input and output layers (
+\begin_inset Formula $\ell=0$
+\end_inset
+
+ and 
+\begin_inset Formula $\ell=L+1$
+\end_inset
+
+ respectively), since they do not receive messages from below and above
+ respectively.
+ In the end, thanks to indipendence assumptions and the central limit theorem
+ that we used throughout the derivations, we arrive to a closed set of equations
+ involving the means and the variances (or otherwise the corresponding natural
+ parameters) of the messages.
+ 
+\end_layout
+
+\begin_layout Standard
+[TODO mention that we approximate cavity variances with non-cavity ones]
+ [TODO use non-cavity variances for BP equations]
+\end_layout
+
+\begin_layout Standard
+Dividing the update equations in a 
+\shape italic
+forward
+\shape default
+ and 
+\shape italic
+backward
+\shape default
+ pass, and ordering them using time indexes in such a way that we have an
+ efficient flow of information, we obtain the set of BP equations presented
+ in the main text Eqs.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~(
+\backslash
+ref{eq:upd-x}-
+\backslash
+ref{eq:upd-H})
+\end_layout
+
+\end_inset
+
+ and in the Appendix Eqs.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~(
+\backslash
+ref{eqa:upd-x}-
+\backslash
+ref{eqa:upd-H})
+\end_layout
+
+\end_inset
+
+.
+ We report the complete set of the BP equations here (TODO forse non c'è
+ bisogno, magari solo l'inizializzazione):
+\end_layout
+
+\begin_layout Paragraph
+Initialization
+\end_layout
+
+\begin_layout Standard
+At 
+\begin_inset Formula $\tau=0$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in\to k}^{\ell,0} & =0\\
+A_{in}^{\ell,0} & =0\\
+H_{ki\to n}^{\ell,0} & =0\\
+G_{ki}^{\ell,0} & =0
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Forward Pass
+\end_layout
+
+\begin_layout Standard
+At each 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=0,\dots,L$
+\end_inset
+
+ (TODO check 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range -> 
+\begin_inset Formula $\hat{x}_{in\to k}^{\ell,\tau}$
+\end_inset
+
+ non dovrebbe partire da 
+\begin_inset Formula $\ell=1$
+\end_inset
+
+?):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{x}_{in\to k}^{\ell,\tau} & =\partial_{B}\varphi^{\ell}(B_{in\to k}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+\Delta_{in}^{\ell,\tau} & =\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki\to n}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+\sigma_{ki}^{\ell,\tau} & =\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+V_{kn}^{\ell,\tau} & =\sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau-1}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\right)\\
+\omega_{kn\to i}^{\ell,\tau} & =\sum_{i'\neq i}m_{ki'\to n}^{\ell,\tau}\,\hat{x}_{i'n\to k}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Backward Pass
+\end_layout
+
+\begin_layout Standard
+For 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=L,\dots,0$
+\end_inset
+
+ (TODO check 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+g_{kn\to i}^{\ell,\tau} & =\partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn\to i}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+\Gamma_{kn}^{\ell,\tau} & =-\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+A_{in}^{\ell,\tau} & =\sum_{k}\left(\left(\left(m_{ki}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\sigma_{ki}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+B_{in\to k}^{\ell,\tau} & =\sum_{k'\neq k}m_{k'i\to n}^{\ell,\tau}\,g_{k'n\to i}^{\ell,\tau}\\
+G_{ki}^{\ell,\tau} & =\sum_{n}\left(\left(\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\Delta_{in}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\Delta_{in}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+H_{ki\to n}^{\ell,\tau} & =\sum_{n'\neq n}\hat{x}_{in'\to k}^{\ell,\tau}\,g_{kn'\to i}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Derivation of the AMP equations
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:amp_derivation"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In order to obtain the AMP equations, we approximate cavity quantities with
+ non-cavity ones in the BP equations Eqs.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+~(
+\backslash
+ref{eqa:upd-x}-
+\backslash
+ref{eqa:upd-H})
+\end_layout
+
+\end_inset
+
+ using a first order expansion.
+ We start with the mean activation:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{x}_{in\to k}^{\ell,\tau}= & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1}-m_{ki\to n}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
+\approx & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
+ & -m_{ki\to n}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1}\partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\nonumber \\
+\approx & \hat{x}_{in}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+Analogously, for the weight's mean we have:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+m_{ki\to n}^{\ell,\tau} & =\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1}-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\nonumber \\
+ & \approx\partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})-\hat{x}_{in\to k}^{\ell,\tau-1}\,g_{kn\to i}^{\ell,\tau-1}\partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\nonumber \\
+ & \approx m_{ki}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\,g_{kn}^{\ell,\tau-1}\,\sigma_{ki}^{\ell,\tau}.
+\end{align}
+
+\end_inset
+
+These expansions bring us to the following equation for 
+\begin_inset Formula $\omega_{kn}^{\ell,\tau}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\omega_{kn}^{\ell,\tau}= & \sum_{i}m_{ki\to n}^{\ell,\tau}\,\hat{x}_{in\to k}^{\ell,\tau}\nonumber \\
+\approx & \sum_{i}m_{ki}^{\ell,\tau}\,\hat{x}_{in}^{\ell,\tau}-g_{kn}^{\ell,\tau-1}\sum_{i}\,\sigma_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}-g_{kn}^{\ell,\tau-1}\sum_{i}m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & [maybe-irrelevant]+(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+Let us now apply the same procedure to the other set of cavity messages.
+ A first order expansion of the quantities 
+\begin_inset Formula $g_{kn\to i}^{\ell,\tau}$
+\end_inset
+
+ brings to:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+g_{kn\to i}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau}-m_{ki\to n}^{\ell,\tau}\,\hat{x}_{in\to k}^{\ell,\tau},V_{kn}^{\ell,\tau})\nonumber \\
+\approx & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\nonumber \\
+ & -m_{ki\to n}^{\ell,\tau}\,\hat{x}_{in\to k}^{\ell,\tau}\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\nonumber \\
+\approx & g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\Gamma_{kn}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+and this expansion brings us to the following equations for 
+\begin_inset Formula $B_{in}^{\ell,\tau}$
+\end_inset
+
+ and 
+\begin_inset Formula $H_{ki}^{\ell,\tau}$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in}^{\ell,\tau}= & \sum_{k}m_{ki\to n}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
+\approx & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\sum_{k}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
+ & [maybe-irrelevant]-\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in\to k}^{\ell,\tau}\,g_{kn\to i}^{\ell,\tau}\nonumber \\
+\approx & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & [maybe-irrelevant]-m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+We are now able to write down the full AMP equations:
+\end_layout
+
+\begin_layout Paragraph
+Initialization
+\end_layout
+
+\begin_layout Standard
+At 
+\begin_inset Formula $\tau=0$
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+B_{in}^{\ell,0} & =0\\
+A_{in}^{\ell,0} & =0\\
+H_{ki}^{\ell,0} & =0\text{ or some values}\\
+G_{ki}^{\ell,0} & =0\text{ or some values}\\
+g_{kn}^{\ell,0} & =0
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Forward Pass
+\end_layout
+
+\begin_layout Standard
+At each 
+\begin_inset Formula $\tau=1,\dots,\tau_{max}$
+\end_inset
+
+, for 
+\begin_inset Formula $\ell=0,\dots,L$
+\end_inset
+
+ (TODO check 
+\begin_inset Formula $\ell$
+\end_inset
+
+ range):
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+\hat{x}_{in}^{\ell,\tau}= & \partial_{B}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+\Delta_{in}^{\ell,\tau}= & \partial_{B}^{2}\varphi^{\ell}(B_{in}^{\ell,\tau-1},A_{in}^{\ell,\tau-1},\omega_{in}^{\ell-1,\tau},V_{in}^{\ell-1,\tau})\\
+m_{ki}^{\ell,\tau}= & \partial_{H}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+\sigma_{ki}^{\ell,\tau}= & \partial_{H}^{2}\psi^{\ell}(H_{ki}^{\ell,\tau-1},G_{ki}^{\ell,\tau-1},\theta_{ki}^{\ell})\\
+V_{kn}^{\ell,\tau}= & \sum_{i}\left(\left(m_{ki}^{\ell,\tau}\right)^{2}\,\Delta_{in}^{\ell,\tau}+\sigma_{ki}^{\ell,\tau}\,\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\,\Delta_{in}^{\ell,\tau}\right)\\
+\omega_{kn}^{\ell,\tau}= & \sum_{i}m_{ki}^{\ell,\tau}\,\hat{x}_{in}^{\ell,\tau}-g_{kn}^{\ell,\tau-1}\sum_{i}\,\sigma_{ki}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}-g_{kn}^{\ell,\tau-1}\sum_{i}m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & +(g_{kn}^{\ell,\tau-1})^{2}\sum_{i}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\hat{x}_{in}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Backward Pass
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align}
+g_{kn}^{\ell,\tau}= & \partial_{\omega}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+\Gamma_{kn}^{\ell,\tau}= & -\partial_{\omega}^{2}\varphi^{\ell+1}(B_{kn}^{\ell+1,\tau},A_{kn}^{\ell+1,\tau},\omega_{kn}^{\ell,\tau},V_{kn}^{\ell,\tau})\\
+A_{in}^{\ell,\tau}= & \sum_{k}\left(\left(\left(m_{ki}^{\ell,\tau}\right)^{2}+\sigma_{ki}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\sigma_{ki}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+B_{in}^{\ell,\tau}= & \sum_{k}m_{ki}^{\ell,\tau}\,g_{kn}^{\ell,\tau}-\hat{x}_{in}^{\ell,\tau-1}\sum_{k}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\sigma_{ki}^{\ell,\tau}+\hat{x}_{in}^{\ell,\tau}\sum_{k}(m_{ki}^{\ell,\tau})^{2}\Gamma_{kn}^{\ell,\tau}\nonumber \\
+ & -\hat{x}_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau-1}\sum_{k}\sigma_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\\
+G_{ki}^{\ell,\tau}= & \sum_{n}\left(\left(\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}+\Delta_{in}^{\ell,\tau}\right)\Gamma_{kn}^{\ell,\tau}-\Delta_{in}^{\ell,\tau}\left(g_{kn}^{\ell,\tau}\right)^{2}\right)\\
+H_{ki}^{\ell,\tau}= & \sum_{n}\hat{x}_{in}^{\ell,\tau}\,g_{kn}^{\ell,\tau}+m_{ki}^{\ell,\tau}\sum_{n}\left(\hat{x}_{in}^{\ell,\tau}\right)^{2}\Gamma_{kn}^{\ell,\tau}-m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau}g_{kn}^{\ell,\tau-1}\Delta_{in}^{\ell,\tau}\nonumber \\
+ & -m_{ki}^{\ell,\tau}m_{ki}^{\ell,\tau-1}\sum_{n}g_{kn}^{\ell,\tau-1}\Gamma_{kn}^{\ell,\tau}\Delta_{in}^{\ell,\tau}\hat{x}_{in}^{\ell,\tau}
+\end{align}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+TODO
+\end_layout
+
+\begin_layout Standard
+- B and H equations have to be changed yet on the cl/amp branch in DeepMP.jl
+\end_layout
+
+\begin_layout Standard
+- not clear how to put damping
+\end_layout
+
+\begin_layout Standard
+- presentare in appendice una sola volta la forma finale delle equazioni
+ di BP e AMP
+\end_layout
+
+\begin_layout Standard
+- nei vari algoritmi riportati nel paper non viene specificata l'inizializzazion
+e dei messaggi
+\end_layout
+
+\end_body
+\end_document

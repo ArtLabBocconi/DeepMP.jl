@@ -1,7 +1,7 @@
 using Pkg
-Pkg.activate("../")
+# Pkg.activate("../")
 #Pkg.activate("./")
-Pkg.instantiate()
+# Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
@@ -14,7 +14,7 @@ using CUDA
 function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist, normalize=true)
     
     seed > 0 && Random.seed!(seed)
-    
+
     namedir, Dataset, reduce_dims  = dataset == :fashion ? ("FashionMNIST", FashionMNIST, (1,2,3)) :
                                      dataset == :mnist   ? ("MNIST", MNIST, (1,2,3)) :
                                      dataset == :cifar10 ? ("CIFAR10", CIFAR10, (1,2,4)) :
@@ -25,14 +25,17 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
     xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
     xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
     @assert all(isinteger.(ytest))
+
     if normalize
         mn = mean(xtrain, dims=reduce_dims)
         st = std(xtrain, dims=reduce_dims)
         xtrain = (xtrain .- mn) ./ (st .+ 1e-5)
         xtest = (xtest .- mn) ./ (st .+ 1e-5)
     end
+
     xtrain = reshape(xtrain, :, size(xtrain)[end])
     xtest = reshape(xtest, :, size(xtest)[end])
+
     if !isempty(classes)
         # ONE CLASS VS ANOTHER
         @assert length(classes) == 2
@@ -67,18 +70,28 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
     end
     M = min(M, length(ytrain))
     xtrain, ytrain = xtrain[:,1:M], ytrain[1:M]
+    
     return xtrain, ytrain, xtest, ytest
+
 end
 
-function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_type=:bpi, kws...)
+function run_experiment(; M=-1, dataset=:fashion, multiclass=false, K=[], lay_type=:bpi, 
+                          dataset2=nothing, kws...)
 
     xtrain, ytrain, xtest, ytest = get_dataset(M; dataset, multiclass)
+    if isnothing(dataset2)
+        xtrain2, ytrain2, xtest2, ytest2 = nothing, nothing, nothing, nothing
+    else
+        xtrain2, ytrain2, xtest2, ytest2 = get_dataset(M; dataset=dataset2, multiclass)
+    end
     K[end] = multiclass ? 10 : 1
     K[1] = dataset in [:mnist, :fashion] ? 28*28 : 32*32*3
     layers = [lay_type for _ in 1:length(K)-1]
     multiclass && (layers[end] = :argmax)
     
-    g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, K, layers, kws...)
+    g, w, teacher, E, it = DeepMP.solve(xtrain, ytrain; xtest, ytest, dataset, K, layers, 
+                                        #xtrain2, ytrain2, xtest2, ytest2, 
+                                        kws...)
 
     #GC.gc()
     #CUDA.reclaim()

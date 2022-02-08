@@ -1,6 +1,7 @@
 module DeepMP
 
 using ExtractMacro
+using DelimitedFiles
 using SpecialFunctions
 using Printf
 using Random
@@ -51,31 +52,43 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
     for it = 1:maxiters
 
         t = @timed Δ = update!(g, reinfpar)
-        #E = energy(g)
-        E = mean(vec(forward(g, g.layers[1].x)) .!= g.layers[end].y) * 100
 
-        verbose >= 1 && @printf("it=%d \t (r=%f) Etrain=%.2f%% \t Δ=%f \n",
+        #E = energy(g)
+        xtrain, ytrain = g.layers[1].x, g.layers[end].y
+        E = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
+
+        verbose >= 1 && @printf("it=%d \t (r=%s) Etrain=%.2f%% \t Δ=%f \n",
                                 it, reinfpar.r, E, Δ)
+
         if verbose >= 2
             Etest = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
+                Etest_bayes = bayesian_error(g, xtest, ytest) *100
             end
-            @printf("          Etest=%.2f%%  rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            @printf("\t\t\t\t  Etest=%.2f%%   rstep=%g  t=%g\n", Etest, reinfpar.rstep, t.time)
+            
+            Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
+            @printf("\t  EtrainBayes=%.2f%% EtestBayes=%.2f%%\n", Etrain_bayes, Etest_bayes)
         end
 
-        plotinfo > 0 && plot_info(g, plotinfo, verbose=verbose)
+        plotinfo > 0 && plot_info(g, 0; verbose)
+
         update_reinforcement!(reinfpar)
+
         if altsolv && E == 0
             verbose > 0 && println("Found Solution: correctly classified $(g.M) patterns.")
             return it, E, Δ
         end
+
         if altconv && Δ < ϵ
             verbose > 0 && println("Converged!")
             return it, E, Δ
         end
     end
+
     return maxiters, 1, 1.0
+
 end
 
 function solve(; K::Vector{Int} = [101, 3],
@@ -159,7 +172,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 batchsize = -1,                 # only supported by some algorithms
                 epochs = 100,
                 ϵinit = 0.,
-                plotinfo = 0,
                 verbose = 1,
                 usecuda = true,
                 gpu_id = -1,
@@ -177,10 +189,12 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     L = length(K) - 1
     ψ = num_to_vec(ψ, L)
     ρ = num_to_vec(ρ, L)
+    r = num_to_vec(r, L)
 
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
+<<<<<<< HEAD
 
     # g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     g0 !== nothing && @assert isa(g0, FactorGraph)
@@ -189,6 +203,11 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     else
         g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     end
+=======
+    
+
+    g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
     if teacher !== nothing
         teacher = device.(teacher)
@@ -200,8 +219,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     reinfpar = ReinfParams(r, rstep, yy, ψ)
 
     if saveres
-        resfile = "results/res_dataset$(dataset)_"
-        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers)_rho$(ρ)_r$(r)_damp$(ψ)"
+        resfile = "resultsreb/res_dataset$(dataset)_"
+        resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers[1])_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
         seed ≠ -1 && (resfile *= "_seed$(seed)")
@@ -210,6 +229,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     end
 
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
+
         Etrain = mean(vec(forward(g, xtrain)) .!= ytrain) * 100
         Etrain_bayes = bayesian_error(g, xtrain, ytrain) *100
         num_batches = length(dtrain)
@@ -218,8 +238,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
             Etest_bayes = bayesian_error(g, xtest, ytest) *100
         end
+<<<<<<< HEAD
 
         verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%g rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
+=======
+        
+        verbose >= 1 && @printf("Epoch %i (conv=%g, solv=%g <it>=%g): Etrain=%.2f%% Etest=%.2f%%  r=%s rstep=%g ρ=%s  t=%g (layers=%s, bs=%d)\n",
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
                                 epoch, (converged/num_batches), (solved/num_batches), (meaniters/num_batches),
                                 Etrain, Etest, reinfpar.r, reinfpar.rstep, ρ, t.time, "$layers", batchsize)
 
@@ -243,7 +268,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if batchsize <= 0
         ## FULL BATCH message passing
         it, e, δ = converge!(g; maxiters, ϵ, reinfpar,
-                            altsolv, altconv, plotinfo,
+                            altsolv, altconv, plotinfo=1,
                             teacher, verbose,
                             xtest, ytest)
 
@@ -256,6 +281,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
             t = @timed for (b, (x, y)) in enumerate(dtrain)
                 all(x->x==0, ρ) || set_Hext_from_H!(g, ρ, rbatch)
                 set_input_output!(g, x, y)
+                reset_downgoing_messages!(g)
 
                 it, e, δ = converge!(g; maxiters, ϵ,
                                         reinfpar, altsolv, altconv, plotinfo=0,
@@ -265,16 +291,13 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 meaniters += it
 
                 verbose >= 2 && print("b = $b / $(length(dtrain))\r")
-
-                #if epochs == 1 && b % 1000 == 0
-                #    Etrain = report(b; converged, solved, meaniters)
-                #end
-
             end
             Etrain = report(epoch; t, converged, solved, meaniters)
             #Etrain == 0 && break
         end
+
     end
+<<<<<<< HEAD
     if saveres
         close(fres)
         println("outfile: $resfile")
@@ -426,12 +449,16 @@ function solveCL(xtrain::AbstractMatrix, ytrain::AbstractVector;
             Etrain = report(epoch; t, converged, solved, meaniters)
         end
     end
+=======
+
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
     if saveres
         close(fres)
         println("outfile: $resfile")
         conf_file = "results/conf$(resfile[12:end-4]).jld2"
         @show conf_file
         #save(conf_file, Dict("weights" => getW(g)))
+        write_weight_mask(g)
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)

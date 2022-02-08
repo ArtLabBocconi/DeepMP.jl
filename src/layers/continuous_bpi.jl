@@ -1,3 +1,6 @@
+"""
+BPI with real weights
+"""
 mutable struct CBPILayer <: AbstractLayer
     l::Int
     K::Int
@@ -68,7 +71,9 @@ function update!(layer::CBPILayer, reinfpar; mode=:both)
     @extract layer: Bup B A H Hext ω  V  Ω  Ωext
     @extract layer: bottom_layer top_layer
     @extract reinfpar: r y ψ l
+    
     Δm = 0.
+    rl = r[l]
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -78,22 +83,21 @@ function update!(layer::CBPILayer, reinfpar; mode=:both)
         end
         
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-6)
+        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
         @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
     end
     if mode == :back || mode == :both
         Btop = top_layer.B 
         @assert size(Btop) == (K, M)
-        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i] * x̂[i,a], V[k,a])  avx=false
         @tullio g[k,a] := compute_g(Btop[k,a], ω[k,a], V[k,a])  avx=false
-        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
+        @tullio gcav[k,i,a] := compute_g(Btop[k,a], ω[k,a] - m[k,i] * x̂[i,a], V[k,a])  avx=false
         
-        # grad_g(B, ω, V)::F = gradient(ω -> compute_g(B, ω, V)::F, ω)[1]
+        # @tullio Γ[k,a] := compute_Γ(Btop[k,a], ω[k,a], V[k,a])
         grad_g(B, ω, V) = ForwardDiff.derivative(ω -> compute_g(B, ω, V), ω)
         Γ = -grad_g.(Btop, ω, V)
         # @show count(!isfinite, Γ)
         if !all(isfinite, Γ)
-            @warn mean((!isfinite).(Γ))
+            # @warn mean((!isfinite).(Γ))
             # Γa = Array(Γ)
             # iinf = (!isfinite).(Γa)
             # @show Γa[iinf] Btop[iinf] ω[iinf] V[iinf]
@@ -107,6 +111,7 @@ function update!(layer::CBPILayer, reinfpar; mode=:both)
         
         if !isbottomlayer(layer)
             @tullio B[i,a] = m[k,i] * gcav[k,i,a]
+            #TODO add A
         end
 
         if !isfrozen(layer)
@@ -114,27 +119,22 @@ function update!(layer::CBPILayer, reinfpar; mode=:both)
             @tullio Ωin[k,i] := (x̂[i,a]^2 + Δ[i,a]) * Γ[k,a] - Δ[i,a] * g[k,a]^2
             if y > 0 # focusing
                 @assert false
-                tγ = tanh(r)
-                @tullio mjs[k,i] := tanh(Hin[k,i])
-                @tullio mfoc[k,i] := tanh((y-1)*atanh(mjs[k,i]*tγ)) * tγ
-                @tullio Hfoc[k,i] := atanh(mfoc[k,i])
-                @tullio Hnew[k,i] := Hin[k,i] + Hfoc[k,i] + Hext[k,i] 
             else
                 # reinforcement 
-                @tullio Ωnew[k,i] := Ωin[k,i] + r*Ω[k,i] + Ωext[k,i]
-                @tullio Hnew[k,i] := Hin[k,i] + r*H[k,i] + Hext[k,i]
+                @tullio Ωnew[k,i] := Ωin[k,i] + rl*Ω[k,i] + Ωext[k,i]
+                @tullio Hnew[k,i] := Hin[k,i] + rl*H[k,i] + Hext[k,i]
             end
             # H .= ψ[l] .* H .+ (1-ψ[l]) .* Hnew
             H .= Hnew
             # @show mean(Ωnew .> 0)
             # @show mean(Ωnew) mean(abs.(H))
-            Ω .= max.(1f-6, Ωnew .+ 1f-6)
+            Ω .= max.(1f-6, Ωnew)
 
             mnew = ψ[l] .* m .+ (1-ψ[l]) .* (H ./ Ω) .* weight_mask
-            # mnew = tanh.(H) .* weight_mask
             Δm = mean(abs.(m .- mnew))
             m .= mnew
-            σ .= ψ[l] .* σ .+ (1-ψ[l]) .* (1 ./ Ω) .* weight_mask
+            # σ .= ψ[l] .* σ .+ (1-ψ[l]) .* (1 ./ Ω) .* weight_mask
+            σ .= (1 ./ Ω) .* weight_mask
             @assert all(σ .>= 0)
         end
     end
@@ -146,11 +146,12 @@ function initrand!(layer::L) where {L <: Union{CBPILayer}}
     @extract layer: K N M weight_mask ϵinit
     @extract layer: x̂ Δ m σ 
     @extract layer: B A ω H Ω V Hext Ωext
-    # TODO reset all variables
-    μ = 1
-    stdev = ϵinit
+    μ = ϵinit / √N
+    stdev = ϵinit / √N
+    # stdev = 0.1
+  
     H .= (μ / stdev^2) .* randn!(similar(m)) .+ Hext
-    Ω .= 1 / stdev^2 .* fill!(similar(m), 1) + Ωext
+    Ω .= (1 / stdev^2) .* fill!(similar(m), 1) .+ Ωext
     m .= (H ./ Ω) .* weight_mask
     σ .= (1 ./ Ω) .* weight_mask
 end
@@ -164,7 +165,7 @@ function fix_input!(layer::L, x::AbstractMatrix) where {L <: Union{CBPILayer}}
 end
 
 function getW(layer::CBPILayer)
-    return sign.(layer.m .* layer.weight_mask)
+    return layer.m .* layer.weight_mask
 end
 
 function forward(layer::CBPILayer, x)

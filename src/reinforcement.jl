@@ -1,5 +1,5 @@
 mutable struct ReinfParams
-    r::Float32                           # reinforcement (γ for focusing) for W variables
+    r::Union{Float64, Vector{Float64}}   # reinforcement (γ for focusing) for W variables
     rstep::Float32
     y::Float32                           # parameter for FocusingBP
     ψ::Union{Float32, Vector{Float64}}   # damping parameter
@@ -16,10 +16,10 @@ function update_reinforcement!(reinfpar::ReinfParams)
     else
         if reinfpar.y <= 0
             # reinforcement update
-            reinfpar.r = 1 - (1-reinfpar.r) * (1-reinfpar.rstep)
+            reinfpar.r = 1 .- (1 .- reinfpar.r) .* (1 - reinfpar.rstep)
         else
             # focusing update
-            reinfpar.r *= (1.0 + reinfpar.rstep)
+            reinfpar.r .*= (1.0 + reinfpar.rstep)
             #@assert false #TODO
         end
     end

@@ -6,7 +6,7 @@ mutable struct FactorGraph
                                    # Weight with layers are those in 2:L+1
     density # weight density (fraction of non-zeros)
     device
-
+    
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int}, ϵinit::F,
                 layertype::Vector{Symbol};
@@ -88,8 +88,8 @@ function process_density(density, L)
     end
     @assert length(density) == L
     if density[L] < 1.0
-        density[L] = 1.0
-        # @warn "Setting density[$L] = 1.0"
+        #density[L] = 1.0
+        #@warn "Setting density[$L] = 1.0"
     end
     return density
 end
@@ -124,6 +124,15 @@ function set_weight_mask!(g::FactorGraph, g2::FactorGraph)
     @assert g2.L == g.L
     for l=2:g.L+1
         set_weight_mask!(g.layers[l], g2.layers[l].weight_mask)
+    end
+end
+
+function write_weight_mask(g::FactorGraph)
+    @extract g: density
+    for l=2:g.L+1
+        file = "results/mask_density$(density)_layer$(l-1).dat"
+        writedlm(file, g.layers[l].weight_mask)
+        println(file)
     end
 end
 
@@ -174,6 +183,7 @@ function set_Hext_from_H!(g::FactorGraph, ρ, rbatch)
     end
 end
 
+<<<<<<< HEAD
 function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
     if hasproperty(lay, :allh) # TODO deprecate
         @assert hasproperty(lay, :allhext)
@@ -198,14 +208,19 @@ function copy_mags!(lay1::AbstractLayer, lay2::AbstractLayer)
         lay1.m .= lay2.m
     end
 end
+=======
+f_meta(h; m=0.0) = 1.0 - tanh(m * h)^2 
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
 
-function copy_mags!(g1::FactorGraph, g2::FactorGraph)
-    @assert g1.L == g2.L
-    for l = 2:g1.L+1
-        copy_mags!(g1.layers[l], g2.layers[l])
+function set_Hext_from_H!(lay::AbstractLayer, ρ, rbatch)
+    lay.Hext .= ρ .* lay.H .+ rbatch .* lay.Hext
+    if hasproperty(lay, :Ωext)
+        # for continuous weights
+        lay.Ωext .= ρ .* lay.Ω .+ rbatch .* lay.Ωext        
     end
 end
 
+<<<<<<< HEAD
 # g gets g0's layers
 function copy_layers!(g0::FactorGraph, g::FactorGraph)
     # g = deepcopy(g0)
@@ -244,6 +259,8 @@ end
 #     [get_allh(layer) for layer in g.layers[2:g.L+1]]
 # end
 
+=======
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
 function initrand!(g::FactorGraph)
     @extract g: M layers K
     for lay in layers[2:end-1]
@@ -256,6 +273,7 @@ function set_input_output!(g, x, y)
     set_output!(g.layers[end], y)
     g.layers[1].x = x
     fix_input!(g.layers[2], g.layers[1].x) # fix input to first layer
+<<<<<<< HEAD
 
     # Set to 0 the messages going down
     for lay in g.layers[2:end-1]
@@ -269,7 +287,37 @@ function set_input_output!(g, x, y)
         if hasproperty(lay, :g)
             lay.g .= 0
         end
+=======
+end
+
+function reset_downgoing_messages!(g)
+    # Set to 0 the messages going down
+    for lay in g.layers[2:end-1]
+        reset_downgoing_messages!(lay)
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
     end
+end
+
+function reset_downgoing_messages!(lay::AbstractLayer)
+    lay.B .= 0  
+    if hasproperty(lay, :Bcav)
+        lay.Bcav .= 0
+    end
+    if hasproperty(lay, :A)
+        lay.A .= 0
+    end
+    if hasproperty(lay, :mcav)
+        lay.mcav .= lay.m
+    end
+    if hasproperty(lay, :g)
+        lay.g .= 0
+    end
+    if hasproperty(lay, :gcav)
+        lay.gcav .= 0
+    end
+    # if hasproperty(lay, :H)
+    #     lay.H .= lay.Hext
+    # end
 end
 
 function freezetop!(g::FactorGraph, w)
@@ -308,7 +356,7 @@ Forward pass with pointwise estimator.
 """
 function forward(g::FactorGraph, x)
     @extract g: L layers
-   for l=2:L+1
+    for l=2:L+1
         x = forward(layers[l], x)
     end
     return x
@@ -330,7 +378,12 @@ end
 
 function bayesian_forward(layer::AbstractLayer, x̂, Δ)
     # WARNING Valid only for sign activations
+<<<<<<< HEAD
     @extract layer: m  σ
+=======
+    m = weight_mean(layer) .* layer.weight_mask
+    σ = weight_var(layer) .* layer.weight_mask
+>>>>>>> 78bfb0171c061fa8e42942af9607ea4dcb243039
 
     @tullio ω[k,a] := m[k,i] * x̂[i,a]
     V = .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
