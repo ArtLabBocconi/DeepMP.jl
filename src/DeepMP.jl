@@ -207,7 +207,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-    
 
     g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
