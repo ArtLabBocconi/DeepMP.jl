@@ -1,5 +1,5 @@
 multicl = [true]
-gpu_id = 2
+gpu_id = 0
 epochs = 100
 #datasets = [:fashion]
 #lays = [:bpi, :tap, :mf]
