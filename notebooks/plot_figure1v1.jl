@@ -2,6 +2,7 @@ using DelimitedFiles, Statistics
 using PyPlot
 using PyCall
 using Printf
+using LaTeXStrings
 
 plt.style.use("default")
 plt.style.use("seaborn-whitegrid")
@@ -9,47 +10,127 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 
 rd(x, n) = round(x, sigdigits=n)
 
-dataset = :mnist
+dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
+#K = [Nin, 501, 501, 1]
+K = [Nin, 501, 501, 501, 1]
 L = length(K)-1
-lrsgd = 0.0001
-density = 0.1
+lrsgd = 10.0
 
 # for different file names
-lays = [:bpi]
+lays = [:bp, :bpi, :tap, :mf]
+lays = [:bpi, :tap, :mf]
 
-multiclass = true
-plot_sgd, plot_bp, plot_bayes = true, true, true
+plot_sgd, plot_bp, plot_bayes = true, true, false
+plot_ebp = true
+plot_continuous_sgd = false
 plot_overlaps = false
+multiclass = true
 
 if multiclass
     K[end] = 10
 
+    if batchsize == 128
+
+        seed_bp = [2, 7, 11]
+        seed_sgd = [2, 7, 11]
+        P = dataset ≠ :cifar10 ? 6e4 : 5e4
+        maxiters = 1
+        #r = [0., 0., 0.]
+        r = 0.
+        ϵinits = [1.0, 1.0, 1.0]
+
+        if length(K) == 4
+                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+                #ψs = [[0.81, 0.81, 0.81], [0.81, 0.81, 0.81], [0.81, 0.81, 0.81]]
+                if K[2] == 101    
+                    #ρs = [[1.0-1e-4, 1.0-1e-3, 0.0], [1.0, 1.0, 0.0], [1.0, 1.0, 0.0].+1e-4]
+                    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1e-4]]
+                    if ψs[1][1]==0.81
+                        ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0, 1.0, 0.9]]
+                    end
+                elseif K[2] == 501
+                    ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                end
+
+        elseif length(K) == 5
+
+            if K[2] == 101
+                
+                ψs = [[0.95 for _=1:4], [0.8, 0.8, 0.8, 0.8], [0.95 for _=1:4]]
+                ρs = [[1.0, 1.0, 1.0, 0.0], [1.0, 1.0, 1.0, 0.0], [1.0+1e-3, 1.0+1e-3, 1.0+1e-3, 0.0]] 
+                
+                #ψs = [[0.95 for _=1:4], [0.95 for _=1:4], [0.95 for _=1:4]]
+                #ρs = [[1.0, 1.0, 1.0, 0.0], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-3, 1.0+1e-3, 1.0+1e-3, 0.0]] 
+            
+            elseif K[2] == 501
+                
+                ψs = [[0.95 for _=1:4], [0.95 for _=1:4], [0.95 for _=1:4]]
+                ρs = [[1.0, 1.0, 1.0, 0.5], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.0], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
+                
+                ψs = [[0.1, 0.1, 0.1, 0.9], [0.1, 0.1, 0.1, 0.9], [0.1, 0.1, 0.1, 0.9]]
+                ρs = [[1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
+            
+            end
+        end
+    end
+
+else
+
+    if batchsize == 128
+        seed_bp = [2, 7, 11]
+        seed_sgd = [2, 7, 11]
+        P = dataset ≠ :cifar10 ? 6e4 : 5e4
+        maxiters = 1   
+        r = [0., 0., 0.]        
+        ϵinits = [1.0, 1.0, 1.0]
+        ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
+        #ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]] 
+
+        if K[2] == 101
+
+            #ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]
+            ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-4, 0.]]
+            ρs = [[0.9999, 0.999, 0.9], [1.0, 1.0, 1.0], [0.8, 0.8, 0.8]]
+
+        elseif K[2] == 501
+
+            #ρs = [[1.0, 1.0, -1e-4].+1e-4, [1.0, 1.0, 1.0], [1.0+1e-4, 1.0+1e-3, 1.0+1e-3]]
+            if dataset == :cifar10
+                ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+            else
+                ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+                ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.99999], [0.8, 0.8, 0.8]]
+            end
+
+        end 
+    end
+
+end
+
+online = false
+if online
+    plot_sgd, plot_bp, plot_bayes = true, true, true
+    dataset = :fashion
+    K = [Nin, 101, 101, 1]
+    batchsize = 1
+    lrsgd = 1.0
+    lays = [:bpi]
+    multiclass = false
     seed_bp = [2]
     seed_sgd = [2]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1
+    r = 0.
     ϵinits = [1.0, 1.0, 1.0]
-    r = [0.0 for _=1:length(K)-1]
-
-    ψs = [[0.79, 0.79, 0.79], [0.8, 0.8, 0.8], [0.8, 0.8, 0.8]]
-    ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
-
-else
-
-    seed_bp = [2, 7, 11]
-    seed_sgd = [2, 7, 11]
-    P = dataset ≠ :cifar10 ? 6e4 : 5e4
-    maxiters = 1   
-    r = [0.0 for _=1:length(K)-1]
-    ϵinits = [1.0, 1.0, 1.0]
-
-    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
-    ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
+    ψs = [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+    ρs = [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]
 
 end
+
+density = 1.
 
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
@@ -166,29 +247,30 @@ if plot_bp
 ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_test_bayes,
             color="tab:red", alpha=0.3, edgecolor=nothing)
 
-        end
-        ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
-        ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
+        else
+            ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
+            ax1.plot(epoche_bp[1], μ_test_bp, ls="--", label=lbl_test, color=algo_color[lay])
 
-        ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
-        ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
-                        color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+            ax1.fill_between(epoche_bp[1], μ_train_bp-σ_train_bp, μ_train_bp+σ_train_bp,
+                            color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+            ax1.fill_between(epoche_bp[1], μ_test_bp-σ_test_bp, μ_test_bp+σ_test_bp,
+                            color=algo_color[lay], alpha=0.3, edgecolor=nothing)
+        end
 
         if plot_overlaps
 
             ax2.plot(epoche_bp[1], μ_q0lay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY layer1", c=algo_color[lay])
             ax3.plot(epoche_bp[1], μ_qablay1, ls="-",
-                label="$lay lay1", c=algo_color[lay])
+                label="$LAY layer1", c=algo_color[lay])
             ax4.plot(epoche_bp[1], μ_q0lay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY layer2", c=algo_color[lay])
             ax5.plot(epoche_bp[1], μ_qablay2, ls="-",
-                label="$lay lay2", c=algo_color[lay])
+                label="$LAY layer2", c=algo_color[lay])
             ax6.plot(epoche_bp[1], μ_q0lay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY layer3", c=algo_color[lay])
             ax7.plot(epoche_bp[1], μ_qablay3, ls="-",
-                label="$lay lay3", c=algo_color[lay])
+                label="$LAY layer3", c=algo_color[lay])
 
             ax2.fill_between(epoche_bp[1], μ_q0lay1-σ_q0lay1, μ_q0lay1+σ_q0lay1,
                         color=algo_color[lay], alpha=0.3)
@@ -209,6 +291,7 @@ ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_tes
 
     end
 end
+
 
 Ksgd = K[2:end-1]
 classes = multiclass ? nothing : []
@@ -250,8 +333,8 @@ if plot_sgd
         lbl_test = "binaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "BinaryNet train"
-    lbl_test = "BinaryNet test"
+    lbl_train = "binaryNet train"
+    lbl_test = "binaryNet test"
 
     ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
@@ -263,15 +346,90 @@ if plot_sgd
 
 end
 
+lrsgd = 0.1
+if plot_continuous_sgd
+    epoche, train_sgd, test_sgd = [], [], []
+    for seedgd in seed_sgd
+        file = "../../representations/knet/scripts/results/res_dataset$(dset_sgd)_classes$(classes)_binwfalse_hidden$(Ksgd)_biasfalse_freezetopfalse"
+        (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
+        file *= "_lr$(lrsgd)_bs$(batchsize)"
+        seedgd ≠ 2 && (file *= "_seed$(seedgd)")
+        file *= ".dat"
+        @show file
+
+        if isfile(file)
+            dati_sgd = readdlm(file)
+            push!(epoche, dati_sgd[:, 1])
+            push!(train_sgd, dati_sgd[:, 2])
+            push!(test_sgd, dati_sgd[:, 3])
+        else
+            println("* NOT FOUND: $file")
+        end
+    end
+
+    μ_train, σ_train = mean(train_sgd) .* 100., std(train_sgd) .* 100.
+    μ_test, σ_test = mean(test_sgd) .* 100., std(test_sgd) .* 100.
+
+    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
+
+    lbl_train = "SGD train"
+    lbl_test = "SGD test"
+
+    ax1.plot(epoche[1], μ_train, ls="-", c="tab:red", label=lbl_train, alpha=0.75)
+    ax1.plot(epoche[1], μ_test, ls="--", c="tab:red", label=lbl_test, alpha=0.75)
+
+    ax1.fill_between(epoche[1], μ_train+σ_train, μ_train-σ_train, color="tab:red", alpha=0.75)
+    ax1.fill_between(epoche[1], μ_test+σ_test, μ_test-σ_test, color="tab:red", alpha=0.75)
+
+    println("SGD: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
+
+end
+
+if plot_ebp
+    if L == 3
+        file = "../scripts/results_ebp/fashion_norm_101_101_b10_ep100.dat"
+    elseif L==4
+        file = "../scripts/results_ebp/fashion_norm_501_501_501_b10_ep100.dat"
+    end
+    @show file
+
+    if isfile(file)
+        dati_sgd = readdlm(file)
+        epoche = dati_sgd[:, 1]
+        μ_train = dati_sgd[:, 2] .* 100
+        μ_test = dati_sgd[:, 3] .* 100
+        σ_train = dati_sgd[:, 6] .* 100
+        σ_test = dati_sgd[:, 7] .* 100
+    else
+        println("* NOT FOUND: $file")
+    end
+
+    train_legend = "$(rd(μ_train[end],2)) ± $(rd(σ_train[end],2))"
+    test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
+
+    lbl_train = "EBP train"
+    lbl_test = "EBP test"
+
+    ax1.plot(epoche, μ_train, ls="-", c="tab:gray", label=lbl_train, alpha=1.0)
+    ax1.plot(epoche, μ_test, ls="--", c="tab:gray", label=lbl_test, alpha=1.0)
+
+    ax1.fill_between(epoche, μ_train+σ_train, μ_train-σ_train, color="tab:gray", alpha=0.3)
+    ax1.fill_between(epoche, μ_test+σ_test, μ_test-σ_test, color="tab:gray", alpha=0.3)
+
+    println("EBP: train: $(rd(μ_train[end],2)) ± $(rd(σ_train[end],2)); test: $(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))")
+
+end
+
 if dataset == :mnist
     if multiclass
-        ax1.set_ylim(0, 50)
+        ax1.set_ylim(0, 8)
     else
         ax1.set_ylim(0, 5)
     end
 elseif dataset == :fashion
     if multiclass
-        ax1.set_ylim(0, 25)
+        ax1.set_ylim(0, 70)
     else
         ax1.set_ylim(0, 8)
     end
@@ -288,31 +446,48 @@ ax1.set_ylabel("error (%)", fontsize=18)
 ax1.tick_params(labelsize=14)
 ax1.legend(loc="upper right", frameon=false, fontsize=14, ncol=2)
 
+
+if online
+    ax1.set_ylim(1, 10)
+    ax1.set_xscale("log")
+    #ax1.set_yscale("log")
+end
+
 if plot_overlaps
-    ax2.set_ylabel("q0", fontsize=10)
-    ax2.set_xlabel("epochs", fontsize=10)
-    ax3.set_xlabel("epochs", fontsize=10)
-    ax3.set_ylabel("qab", fontsize=10)
-    ax4.set_ylabel("q0", fontsize=10)
-    ax4.set_xlabel("epochs", fontsize=10)
-    ax5.set_xlabel("epochs", fontsize=10)
-    ax5.set_ylabel("qab", fontsize=10)
-    ax6.set_ylabel("q0", fontsize=10)
-    ax6.set_xlabel("epochs", fontsize=10)
-    ax7.set_xlabel("epochs", fontsize=10)
-    ax7.set_ylabel("qab", fontsize=10)
+    font_ov = 14
+    ax2.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax2.set_xlabel("epochs", fontsize=font_ov)
+    ax3.set_xlabel("epochs", fontsize=font_ov)
+    ax3.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+    ax4.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax4.set_xlabel("epochs", fontsize=font_ov)
+    ax5.set_xlabel("epochs", fontsize=font_ov)
+    ax5.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+    ax6.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax6.set_xlabel("epochs", fontsize=font_ov)
+    ax7.set_xlabel("epochs", fontsize=font_ov)
+    ax7.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+
+    font_tick = 11
+    ax2.tick_params(labelsize=font_tick)
+    ax3.tick_params(labelsize=font_tick)
+    ax4.tick_params(labelsize=font_tick)
+    ax5.tick_params(labelsize=font_tick)
+    ax6.tick_params(labelsize=font_tick)
+    ax7.tick_params(labelsize=font_tick)
+
 end
 
 #ax3.tick_params(labelsize=7)
 #ax2.set_ylim(0,1)
 
 if plot_overlaps
-    ax2.legend(loc="best", frameon=false, fontsize=10)
-    ax3.legend(loc="best", frameon=false, fontsize=10)
-    ax4.legend(loc="best", frameon=false, fontsize=10)
-    ax5.legend(loc="best", frameon=false, fontsize=10)
-    ax6.legend(loc="best", frameon=false, fontsize=10)
-    ax7.legend(loc="best", frameon=false, fontsize=10)
+    ax2.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax3.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax4.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax5.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax6.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
+    ax7.legend(loc="best", frameon=false, fontsize=10, handlelength=1)
 end
 
 #plt.grid(false)
@@ -325,16 +500,14 @@ dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
 #fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
-fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchsize, K=$(K[2:end-1]) iters=$maxiters", fontsize=14)
-
 fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figures/figure_sparsity.png")
+fig.savefig("figures/figure_deepMP.png")
 multc = multiclass ? "multiclass" : "2class"
-#fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
+#fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
 ovs = plot_overlaps ? ".ovs" : ""
 bay = plot_bayes ? ".bayes" : ""
-#fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)$(ovs)$(bay)_sparse.pdf")
+#fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs$bay.pdf")
 
 plt.close()

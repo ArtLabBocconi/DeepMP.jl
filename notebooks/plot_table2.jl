@@ -10,64 +10,58 @@ cd("/home/fabrizio/workspace/DeepMP.jl/notebooks")
 rd(x, n) = round(x, sigdigits=n)
 
 dataset = :fashion
+multiclass = true
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
-#Ks = [[0, 101, 101, 0], [0, 501, 501, 501, 0], [0, 501, 501, 501, 501, 501, 0], [0, 1024, 1024, 1024, 1024, 1024, 0]]
-#ρs = [[1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9], [1.0, 1.0, 1.0, 1.0, 1.0, 0.9]]
-#ψs = [[0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8], [0.8, 0.8, 0.8, 0.8, 0.8, 0.8]]
-
-# for different file names
-lays = [:bpi, :tap, :mf]
-#lays = [:tap]
-Ks = [[0, 501, 501, 501, 501, 0]]
-ρs = [[1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 1.0+1e-4, 0.9]]
-#ψs = [[0.9, 0.9, 0.9, 0.9, 0.9, 0.9]]
-ψs = [[0.2, 0.2, 0.2, 0.2, 0.99]]
+Ks = [[0, 1024, 1024, 1024, 0]]
+ρs = [[1.0, 1.0, 1.0, 0.9]]
+ψs = [[0.8, 0.8, 0.8, 0.8]]
 
 figure_index = 1
 
-algo = "sgd"; lrsgd = 10.0
-#algo = "adam"; lrsgd = 0.001
+lrsgd = 0.001
 density = 1.0
 
+# for different file names
+lays = [:bpi, :tap, :mf]
+lay_to_skip = [:tap, :mf]
+lay_to_skip = []
 
-multiclass = true
-plot_sgd, plot_bp, plot_bayes = true, true, true
-plot_overlaps = false
+plot_sgd, plot_bp, plot_bayes = true, true, false
+plot_overlaps = true
 plot_adam = false
 
+K = Ks[figure_index]
+K[1] = Nin
+L = length(K)-1
+
 if multiclass
+    K[end] = 10
     seed_bp = [2, 7, 11]
     seed_sgd = [2, 7, 11]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1
     ϵinits = [1.0, 1.0, 1.0]
 
-    K = Ks[figure_index]
-    K[1] = Nin
-    K[end] = 10
-    L = length(K)-1
     r = [0.0 for _=1:L]
     ρ = ρs[figure_index]
     ψ = ψs[figure_index]
 
 else
-
+    K[end] = 1
     seed_bp = [2, 7, 11]
     seed_sgd = [2, 7, 11]
     P = dataset ≠ :cifar10 ? 6e4 : 5e4
     maxiters = 1   
-    r = [0.0 for _=1:length(K)-1]
+    r = [0.0 for _=1:L]
     ϵinits = [1.0, 1.0, 1.0]
 
-    ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
-    ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
+    #ρs = [[1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9], [1.0+1e-4, 1.0+1e-4, 0.9]]
+    #ψs = [[0.8, 0.8, 0.8], [0.81, 0.81, 0.81], [0.8, 0.8, 0.8]]
 
 end
 
 algo_color = Dict(:sgd=>"black", :bp=>"tab:red", :tap=>"tab:green", :bpi=>"tab:blue", :mf=>"tab:orange")
-bayes_color = Dict(:tap=>"tab:olive", :bpi=>"tab:cyan", :mf=>"tab:pink")
-
 algo_mark = Dict(:sgd=>"o", :bp=>"^", :tap=>"s", :bpi=>"x", :mf=>"D")
 errev = 10
 
@@ -91,7 +85,7 @@ end
 if plot_bp 
     for (i,(lay, ρ, ψ, ϵinit)) in enumerate(zip(lays, [ρs[figure_index] for _=1:length(lays)], [ψs[figure_index] for _=1:length(lays)], ϵinits))
         
-        #lay in lay_to_skip && continue
+        lay in lay_to_skip && continue
 
         if !multiclass
             layers = [lay for i in 1:(length(K)-1)]
@@ -105,8 +99,7 @@ if plot_bp
         q0lay3, qablay3 = [], []
 
         train_bayes, test_bayes = [], []
-        
-        println()
+
         for seed in seed_bp
             resfile = "../scripts/resultsreb/res_dataset$(dataset)_"
             resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers[1])_rho$(ρ)_r$(r)_damp$(ψ)"
@@ -115,7 +108,7 @@ if plot_bp
             seed ≠ -1 && (resfile *= "_seed$(seed)")
             resfile *= ".dat"
 
-            if isfile(resfile) && filesize(resfile) ≠ 0 && countlines(resfile) > 90
+            if isfile(resfile) && filesize(resfile) ≠ 0 && countlines(resfile) > 50
                 @show resfile
                 dati = readdlm(resfile)
 
@@ -126,10 +119,8 @@ if plot_bp
                 push!(qablay1, dati[:, 5])
                 push!(q0lay2, dati[:, 6])
                 push!(qablay2, dati[:, 7])
-
-                # TODO: questo è l'ultimo layer
-                push!(q0lay3, dati[:, 12])
-                push!(qablay3, dati[:, 13])
+                push!(q0lay3, dati[:, 8])
+                push!(qablay3, dati[:, 9])
 
                 if plot_bayes
                     push!(train_bayes, dati[:, end-1])
@@ -177,13 +168,13 @@ if plot_bp
         lbl_test = "$LAY test"
 
         if plot_bayes
-            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color=bayes_color[lay], alpha=0.75)
-            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color=bayes_color[lay], alpha=0.75)    
+            ax1.plot(epoche_bp[1], μ_train_bayes, ls="-.", lw=2, label="Bayes "*lbl_train, color="tab:red", alpha=1.0)
+            ax1.plot(epoche_bp[1], μ_test_bayes, ls=":", lw=2, label="Bayes "*lbl_test, color="tab:red", alpha=1.0)    
         
             ax1.fill_between(epoche_bp[1], μ_train_bayes-σ_train_bayes, μ_train_bayes+σ_train_bayes,
-            color=bayes_color[lay], alpha=0.3, edgecolor=nothing)
+            color="tab:red", alpha=0.3, edgecolor=nothing)
 ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_test_bayes,
-            color=bayes_color[lay], alpha=0.3, edgecolor=nothing)
+            color="tab:red", alpha=0.3, edgecolor=nothing)
 
         end
         ax1.plot(epoche_bp[1], μ_train_bp, ls="-", label=lbl_train, color=algo_color[lay])
@@ -224,7 +215,7 @@ ax1.fill_between(epoche_bp[1], μ_test_bayes-σ_test_bayes, μ_test_bayes+σ_tes
         
         end
 
-        println("$lay: train: $(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3)); test: $(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))\n")
+        println("$lay: train: $(rd(μ_train_bp[end],3)) ± $(rd(σ_train_bp[end],3)); test: $(rd(μ_test_bp[end],3)) ± $(rd(σ_test_bp[end],3))")
 
     end
 end
@@ -238,7 +229,6 @@ if plot_sgd
     for seedgd in seed_sgd
         file = "../../representations/knet/scripts/resultsreb/res_dataset$(dset_sgd)_classes$(classes)_binwtrue_hidden$(Ksgd)_biasfalse_freezetopfalse"
         (P > 0 && (P≠6e4) && P≠5e4) && (file *= "_P$(Int(P))")
-        algo ≠ "adam" && (file *= "_$(algo)")
         file *= "_lr$(lrsgd)_bs$(batchsize)"
         seedgd ≠ 2 && (file *= "_seed$(seedgd)")
         file *= ".dat"
@@ -335,13 +325,13 @@ end
 
 if dataset == :mnist
     if multiclass
-        ax1.set_ylim(0, 50)
+        ax1.set_ylim(0, 5)
     else
         ax1.set_ylim(0, 5)
     end
 elseif dataset == :fashion
     if multiclass
-        ax1.set_ylim(0, 30)
+        ax1.set_ylim(0, 25)
     else
         ax1.set_ylim(0, 8)
     end
@@ -357,7 +347,6 @@ ax1.set_xlabel("epochs", fontsize=18)
 ax1.set_ylabel("error (%)", fontsize=18)
 ax1.tick_params(labelsize=14)
 ax1.legend(loc="upper right", frameon=false, fontsize=14, ncol=2)
-ax1.set_xlim(-2, 100)
 
 if plot_overlaps
     ax2.set_ylabel("q0", fontsize=10)
@@ -396,13 +385,12 @@ dset_tit = dataset == :mnist ? "MNIST" :
            dataset == :fashion ? "FashionMNIST" :
            dataset == :cifar10 ? "CIFAR10" : "?"
 #fig.suptitle("$dset_tit $classt P=$(Pstring), bs=$batchsize, K=$(K[2:end-1]), ψ=$(ψs[end]), init=$(ϵinits[1]), iters=$maxiters, r=$r")
-#fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchsize, K=$(K[2:end-1]) iters=$maxiters", fontsize=14)
+fig.suptitle("$dset_tit $classt P=$(Pstring), density=$(density*100)% bs=$batchsize, K=$(K[2:end-1]) iters=$maxiters", fontsize=14)
 
 #fig.tight_layout()
 
 #fig.savefig("figures/deepMP_bs$(batchsize)_K$(K)_rho$(ρ1)_ψ_$(ψ)_P$(P)_maxiters_$(maxiters)_r$(r)_ϵinit_$(ϵinit)_.png")
-fig.savefig("figures/figure_1.png")
-fig.savefig("figures/figure_app.pdf")
+fig.savefig("figures/figure_table.png")
 multc = multiclass ? "multiclass" : "2class"
 #fig.savefig("figures/figBP_$(K[2:end-1]).$(dataset).$(multc)_sparse.png")
 ovs = plot_overlaps ? ".ovs" : ""
