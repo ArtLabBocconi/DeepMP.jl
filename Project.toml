@@ -33,7 +33,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Adapt = "3.0"
 CUDA = "3.0"
-CUDAKernels = "0.3"
+CUDAKernels = "0.3, 0.4"
 Cassette = "0.3"
 ExtractMacro = "1.0"
 FiniteDifferences = "0.12"
