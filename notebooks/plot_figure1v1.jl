@@ -14,8 +14,8 @@ dataset = :fashion
 batchsize = 128
 Nin = dataset ≠ :cifar10 ? 784 : 3072
 K = [Nin, 101, 101, 1]
-#K = [Nin, 501, 501, 1]
-K = [Nin, 501, 501, 501, 1]
+K = [Nin, 501, 501, 1]
+#K = [Nin, 501, 501, 501, 1]
 L = length(K)-1
 lrsgd = 10.0
 
@@ -24,9 +24,9 @@ lays = [:bp, :bpi, :tap, :mf]
 lays = [:bpi, :tap, :mf]
 
 plot_sgd, plot_bp, plot_bayes = true, true, false
-plot_ebp = true
+plot_ebp = false
 plot_continuous_sgd = false
-plot_overlaps = false
+plot_overlaps = true
 multiclass = true
 
 if multiclass
@@ -326,15 +326,15 @@ if plot_sgd
     test_legend = "$(rd(μ_test[end],2)) ± $(rd(σ_test[end],2))"
 
     if plot_overlaps
-        lbl_train = "binaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
-        lbl_test = "binaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
+        lbl_train = "BinaryNet train bs=$batchsize, lr=$lrsgd, $train_legend"
+        lbl_test = "BinaryNet test bs=$batchsize, lr=$lrsgd, $test_legend"
     else
-        lbl_train = "binaryNet train, lr=$lrsgd"
-        lbl_test = "binaryNet test, lr=$lrsgd"
+        lbl_train = "BinaryNet train, lr=$lrsgd"
+        lbl_test = "BinaryNet test, lr=$lrsgd"
     end
 
-    lbl_train = "binaryNet train"
-    lbl_test = "binaryNet test"
+    lbl_train = "BinaryNet train"
+    lbl_test = "BinaryNet test"
 
     ax1.plot(epoche[1], μ_train, ls="-", c=algo_color[:sgd], label=lbl_train, alpha=1.0)
     ax1.plot(epoche[1], μ_test, ls="--", c=algo_color[:sgd], label=lbl_test, alpha=1.0)
@@ -429,7 +429,7 @@ if dataset == :mnist
     end
 elseif dataset == :fashion
     if multiclass
-        ax1.set_ylim(0, 70)
+        ax1.set_ylim(0, 25)
     else
         ax1.set_ylim(0, 8)
     end
@@ -455,18 +455,18 @@ end
 
 if plot_overlaps
     font_ov = 14
-    ax2.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax2.set_ylabel(L"\langle q_{diag} \rangle", fontsize=font_ov)
     ax2.set_xlabel("epochs", fontsize=font_ov)
     ax3.set_xlabel("epochs", fontsize=font_ov)
-    ax3.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
-    ax4.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax3.set_ylabel(L"\langle q_{off} \rangle", fontsize=font_ov)
+    ax4.set_ylabel(L"\langle q_{diag} \rangle", fontsize=font_ov)
     ax4.set_xlabel("epochs", fontsize=font_ov)
     ax5.set_xlabel("epochs", fontsize=font_ov)
-    ax5.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
-    ax6.set_ylabel(L"\langle q0 \rangle", fontsize=font_ov)
+    ax5.set_ylabel(L"\langle q_{off} \rangle", fontsize=font_ov)
+    ax6.set_ylabel(L"\langle q_{diag} \rangle", fontsize=font_ov)
     ax6.set_xlabel("epochs", fontsize=font_ov)
     ax7.set_xlabel("epochs", fontsize=font_ov)
-    ax7.set_ylabel(L"\langle qab \rangle", fontsize=font_ov)
+    ax7.set_ylabel(L"\langle q_{off} \rangle", fontsize=font_ov)
 
     font_tick = 11
     ax2.tick_params(labelsize=font_tick)
@@ -508,6 +508,6 @@ multc = multiclass ? "multiclass" : "2class"
 #fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc.png")
 ovs = plot_overlaps ? ".ovs" : ""
 bay = plot_bayes ? ".bayes" : ""
-#fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs$bay.pdf")
+fig.savefig("figures/figBP_$(K[2:end-1]).$dataset.$multc$ovs$bay.pdf")
 
 plt.close()

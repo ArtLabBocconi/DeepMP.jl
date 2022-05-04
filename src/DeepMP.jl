@@ -207,7 +207,6 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     xtrain, ytrain = device(xtrain), device(ytrain)
     xtest, ytest = device(xtest), device(ytest)
     dtrain = DataLoader((xtrain, ytrain); batchsize, shuffle=true, partial=false)
-    
 
     g = FactorGraph(first(dtrain)..., K, ϵinit, layers; β, density, device)
     h0 !== nothing && set_external_fields!(g, h0; ρ, rbatch);
@@ -218,10 +217,10 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     initrand!(g)
     freezetop && freezetop!(g, 1)
     reinfpar = ReinfParams(r, rstep, yy, ψ)
-
+    
     if saveres
 
-        resfile = "resultsreb/res_dataset$(dataset)_"
+        resfile = "results/res_dataset$(dataset)_"
         resfile *= "Ks$(K)_bs$(batchsize)_layers$(layers[1])_rho$(ρ)_r$(r)_damp$(ψ)"
         resfile *= "_density$(density)"
         resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
@@ -229,7 +228,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         resfile *= ".dat"
         fres = open(resfile, "w")
 
-        #resfile = "resultsreb/res_dataset$(dataset)_"
+        #resfile = "results/res_dataset$(dataset)_"
         #resfile *= "Ks$(length(K)-2)x$(K[2])_bs$(batchsize)_layers$(layers[1])_rho$(ρ[1])_r$(r[1])_damp$(ψ[1])"
         #resfile *= "_density$(density[1])"
         #resfile *= "_M$(length(ytrain))_ϵinit$(ϵinit)_maxiters$(maxiters)"
@@ -307,7 +306,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
     if saveres
         close(fres)
         println("outfile: $resfile")
-        conf_file = "results_ECE/conf$(resfile[12:end-4]).jld2"
+        conf_file = "results/conf$(resfile[12:end-4]).jld2"
         @show conf_file
         save(conf_file, Dict("graph" => Array{F}(g.layers[2].m)))
         #save(conf_file, Dict("weights" => getW(g)))

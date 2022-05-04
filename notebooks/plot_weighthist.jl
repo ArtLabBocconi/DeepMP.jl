@@ -42,8 +42,8 @@ colors = ["tab:blue", "tab:orange", "tab:green"]
 colorsbp = ["tab:cyan", "tab:red", "tab:olive"]
 
 if lays[1] == :bpi
-    #ρ = [0.9999, 0.9999, 0.9] # Bayesian
-    ρ = [1.0001, 1.0001, 0.9] # point-wise
+    ρ = [0.9999, 0.9999, 0.9] # Bayesian
+    #ρ = [1.0001, 1.0001, 0.9] # point-wise
     binw = true
 else
     ρ = [1.0, 1.0, 0.9]
@@ -62,7 +62,8 @@ if plot_sgd
         weights_sgd = load(file, "weights")
         for i in is
             ax1.hist(vec(weights_sgd[i]), bins=100, density=true, alpha=0.3, 
-                        color=colors[i], histtype="bar", label="Adam layer $i")
+            color=colors[i], histtype="bar", label="BinaryNet")
+            #            color=colors[i], histtype="bar", label="Adam layer $i")
         end
     else
         println("* NOT FOUND: $file")
@@ -92,7 +93,8 @@ if plot_bp
             magnetizations = graph_bp
             #magnetizations = DeepMP.getW(graph_bp.layers[i+1])
             ax1.hist(vec(magnetizations), bins=100, density=true, alpha=0.3, 
-                    color=colorsbp[i], histtype="bar", label="BP layer $i")
+                    color=colorsbp[i], histtype="bar", label="BP")
+                    #color=colorsbp[i], histtype="bar", label="BP layer $i")
         end
     else
         println("* NOT FOUND: $resfile")
@@ -104,7 +106,8 @@ ax1.set_ylabel("P(w)", fontsize=18)
 ax1.legend(loc="best", frameon=false, fontsize=14)
 
 title = binw == true ? "Binary Weights" : "Continuous Weights"
-ax1.set_title(title, fontsize = 16)
+#ax1.set_title(title, fontsize = 16)
 
 fig.savefig("figures/weight_histogram.png")
+fig.savefig("figures/weight_histogram.pdf")
 plt.close()

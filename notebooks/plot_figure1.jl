@@ -33,7 +33,7 @@ density = 1.0
 
 multiclass = true
 plot_sgd, plot_bp, plot_bayes = true, true, true
-plot_overlaps = false
+plot_overlaps = true
 plot_adam = false
 
 if multiclass
