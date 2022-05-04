@@ -63,6 +63,7 @@ function converge!(g::FactorGraph;  maxiters=10000, ϵ=1f-5,
 
         if verbose >= 2 || (batchsize == -1 && saveres && !isnothing(fres))
             Etest = 100.0
+            Etest_bayes = 100.0
             if ytest !== nothing
                 Etest = mean(vec(forward(g, xtest)) .!= ytest) * 100
                 Etest_bayes = bayesian_error(g, xtest, ytest) *100

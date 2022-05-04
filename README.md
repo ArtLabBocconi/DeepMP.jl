@@ -10,9 +10,9 @@ each layer, and run the message passing iterations:
 ```julia
 using DeepMP
 
-g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,21,3,1]
-                   , layers=[:tap,:bp,:bpex]
-                   ,r=.9,rstep=0.002, seedx=1,maxiters=800);
+g, W, teacher, E = DeepMP.solve(α=0.2, K=[401,101,1] , layers=[:bp, :bp], 
+                        ψ=[0.8, 0.8], ϵinit=1.0 , r=.9, rstep=0.002, 
+                        seedx=1, maxiters=800, gpu_id=2, saveres=true);
 
 @assert E == 0 # zero training error
 ```
@@ -24,12 +24,9 @@ A typical experiment we run is
 ```julia
 include("scripts/real_data_experiments.jl")
 
-run_experiment(; dataset=:fashion, multiclass=false,
-                 usecuda=true, gpu_id=0, epochs=100, 
-                 layers=[:bpi, :bpi, :bpi], 
-                 batchsize=128, 
-                 ρ=[1.0+1e-6, 1.0+1e-6, 0.0], 
-                 ψ=0.2, M=60000, 
-                 maxiters=1, r=0.0, 
-                 ϵinit=1.0, K=[28*28, 101, 101, 1], altsolv=false, altconv=true, seed=2, saveres=false)
+run_experiment(; multiclass=false, dataset=:fashion, lay_type=:bp, seed=2, 
+            ρ=[1.0, 1.0, 0.9], density=1.0, ψ=[0.8, 0.8, 0.8],
+            epochs=200, batchsize=128, usecuda=true, gpu_id=0,  
+            M=Int(6e4), maxiters=1, r=0.0, ϵinit=1.0, K=[28*28, 501, 501, 1], 
+            altsolv=false, altconv=false, saveres=true);
 ```
