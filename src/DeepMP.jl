@@ -230,6 +230,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
         #resfile *= ".dat"
         #fres = open(resfile, "w")
 
+    else
+        fres = nothing
     end
     
     function report(epoch; t=(@timed 0), converged=0., solved=0., meaniters=0.)
@@ -311,6 +313,8 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 println(file)
             end
         end
+    else
+        conf_file = nothing
     end
 
     Etrain = sum(vec(forward(g, xtrain)) .!= ytrain)

@@ -13,15 +13,15 @@ using DeepMP, Random
 
 Random.seed!(17)
 
-prob = DeepMP.generate_problem(N=401, Mtrain=1000)
+prob = DeepMP.generate_problem(N=401, Mtrain=100)
 
 g, W, teacher, E = DeepMP.solve(prob.xtrain, prob.ytrain; 
                         K = [401, 101, 1], 
                         layers=[:bp, :bp], 
                         ψ=[0.8, 0.8], ϵinit=1.0 , r=.9, rstep=0.002, 
                         maxiters=800, 
-                        batchsize=128,
-                        usecuda=true, gpu_id=0);
+                        batchsize=-1,
+                        usecuda=true, gpu_id=0, saveres=false);
 
 @assert E == 0 # zero training error
 ```
