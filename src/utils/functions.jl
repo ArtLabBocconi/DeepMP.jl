@@ -1,7 +1,3 @@
-
-@inline Cassette.overdub(::CUDAKernels.CUDACtx, ::typeof(SpecialFunctions.erfcx), x::Union{Float32, Float64}) = SpecialFunctions.erfcx(x)
-@inline Cassette.overdub(::KernelAbstractions.CPUCtx, ::typeof(SpecialFunctions.erfcx), x::Union{Float32, Float64}) = SpecialFunctions.erfcx(x)
-
 G(x::T) where T = exp(-(x^2) / 2) / √(T(2)*π)
 H(x::T) where T = erfc(x / √T(2)) / 2
 

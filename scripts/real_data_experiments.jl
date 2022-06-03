@@ -1,7 +1,6 @@
-using Pkg
-Pkg.activate("../")
-#Pkg.activate("./")
-Pkg.instantiate()
+# using Pkg
+# Pkg.activate(joinpath(@__DIR__, "../"))
+# Pkg.instantiate()
 
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using DeepMP
@@ -22,15 +21,15 @@ function get_dataset(M=-1; multiclass=false, classes=[], seed=17, dataset=:mnist
                                      error("uknown dataset")
     
     datadir = joinpath(homedir(), "Datasets", namedir)
-    xtrain, ytrain = Dataset.traindata(DeepMP.F, dir=datadir)
-    xtest, ytest = Dataset.testdata(DeepMP.F, dir=datadir)
+    xtrain, ytrain = Dataset(:train, dir=datadir)[:]
+    xtest, ytest = Dataset(:test, dir=datadir)[:]
     @assert all(isinteger.(ytest))
 
     if normalize
         mn = mean(xtrain, dims=reduce_dims)
         st = std(xtrain, dims=reduce_dims)
-        xtrain = (xtrain .- mn) ./ (st .+ 1e-5)
-        xtest = (xtest .- mn) ./ (st .+ 1e-5)
+        xtrain = (xtrain .- mn) ./ (st .+ 1f-5)
+        xtest = (xtest .- mn) ./ (st .+ 1f-5)
     end
 
     xtrain = reshape(xtrain, :, size(xtrain)[end])
