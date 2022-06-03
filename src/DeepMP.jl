@@ -16,6 +16,8 @@ using Functors
 using JLD2
 import Zygote
 import ForwardDiff
+using Base: @kwdef
+
 CUDA.allowscalar(false)
 
 # using PyPlot
@@ -34,6 +36,11 @@ include("utils/utils.jl")
 include("utils/functions.jl")
 include("utils/dataloader.jl")
 include("utils/Magnetizations.jl"); using .Magnetizations
+
+include("channels/channels.jl")
+include("channels/sign.jl")
+include("channels/relu.jl")
+
 include("layers/layers.jl")
 include("factor_graph.jl")
 include("reinforcement.jl")
