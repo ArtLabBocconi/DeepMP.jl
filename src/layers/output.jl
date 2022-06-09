@@ -1,8 +1,9 @@
-mutable struct OutputLayer{T,S,W} <: AbstractLayer
+mutable struct OutputLayer{T,S<:AbstractMatrix} <: AbstractLayer
     l::Int
     y::T
     B::S
-    β::W
+    A::S
+    β::Float32
 end
 
 function OutputLayer(y::AbstractVector; β=Inf)

@@ -1,5 +1,5 @@
 
-mutable struct BPLayer{A2,A3,M, ACT<:AbstractChannel} <: AbstractLayer
+mutable struct BPLayer{A2<:AbstractMatrix,A3<:AbstractArray,M, ACT<:AbstractChannel} <: AbstractLayer
     l::Int
     K::Int
     N::Int
@@ -73,7 +73,11 @@ function BPLayer(K::Int, N::Int, M::Int, ϵinit;
             ω, ωcav, V,
             DummyLayer(), DummyLayer(),
             weight_mask, isfrozen, 
-            channel)
+            act)
+end
+
+function Base.show(io::IO, l::BPLayer)
+    print(io, "BPLayer($(l.N) => $(l.K), M=$(l.M), act=$(l.act))")
 end
 
 function update!(layer::BPLayer, reinfpar; mode=:both)
