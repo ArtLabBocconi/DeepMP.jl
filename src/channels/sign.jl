@@ -34,7 +34,7 @@ function ∂B_ϕout(ch::ActSign, B, A, ω, V)
     return tanh(Btot)
 end
 
-function ∂²B_ϕout(ch::ActSign, A, B, ω, V)
+function ∂²B_ϕout(ch::ActSign, B, A, ω, V)
     Btot = B + atanh2Hm1(-ω / V)
     return 1 - tanh(Btot)^2
 end

@@ -1,5 +1,5 @@
 
-# @testset "1000 FashionMNIST examples, BP" begin
+@testset "1000 FashionMNIST examples, BP" begin
     g, w, teacher, E, it = run_experiment(; multiclass=false, dataset=:fashion, lay_type=:bp, seed=2, 
                                 M=1000, 
                                 K=[28*28, 201, 201, 1], 
@@ -7,4 +7,7 @@
                                 epochs=20, batchsize=128, usecuda=false, gpu_id=0,  
                                 maxiters=1, r=0.0, ϵinit=1.0, 
                                 altsolv=false, altconv=false, saveres=false);
-# end
+
+    # @test E <= 20
+    @test E <= 30
+end

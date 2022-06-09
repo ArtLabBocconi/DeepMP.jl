@@ -2,7 +2,6 @@
 
 ## type hierarchy for input and output channels
 
-
 @kwdef mutable struct ActReLU <: AbstractChannel
     name::Symbol
 end
@@ -10,6 +9,8 @@ end
 (ch::ActReLU)(x) =  max(0, x)
 
 # intermediate layer
+
+# TODO invert B and A
 function ∂ω_ϕout(ch::ActReLU, A, B, ω, V)
     c = ω
     d = V^2
