@@ -17,7 +17,7 @@ end
 
 function set_output!(lay::OutputLayer, y)
     lay.B .= lay.β .* reshape(y, 1, :)
-    lay.A .= lay.β .* fill!(similar(lay.B), β)
+    lay.A .= lay.β
     lay.y = y
 end
 
