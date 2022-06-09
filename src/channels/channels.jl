@@ -2,9 +2,19 @@
 abstract type AbstractChannel end
 
 ∂ω_ϕout(ch::AbstractChannel, y, ω, V) = deriv(ω->ϕout(ch, y, ω, V), ω)
-∂²ω_ϕout(ch::AbstractChannel, y, ω, V, chout::AbstractChannel) = deriv(ω->∂ω_ϕout(ch, y, ω, V), ω)
-∂B_ϕin(ch::AbstractChannel, B, A, chin::AbstractChannel) = deriv(B->ϕin(ch, B, A), B)
-∂²B_ϕin(ch::AbstractChannel, B, A, chin::AbstractChannel) = deriv(B->∂B_ϕin(ch, B, A), B)
+∂²ω_ϕout(ch::AbstractChannel, y, ω, V) = deriv(ω->∂ω_ϕout(ch, y, ω, V), ω)
+∂B_ϕin(ch::AbstractChannel, B, A) = deriv(B->ϕin(ch, B, A), B)
+∂²B_ϕin(ch::AbstractChannel, B, A) = deriv(B->∂B_ϕin(ch, B, A), B)
+
+function compute_g(act::AbstractChannel, Btop, Atop, ω, V)
+    @tullio g[k,a] := ∂ω_ϕout(act, Btop[k,a], Atop[k,a], ω[k,a], V[k,a])  avx=false
+    return g
+end
+
+function compute_gcav(act::AbstractChannel, Btop, Atop, ωcav, V)
+    @tullio gcav[k,i,a] := ∂ω_ϕout(act, Btop[k,a], Atop[k,a], ωcav[k,i,a], V[k,a])  avx=false
+   return gcav
+end
 
 
 channel(ch::AbstractChannel) = ch

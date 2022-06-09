@@ -19,22 +19,22 @@ end
 
 # INTERMEDIATE LAYER
 
-function ∂ω_ϕout(ch::ActSign, A, B, ω, V)
-    GH2(B, -ω / V) / V
+function ∂ω_ϕout(ch::ActSign, B, A, ω, V)
+    return GH2(B, -ω / V) / V
 end
 
 
-function ∂²ω_ϕout(ch::ActSign, A, B, ω, V)
-    g = ∂ω_ϕout(ch, A, B, ω, V)
-    -ω / V^2 * g - g^2
+function ∂²ω_ϕout(ch::ActSign, B, A, ω, V)
+    g = ∂ω_ϕout(ch, B, A, ω, V)
+    return -ω / V^2 * g - g^2
 end
 
-function ∂B_ϕout(ch::ActSign, A, B, ω, V)
+function ∂B_ϕout(ch::ActSign, B, A, ω, V)
     Btot = B + atanh2Hm1(-ω / V)
-    tanh(Btot)
+    return tanh(Btot)
 end
 
-function ∂²B_ϕout(ch::ActSign, A, B, ω, V)
+function ∂²B_ϕout(ch::ActSign, B, A, ω, V)
     Btot = B + atanh2Hm1(-ω / V)
-    1 - tanh(Btot)^2
+    return 1 - tanh(Btot)^2
 end
