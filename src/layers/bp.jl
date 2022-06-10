@@ -87,13 +87,13 @@ end
 function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ x̂cav Δ m mcav σ 
-    @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
+    @extract layer: B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer act
     @extract reinfpar: r y ψ l
 
     Δm = 0.
     rl = r[l]
-    @assert y == 0 # deprecate focusing
+    @assert y == -1 # deprecate focusing
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
