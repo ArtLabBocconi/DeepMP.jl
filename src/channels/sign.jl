@@ -2,7 +2,7 @@
     name::Symbol
 end
 
-(ch::ActSign)(x) = sign(x)
+(ch::ActSign)(x::Number) = sign(x)
 (ch::ActSign)(x::AbstractArray) = sign.(x)
 
 # TOP LAYER
