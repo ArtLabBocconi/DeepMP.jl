@@ -16,14 +16,32 @@ function compute_gcav(act::AbstractChannel, Btop, Atop, ωcav, V)
    return gcav
 end
 
+function compute_x̂Δ!(x̂, B, A, bottom_layer)
+    act = bottom_layer.act
+    ω, V = bottom_layer.ω, bottom_layer.V
+    @tullio x̂[i,a] = ∂B_ϕout(act, B[i,a], A[i,a], ω[i,a], V[i,a])   
+end
+
+function compute_Δ!(Δ, B, A, bottom_layer)
+    act = bottom_layer.act
+    ω, V = bottom_layer.ω, bottom_layer.V
+    @tullio Δ[i,a] = ∂²B_ϕout(act, B[i,a], A[i,a], ω[i,a], V[i,a])          
+end
+
+function compute_x̂cav!(x̂, Bcav, A, bottom_layer)
+    act = bottom_layer.act
+    ω, V = bottom_layer.ω, bottom_layer.V
+    @tullio x̂[i,a] = ∂B_ϕout(act, Bcav[k,i,a], A[i,a], ω[i,a], V[i,a])   
+end            
+
 
 channel(ch::AbstractChannel) = ch
 channel(arg::Tuple) = (@assert length(arg)==2; channel(arg[1]; arg[2]...))
 
 
 channel(name::Symbol; prms...) = name == :sign ? ActSign(; name=name, prms...) :
-                                 name == :relu  ? ActReLU(; name=name, prms...) : error("no such channel $name")
-                                #  name == :id   ? ActId(; name=name, prms...) :
+                                 name == :relu  ? ActReLU(; name=name, prms...) :
+                                 name == :identity   ? ActIdentity(; name=name, prms...) : error("no such channel $name")
                                 #  name == :abs  ? ActAbs(; name=name, prms...) :
                                 #  name == :L0   ? RegL0(; name=name, prms...) :
                                 #  name == :L1   ? RegL1(; name=name, prms...) :

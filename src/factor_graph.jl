@@ -9,7 +9,7 @@ mutable struct FactorGraph
     
     function FactorGraph(x::AbstractMatrix, y::AbstractVector,
                 K::Vector{Int}, ϵinit::F,
-                layertype::Vector{Symbol};
+                chain::Vector; # e.g. [(:bp, :relu), (:bp, :sign)]
                 β=Inf,
                 density=1., verbose=1,
                 device=cpu)
@@ -23,6 +23,7 @@ mutable struct FactorGraph
         numW = round(Int, numW)
         @assert K[1] == N
         verbose > 0 && println("# N=$N M=$M α=$(M/numW) device=$device")
+        layertype, acts = process_chain(chain)
 
         x, y = x |> device, y |> device
 
@@ -41,7 +42,7 @@ mutable struct FactorGraph
                 push!(layers, TapLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
                 verbose > 0 && println("Created TapLayer\t $(K[l])")
             elseif  layertype[l] == :bp
-                push!(layers, BPLayer(K[l+1], K[l], M, ϵinit, density=density[l]))
+                push!(layers, BPLayer(K[l+1], K[l], M, ϵinit, density=density[l], act=acts[l]))
                 verbose > 0 && println("Created BPLayer\t $(K[l])")
             elseif  layertype[l] == :bpi
                 push!(layers, BPILayer(K[l+1], K[l], M, ϵinit, 
@@ -78,6 +79,12 @@ function process_density(density, L)
         #density[L] = 1.0; @warn "Setting density[$L] = 1.0"
     end
     return density
+end
+
+function process_chain(chain::Vector)
+    layertype = [length(c) == 2 ? c[1] : c for c in chain]
+    acts = [length(c) == 2 ? c[2] : nothing for c in chain]
+    return layertype, acts
 end
 
 # Turn a number into a vector (a value for each layer)

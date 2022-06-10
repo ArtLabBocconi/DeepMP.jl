@@ -8,8 +8,7 @@ mutable struct DummyLayer <: AbstractLayer end
 
 include("input.jl")
 include("output.jl")
-# include("bp.jl")
-include("bp_new.jl")
+include("bp.jl")
 include("tap.jl")
 include("bpi.jl")
 include("continuous_bpi.jl")

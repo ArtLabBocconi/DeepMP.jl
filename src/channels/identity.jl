@@ -1,4 +1,4 @@
-#### ACT RELU   ###############
+#### ACT Identity   ###############
 
 ## type hierarchy for input and output channels
 

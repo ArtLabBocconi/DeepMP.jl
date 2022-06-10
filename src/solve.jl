@@ -121,7 +121,7 @@ function solve(xtrain::AbstractMatrix, ytrain::AbstractVector;
                 xtest = nothing, ytest = nothing,
                 dataset = :fashion,
                 K::Vector{Int},                # List of widths for each layer, e.g. [28*28, 101, 101, 1]
-                layers,                        # List of layer types  e.g. [:bpi, :bpi, :argmax],
+                layers,                        # List of layer types  e.g. [(:bpi, :sign), (:bpi, :sign), :argmax],
                 maxiters = 100,
                 ϵ = 1e-4,                      # convergence criterion
                 r = 0., rstep = 0.,            # reinforcement parameters for W vars
