@@ -14,7 +14,6 @@ mutable struct BPLayer{A2<:AbstractMatrix,A3<:AbstractArray,M, ACT<:AbstractChan
     mcav::A3 
     σ::A2
 
-    Bup::A2
     B::A2 
     Bcav::A3 
     A::A2
@@ -26,6 +25,7 @@ mutable struct BPLayer{A2<:AbstractMatrix,A3<:AbstractArray,M, ACT<:AbstractChan
     ω::A2
     ωcav::A3 
     V::A2
+
 
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
@@ -50,7 +50,6 @@ function BPLayer(K::Int, N::Int, M::Int, ϵinit;
     mcav = zeros(F, K, N, M)
     σ = zeros(F, K, N)
     
-    Bup = zeros(F, K, M)
     B = zeros(F, N, M)
     Bcav = zeros(F, K, N, M)
     A = zeros(F, N, M)
@@ -71,8 +70,9 @@ function BPLayer(K::Int, N::Int, M::Int, ϵinit;
     act = channel(act)
 
     return BPLayer(-1, K, N, M, ϵinit,
-            x̂, x̂cav, Δ, m, mcav, σ,
-            Bup, B, Bcav, A, 
+            x̂, x̂cav, Δ, 
+            m, mcav, σ,
+            B, Bcav, A, 
             H, Hext, Hcav,
             ω, ωcav, V,
             DummyLayer(), DummyLayer(),
@@ -90,8 +90,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
     @extract layer: Bup B Bcav A H Hext Hcav ω ωcav V
     @extract layer: bottom_layer top_layer act
     @extract reinfpar: r y ψ l
+
     Δm = 0.
     rl = r[l]
+    @assert y == 0 # deprecate focusing
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
@@ -99,18 +101,10 @@ function update!(layer::BPLayer, reinfpar; mode=:both)
             compute_x̂cav!(x̂cav, Bcav, A, bottom_layer)
             compute_Δ!(Δ, B, A, bottom_layer)
         end
-        # @assert all(isfinite, x̂)
-        # @assert all(isfinite, x̂cav)
-
         
         @tullio ω[k,a] = mcav[k,i,a] * x̂cav[k,i,a]
         @tullio ωcav[k,i,a] = ω[k,a] - mcav[k,i,a] * x̂cav[k,i,a]
         V .= σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
-        compute_Bup!(act, Bup, ω, V)
-        # @assert all(isfinite, ω)
-        # @assert all(isfinite, V)
-        # @assert all(isfinite, ωcav)
-        # @assert all(isfinite, Bup)
     end
 
     if mode == :back || mode == :both
@@ -196,7 +190,7 @@ function forward(layer::L, x) where L <: Union{BPLayer}
     @extract layer: N K
     @assert size(x, 1) == N
     W = getW(layer)
-    return layer.act.(W*x .+ 1f-10)
+    return layer.act(W*x .+ 1f-10)
 end
 
 function fixW!(layer::L, w=1.) where {L <: Union{BPLayer}}

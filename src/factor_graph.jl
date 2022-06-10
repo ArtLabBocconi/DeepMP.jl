@@ -82,8 +82,8 @@ function process_density(density, L)
 end
 
 function process_chain(chain::Vector)
-    layertype = [length(c) == 2 ? c[1] : c for c in chain]
-    acts = [length(c) == 2 ? c[2] : nothing for c in chain]
+    layertype = [c isa Symbol ? c : c[1] for c in chain]
+    acts = [c isa Symbol ? nothing : c[2] for c in chain]
     return layertype, acts
 end
 

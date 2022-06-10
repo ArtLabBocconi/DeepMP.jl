@@ -1,41 +1,45 @@
-mutable struct BPILayer <: AbstractLayer
+mutable struct BPILayer{A2<:AbstractMatrix, M, ACT<:AbstractChannel} <: AbstractLayer
     l::Int
     K::Int
     N::Int
     M::Int
     ϵinit
 
-    x̂ 
-    Δ
-    m 
-    σ 
-    Bup
-    B 
-    A 
-    H
-    Hext
-    ω 
-    V
+    x̂::A2
+    Δ::A2
 
-    type::Symbol
+    m::A2
+    σ::A2
+
+    B::A2
+    A::A2 
+    
+    H::A2
+    Hext::A2
+    
+    ω::A2
+    V::A2
+
     top_layer::AbstractLayer
     bottom_layer::AbstractLayer
-    weight_mask
+    
+
+    weight_mask::M
     isfrozen::Bool
+
+    act::ACT
 end
 
 @functor BPILayer
 
 function BPILayer(K::Int, N::Int, M::Int, ϵinit; 
-            density=1., isfrozen=false, type=:bpi)
-    # for variables W
+            density=1., isfrozen=false, act=nothing)
     x̂ = zeros(F, N, M)
     Δ = zeros(F, N, M)
     
     m = zeros(F, K, N)
     σ = zeros(F, K, N)
     
-    Bup = zeros(F, K, M)
     B = zeros(F, N, M)
     A = zeros(F, N, M)
     
@@ -45,38 +49,45 @@ function BPILayer(K::Int, N::Int, M::Int, ϵinit;
     ω = zeros(F, K, M)
     V = zeros(F, K, M)
     
-    weight_mask = rand(F, K, N) .< density
+    weight_mask = rand(K, N) .< density
+
+    if act === nothing
+        act = :sign
+    end
+    act = channel(act)
 
     return BPILayer(-1, K, N, M, ϵinit,
-            x̂, Δ, m, σ,
-            Bup, B, A, 
+            x̂, Δ, 
+            m, σ,
+            B, A, 
             H, Hext,
             ω, V,
-            type,
             DummyLayer(), DummyLayer(),
-            weight_mask, isfrozen)
+            weight_mask, isfrozen,
+            act)
 end
 
 function update!(layer::BPILayer, reinfpar; mode=:both)
     @extract layer: K N M weight_mask
     @extract layer: x̂ Δ m  σ 
     @extract layer: Bup B A H Hext ω  V
-    @extract layer: bottom_layer top_layer
+    @extract layer: bottom_layer top_layer act
     @extract reinfpar: r y ψ l
 
     Δm = 0.
     rl = r[l]
+    @assert y == 0 # deprecate focusing
+
 
     if mode == :forw || mode == :both
         if !isbottomlayer(layer)
-            bottBup = bottom_layer.Bup
-            @tullio x̂[i,a] = tanh(bottBup[i,a] + B[i,a])
-            Δ .= 1 .- x̂.^2
+            compute_x̂!(x̂, B, A, bottom_layer)
+            compute_x̂cav!(x̂cav, Bcav, A, bottom_layer)
+            compute_Δ!(Δ, B, A, bottom_layer)
         end
         
         @tullio ω[k,a] = m[k,i] * x̂[i,a]
-        V .= .√(σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8)
-        @tullio Bup[k,a] = atanh2Hm1(-ω[k,a] / V[k,a]) avx=false
+        V .=  σ * x̂.^2 + m.^2 * Δ + σ * Δ .+ 1f-8
     end
     if mode == :back || mode == :both
         Btop = top_layer.B 

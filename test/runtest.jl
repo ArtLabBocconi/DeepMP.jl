@@ -2,6 +2,7 @@ using DeepMP
 using Test, DelimitedFiles, Random, Statistics
 using MLDatasets: MNIST, FashionMNIST, CIFAR10, CIFAR100
 using CUDA
+
 CUDA.allowscalar(false)
 
 include("test_utils.jl")
